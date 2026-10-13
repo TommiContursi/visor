@@ -1,0 +1,207 @@
+package com.macedonga.visor.di
+
+import android.content.Context
+import com.macedonga.visor.BuildConfig
+import com.macedonga.visor.connection.AndroidTransportFactory
+import com.macedonga.visor.connection.LinkKind
+import com.macedonga.visor.core.transport.LeKeeper
+import com.macedonga.visor.core.assistant.Assistant
+import com.macedonga.visor.core.assistant.LiveAiCamera
+import com.macedonga.visor.core.assistant.GlassesPhotos
+import com.macedonga.visor.core.assistant.SVC_GLASSES_PHOTO
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import com.macedonga.visor.core.assistant.AssistantConfigStore
+import com.macedonga.visor.core.assistant.Brain
+import com.macedonga.visor.core.assistant.Diary
+import com.macedonga.visor.core.assistant.SVC_ASSISTANT
+import com.macedonga.visor.core.assistant.Voice
+import com.macedonga.visor.core.connection.GlassesConnection
+import com.macedonga.visor.core.connection.RealSessionHostFactory
+import com.macedonga.visor.core.connection.SessionHostFactory
+import com.macedonga.visor.core.connection.TransportFactory
+import com.macedonga.visor.core.identity.IdentityStore
+import com.macedonga.visor.core.identity.KeystoreSealer
+import com.macedonga.visor.core.media.AirshipReceiver
+import com.macedonga.visor.core.media.GlassesConfig
+import com.macedonga.visor.core.media.MediaImport
+import com.macedonga.visor.core.media.LiveStream
+import com.macedonga.visor.core.media.LiveOutputs
+import com.macedonga.visor.core.media.LiveSettingsStore
+import com.macedonga.visor.core.media.SVC_AIRSHIP
+import com.macedonga.visor.core.media.SVC_MEDIA_STREAMING_CONTROL
+import com.macedonga.visor.core.media.StreamReceiver
+import com.macedonga.visor.core.session.Responder
+import com.macedonga.visor.core.settings.GlassesSettings
+import com.macedonga.visor.core.settings.RlDriveResponder
+import com.macedonga.visor.core.settings.SVC_RLDRIVE
+import com.macedonga.visor.core.transport.FileWireLog
+import com.macedonga.visor.core.transport.LinkMeter
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import java.io.File
+import javax.inject.Singleton
+
+/** Where the connection is assembled. */
+@Module
+@InstallIn(SingletonComponent::class)
+object ConnectionModule {
+
+    /** The sealed store, in the app's own files directory. */
+    @Provides
+    @Singleton
+    fun identityStore(@ApplicationContext context: Context): IdentityStore =
+        IdentityStore(File(context.filesDir, "identity"), KeystoreSealer())
+
+    /**
+     * Debug builds append every SDU to `files/wire.log`, in the desktop's format, so a phone run
+     * can be diffed against a desktop run.
+     */
+    @Provides
+    @Singleton
+    fun transportFactory(@ApplicationContext context: Context, meter: LinkMeter, kind: LinkKind, keeper: LeKeeper): TransportFactory =
+        AndroidTransportFactory(
+            context,
+            wireLog = if (BuildConfig.DEBUG) FileWireLog(File(context.filesDir, "wire.log")) else null,
+            wifiMeter = meter,
+            kind = kind,
+            keeper = keeper,
+        )
+
+    @Provides
+    @Singleton
+    fun leKeeper(@ApplicationContext context: Context): LeKeeper = LeKeeper(context)
+
+    @Provides
+    @Singleton
+    fun linkKind(): LinkKind = LinkKind()
+
+    @Provides
+    @Singleton
+    fun linkMeter(): LinkMeter = LinkMeter()
+
+    @Provides
+    @Singleton
+    fun airship(@ApplicationContext context: Context): AirshipReceiver =
+        AirshipReceiver(File(context.cacheDir, "airship"))
+
+    @Provides
+    @Singleton
+    fun rlDrive(): RlDriveResponder = RlDriveResponder()
+
+    @Provides
+    @Singleton
+    fun streamReceiver(): StreamReceiver = StreamReceiver()
+
+    @Provides
+    @Singleton
+    fun sessionHostFactory(
+        transports: TransportFactory,
+        airship: AirshipReceiver,
+        drive: RlDriveResponder,
+        stream: StreamReceiver,
+        photos: GlassesPhotos,
+        // A Provider, because the assistant needs the connection this factory feeds.
+        assistant: javax.inject.Provider<Assistant>,
+    ): SessionHostFactory = RealSessionHostFactory(
+        transports,
+        responders = mapOf(
+            SVC_AIRSHIP to airship,
+            SVC_RLDRIVE to drive,
+            SVC_MEDIA_STREAMING_CONTROL to stream,
+            SVC_ASSISTANT to Responder { message, mux -> assistant.get().respond(message, mux) },
+            SVC_GLASSES_PHOTO to photos,
+        ),
+    )
+
+    @Provides
+    @Singleton
+    fun assistantConfig(@ApplicationContext context: Context): AssistantConfigStore = AssistantConfigStore(context)
+
+    @Provides
+    @Singleton
+    fun diary(@ApplicationContext context: Context): Diary =
+        Diary(File(context.filesDir, "assistant"), File(context.filesDir, "assistant_turns.json"), File(context.cacheDir, "assistant"))
+
+    @Provides
+    @Singleton
+    fun assistant(
+        @ApplicationContext context: Context,
+        connection: GlassesConnection,
+        config: AssistantConfigStore,
+        airship: AirshipReceiver,
+        live: LiveStream,
+        photos: GlassesPhotos,
+        settings: GlassesSettings,
+        diary: Diary,
+    ): Assistant = Assistant(
+        context, connection, Voice(context), Brain({ config.config.value }, diary), config, airship, diary,
+        live.wifiSession, live::frameNow,
+        object : LiveAiCamera {
+            // A Live view already running is the camera; only a stream Live AI opened is Live AI's to close.
+            override fun on() = live.startLiveAi()
+            override fun off() {
+                if (live.forLiveAi) live.stop()
+            }
+            override val frames = live.status.map { it.phase == com.macedonga.visor.core.media.LivePhase.RUNNING }.distinctUntilChanged()
+        },
+        photos,
+        { settings.value("assistant_voice_id") },
+    )
+
+    @Provides
+    @Singleton
+    fun glassesPhotos(): GlassesPhotos = GlassesPhotos()
+
+    @Provides
+    @Singleton
+    fun liveStream(
+        @ApplicationContext context: Context,
+        connection: GlassesConnection,
+        receiver: StreamReceiver,
+        store: IdentityStore,
+        hosts: SessionHostFactory,
+        meter: LinkMeter,
+        outputs: LiveOutputs,
+    ): LiveStream = LiveStream(context, connection, receiver, store, hosts, meter, context.filesDir, outputs)
+
+    @Provides
+    @Singleton
+    fun liveOutputs(@ApplicationContext context: Context): LiveOutputs = LiveOutputs(context)
+
+    @Provides
+    @Singleton
+    fun liveSettings(@ApplicationContext context: Context): LiveSettingsStore = LiveSettingsStore(context)
+
+    @Provides
+    @Singleton
+    fun glassesConnection(store: IdentityStore, hosts: SessionHostFactory): GlassesConnection =
+        GlassesConnection(store, hosts)
+
+    @Provides
+    @Singleton
+    fun mediaImport(
+        @ApplicationContext context: Context,
+        connection: GlassesConnection,
+        airship: AirshipReceiver,
+        store: IdentityStore,
+        hosts: SessionHostFactory,
+    ): MediaImport = MediaImport(context, connection, airship, store, hosts)
+
+    @Provides
+    @Singleton
+    fun glassesConfig(
+        @ApplicationContext context: Context,
+        connection: GlassesConnection,
+        airship: AirshipReceiver,
+        media: MediaImport,
+    ): GlassesConfig = GlassesConfig(context, connection, airship, media)
+
+    @Provides
+    @Singleton
+    fun glassesSettings(connection: GlassesConnection, drive: RlDriveResponder): GlassesSettings =
+        GlassesSettings(connection, drive)
+}

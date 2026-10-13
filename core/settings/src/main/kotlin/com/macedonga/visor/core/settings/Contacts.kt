@@ -1,0 +1,51 @@
+package com.macedonga.visor.core.settings
+
+import com.google.flatbuffers.FlexBuffersBuilder
+import java.nio.ByteBuffer
+
+/**
+ * The glasses' contact store: RLDrive namespaces contacts_native, contacts_whats_app,
+ * contacts_messenger and contacts_instagram, objects of type "contact" keyed by the provider's
+ * contact id, data a FlexBuffers map as the Meta app writes it. The assistant resolves the senders
+ * it announces against it.
+ */
+data class GlassesContact(
+    val id: String,
+    val name: String,
+    // Each number as the Meta app writes it: type code, country code, label, number.
+    val numbers: List<Number> = emptyList(),
+    val favorite: Boolean = false,
+    val nicknames: List<String> = emptyList(),
+) {
+    // type: 0 work, 1 home, 2 mobile, 3 other.
+    data class Number(val type: Int, val countryCode: String, val label: String, val number: String)
+}
+
+const val TYPE_CONTACT = "contact"
+
+fun contactsNamespace(provider: String) = "contacts_$provider"
+
+/** One contact as a FlexBuffers map: name, phoneNumbers ("type,cc,label,number,extra" joined by ";"), ... */
+fun encodeContact(c: GlassesContact): ByteArray {
+    val b = FlexBuffersBuilder(ByteBuffer.allocate(512), FlexBuffersBuilder.BUILDER_FLAG_SHARE_KEYS)
+    val start = b.startMap()
+    b.putString("name", c.name)
+    b.putString("nicknames", c.nicknames.joinToString(";") { csv(it) })
+    b.putString("relationship", "")
+    b.putString("phoneNumbers", c.numbers.joinToString(";") { listOf(it.type.toString(), it.countryCode, csv(it.label), it.number, "").joinToString(",") })
+    b.putInt("contactType", 0)
+    b.putBoolean("isFavorite", c.favorite)
+    b.putString("profilePictureUri", "")
+    b.putString("shareableEncryptedChatID", "")
+    b.putInt("scoreSharedAt", 0)
+    b.putBoolean("isE2EE", false)
+    b.putString("groupParticipants", "")
+    b.endMap(null, start)
+    val out = b.finish()
+    return ByteArray(out.remaining()).also { out.get(it) }
+}
+
+private fun csv(s: String) = if (s.any { it == ',' || it == ';' || it == '"' }) "\"" + s.replace("\"", "\"\"") + "\"" else s
+
+/** A contact object for [readNamespace]'s push. */
+fun contactObject(c: GlassesContact) = PushObject(c.id, TYPE_CONTACT, encodeContact(c))

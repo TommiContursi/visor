@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the picker shows before the first update: the connected light. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:type="radial"
+        android:centerX="0.5"
+        android:centerY="0"
+        android:gradientRadius="170dp"
+        android:startColor="#6BFFF1E2"
+        android:centerColor="#24FFD2A1"
+        android:endColor="#00FFD2A1" />
+</shape>

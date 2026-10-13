@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Meta AI on the 108 dp adaptive grid: a speech bubble with the home's voice bars in it, someone to talk to. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="2.25"
+        android:scaleY="2.25"
+        android:translateX="27"
+        android:translateY="27">
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="1.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M6.5 4.5h11a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H11l-4.5 3.5v-3.5a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3zM9 9.5v2M12 8v5M15 9.5v2" />
+    </group>
+</vector>

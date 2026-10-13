@@ -1,0 +1,361 @@
+package com.macedonga.visor.core.media
+
+import android.content.Context
+import com.macedonga.visor.core.connection.GlassesConnection
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import org.json.JSONArray
+import org.json.JSONObject
+
+/** One MobileConfig param from the glasses' params map. type: 1 bool, 2 int64, 3 string, 4 double. */
+class McParam(val name: String, val type: Int, val slot: Int, val sessionless: Boolean)
+
+data class ConfigState(
+    // The glasses' own values by param name, from their last bug report or from the last write.
+    val values: Map<String, Any> = emptyMap(),
+    val params: Map<String, McParam> = emptyMap(),
+    // The values from before Visor's first write, the way back.
+    val baseline: Map<String, Any>? = null,
+    val readAt: Long? = null,
+    val busy: String = "",
+    val note: String = "",
+)
+
+/**
+ * The glasses' MobileConfig, Meta's server-side feature switches. They come out of a bug report
+ * (mobileconfig/current_mc_values.json and the params map); a change goes back as a full pair of
+ * FBMobileConfigTables zipped onto airship namespace "mobileconfig", the way the Meta app syncs them.
+ * Most switches are read at boot, so the glasses need a restart after a write.
+ */
+class GlassesConfig(
+    context: Context,
+    private val connection: GlassesConnection,
+    private val airship: AirshipReceiver,
+    private val media: MediaImport,
+) {
+    private val dir = File(context.filesDir, "mobileconfig").apply { mkdirs() }
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val _state = MutableStateFlow(ConfigState())
+    val state: StateFlow<ConfigState> = _state.asStateFlow()
+
+    private var schemaHash = ""
+    private var counts = IntArray(4)
+    private var sessionId = ""
+    private var waiting: CompletableDeferred<Unit>? = null
+    private var reading: Job? = null
+
+    init {
+        media.bugReportReader = { take(it) }
+        scope.launch { runCatching { load() } }
+    }
+
+    /** Ask the glasses for a bug report and read their configuration out of it. */
+    fun read() {
+        if (reading?.isActive == true) return
+        reading = scope.launch {
+            val done = CompletableDeferred<Unit>().also { waiting = it }
+            _state.update { it.copy(busy = "Asking the glasses for their configuration. Over Bluetooth this takes a few minutes.", note = "") }
+            media.requestBugReport()
+            val got = withTimeoutOrNull(READ_TIMEOUT_MS) { done.await() } != null
+            waiting = null
+            _state.update { it.copy(busy = "", note = if (got) it.note else "The glasses did not send their configuration.") }
+        }
+    }
+
+    /** Write [changes] (param name to value) over the glasses' current values. */
+    fun apply(changes: Map<String, Any>) = write(state.value.values + changes, "Sent. Restart the glasses to use the new values.")
+
+    /** The zip [apply] would send for [changes], for checking it by hand. */
+    fun preview(changes: Map<String, Any>): Pair<String, ByteArray> = tables(state.value.values + changes)
+
+    /** Put back the values from before Visor's first write. */
+    fun restore() {
+        val base = state.value.baseline ?: return
+        write(base, "Original values sent. Restart the glasses to use them.")
+    }
+
+    private fun write(values: Map<String, Any>, done: String) {
+        val s = state.value
+        if (s.params.isEmpty() || s.busy.isNotEmpty()) return
+        scope.launch {
+            _state.update { it.copy(busy = "Sending to the glasses…", note = "") }
+            val why = runCatching {
+                val (name, zip) = tables(values)
+                val sent = CompletableDeferred<String?>()
+                connection.submit { mux -> sent.complete(airship.send(mux, NAMESPACE, name, zip)) }
+                withTimeoutOrNull(SEND_TIMEOUT_MS) { sent.await() } ?: if (sent.isCompleted) null else "no link or no answer"
+            }.getOrElse { it.message ?: it.toString() }
+            if (why == null) {
+                if (s.baseline == null) {
+                    File(dir, BASELINE).writeText(valuesJson(s.values))
+                }
+                File(dir, VALUES).writeText(valuesJson(values))
+                _state.update { it.copy(values = values, baseline = it.baseline ?: s.values, busy = "", note = done) }
+            } else {
+                _state.update { it.copy(busy = "", note = "Not sent: $why") }
+            }
+        }
+    }
+
+    /** A bug report zip from the glasses: keep its MobileConfig part. */
+    private fun take(zip: File) {
+        val lost = ZipFile(zip).use { z ->
+            fun bytes(path: String) = z.getEntry(path)?.let { e -> z.getInputStream(e).use { it.readBytes() } }
+            val map = bytes("mobileconfig/maps/current/merged_params_map_v4_u0.txt") ?: return
+            val names = bytes("mobileconfig/maps/current/merged_params_names_v4_u0.txt") ?: return
+            val values = bytes("mobileconfig/current_mc_values.json")
+            values?.let { File(dir, VALUES).writeBytes(it) }
+            File(dir, MAP).writeBytes(map)
+            File(dir, NAMES).writeBytes(names)
+            bytes("mobileconfig/session_info.json")?.let { File(dir, SESSION).writeBytes(it) }
+            values == null
+        }
+        load()
+        _state.update { it.copy(readAt = System.currentTimeMillis(), note = "Read ${it.values.size} values from the glasses.") }
+        // A reset leaves the glasses on built-in defaults, without what Meta's servers had set (dynamic photos among
+        // it); the last values Visor saw go back.
+        if (lost && state.value.values.isNotEmpty()) write(state.value.values, "The glasses had lost their configuration; the last one went back. Restart the glasses to use it.")
+        waiting?.complete(Unit)
+    }
+
+    private fun load() {
+        val map = File(dir, MAP).takeIf { it.isFile } ?: return
+        val params = parseMap(map.readBytes(), File(dir, NAMES).readText())
+        sessionId = File(dir, SESSION).takeIf { it.isFile }?.let { JSONObject(it.readText()).optString("session_id") }.orEmpty()
+        val values = File(dir, VALUES).takeIf { it.isFile }?.let { parseValues(it.readText()) }.orEmpty()
+        val baseline = File(dir, BASELINE).takeIf { it.isFile }?.let { parseValues(it.readText()) }
+        _state.update { it.copy(values = values, params = params, baseline = baseline, readAt = it.readAt ?: map.lastModified()) }
+    }
+
+    private fun parseMap(map: ByteArray, namesJson: String): Map<String, McParam> {
+        val b = ByteBuffer.wrap(map).order(ByteOrder.LITTLE_ENDIAN)
+        counts = IntArray(4) { b.getShort(4 + 2 * (3 + it)).toInt() and 0xffff }
+        schemaHash = String(map, 30, 32, Charsets.US_ASCII)
+        val names = HashMap<Long, String>()
+        val list = JSONArray(namesJson)
+        for (i in 0 until list.length()) {
+            val p = list.getString(i).split(':')
+            val config = p[0].toLong()
+            for (k in 2 until p.size - 1 step 2) names[(config shl 12) or p[k].toLong()] = "${p[1]}.${p[k + 1]}"
+        }
+        val out = HashMap<String, McParam>()
+        var at = 62
+        while (at + 8 <= map.size) {
+            val x = b.getLong(at)
+            at += 8
+            val name = names[((x ushr 44) shl 12) or ((x ushr 32) and 0xfff)] ?: continue
+            out[name] = McParam(name, ((x ushr 11) and 7).toInt(), ((x ushr 16) and 0xffff).toInt(), x and 0x400L != 0L)
+        }
+        return out
+    }
+
+    /** Both tables for [values] and the zip the glasses take them in. */
+    private fun tables(values: Map<String, Any>): Pair<String, ByteArray> {
+        // Per table (sessionless, sessioned): bools, int64s, doubles, strings by slot.
+        val t = mapOf(true to List(4) { HashMap<Int, Any>() }, false to List(4) { HashMap<Int, Any>() })
+        for ((name, v) in values) {
+            val p = state.value.params[name] ?: continue
+            val kind = when (p.type) {
+                1 -> 0.takeIf { v is Boolean }
+                2 -> 1.takeIf { v is Long || v is Int }
+                4 -> 2.takeIf { v is Number }
+                3 -> 3.takeIf { v is String }
+                else -> null
+            } ?: continue
+            t.getValue(p.sessionless)[kind][p.slot] = v
+        }
+        val stamp = SimpleDateFormat("MMM-dd-yyyy-HH-mm-ss", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date())
+        val name = "${stamp}_${sessionId}_mobileconfig_params_values.zip"
+        val zip = ByteArrayOutputStream().also { bytes ->
+            ZipOutputStream(bytes).use { z ->
+                z.putNextEntry(ZipEntry("sessionless.data/")); z.closeEntry()
+                z.putNextEntry(ZipEntry("params.data/")); z.closeEntry()
+                for ((sessionless, path) in listOf(true to "sessionless.data/0.mctable", false to "params.data/0.mctable")) {
+                    val (bools, ints, doubles, strings) = t.getValue(sessionless)
+                    z.putNextEntry(ZipEntry(path))
+                    z.write(McTable.container(McTable.build(schemaHash, counts, bools, ints, doubles, strings)))
+                    z.closeEntry()
+                }
+            }
+        }.toByteArray()
+        return name to zip
+    }
+
+    private fun parseValues(json: String): Map<String, Any> {
+        val out = HashMap<String, Any>()
+        val list = JSONArray(json)
+        for (i in 0 until list.length()) {
+            val e = list.getJSONObject(i)
+            if (e.optInt("value_source", -1) != 0) continue
+            for (k in e.keys()) {
+                if (k == "value_source") continue
+                val v = e.get(k)
+                if (v != JSONObject.NULL) out[k] = if (v is Int) v.toLong() else v
+            }
+        }
+        return out
+    }
+
+    private fun valuesJson(values: Map<String, Any>): String =
+        JSONArray(values.map { (k, v) -> JSONObject().put(k, v).put("value_source", 0) }).toString()
+
+    private companion object {
+        const val NAMESPACE = "mobileconfig"
+        const val VALUES = "values.json"
+        const val BASELINE = "baseline.json"
+        const val MAP = "params_map.bin"
+        const val NAMES = "params_names.json"
+        const val SESSION = "session_info.json"
+        const val READ_TIMEOUT_MS = 10 * 60_000L
+        const val SEND_TIMEOUT_MS = 60_000L
+    }
+}
+
+/**
+ * FBMobileConfigTable as the glasses' readers in libmcdeps.so take it: a flatbuffer with the schema
+ * hash in field 0, value and meta vectors per type in 1-10, magic 123456 in 15, everything else empty.
+ * A meta of 1 means no value; a true bool is 0x80.
+ */
+internal object McTable {
+    private const val SLOTS = 29
+    private const val NULL_META = 1
+    private const val MAGIC = 123456
+
+    private class Out {
+        var b = ByteArray(1 shl 16)
+        var n = 0
+        fun room(k: Int) {
+            if (n + k > b.size) b = b.copyOf(maxOf(b.size * 2, n + k))
+        }
+        fun byte(v: Int) { room(1); b[n++] = v.toByte() }
+        fun zeros(k: Int) { room(k); n += k }
+        fun align(a: Int, extra: Int = 0) { while ((n + extra) % a != 0) byte(0) }
+        fun i32(v: Int) { room(4); ByteBuffer.wrap(b, n, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(v); n += 4 }
+        fun i64(v: Long) { room(8); ByteBuffer.wrap(b, n, 8).order(ByteOrder.LITTLE_ENDIAN).putLong(v); n += 8 }
+        fun f64(v: Double) = i64(v.toRawBits())
+        fun u16(v: Int) { byte(v and 0xff); byte(v shr 8) }
+        fun putI32(at: Int, v: Int) = ByteBuffer.wrap(b, at, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(v)
+        fun putI64(at: Int, v: Long) = ByteBuffer.wrap(b, at, 8).order(ByteOrder.LITTLE_ENDIAN).putLong(v)
+        fun bytes() = b.copyOf(n)
+    }
+
+    fun container(body: ByteArray): ByteArray =
+        byteArrayOf(0x3c, 0xf1.toByte(), 1, 8) +
+            ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(body.size + 10).array() + body + byteArrayOf(0x3c, 0xf1.toByte())
+
+    fun build(hash: String, counts: IntArray, bools: Map<Int, Any>, ints: Map<Int, Any>, doubles: Map<Int, Any>, strings: Map<Int, Any>): ByteArray {
+        val (nb, ni, nd, ns) = counts.toList()
+        val vectors: Map<Int, Pair<String, List<Any>>> = mapOf(
+            1 to ("i8" to List(nb) { if (bools[it] == true) -128 else 0 }),
+            2 to ("i32" to List(nb) { if (it in bools) 0 else NULL_META }),
+            3 to ("i64" to List(ni) { (ints[it] as? Number)?.toLong() ?: 0L }),
+            4 to ("i32" to List(ni) { if (it in ints) 0 else NULL_META }),
+            5 to ("i32" to emptyList()), 6 to ("i32" to emptyList()),
+            7 to ("f64" to List(nd) { (doubles[it] as? Number)?.toDouble() ?: 0.0 }),
+            8 to ("i32" to List(nd) { if (it in doubles) 0 else NULL_META }),
+            9 to ("str" to List(ns) { strings[it] as? String ?: "" }),
+            10 to ("i32" to List(ns) { if (it in strings) 0 else NULL_META }),
+            11 to ("str" to emptyList()), 14 to ("tab" to emptyList()), 17 to ("tab" to emptyList()),
+            18 to ("i32" to emptyList()), 19 to ("str" to emptyList()),
+            23 to ("i32" to emptyList()), 24 to ("i32" to emptyList()), 25 to ("i32" to emptyList()), 26 to ("i32" to emptyList()),
+        )
+        val texts = mapOf(0 to hash, 20 to "", 21 to "", 28 to "")
+        val scalars = mapOf(12 to ("i32" to 0L), 15 to ("i32" to MAGIC.toLong()), 16 to ("i64" to 0L), 22 to ("i32" to 0L), 27 to ("i32" to 0L))
+
+        // Table layout: soffset, then the fields in slot order, 8-byte scalars aligned.
+        val layout = ArrayList<Triple<Int, Int, String>>()
+        var off = 4
+        for (slot in 0 until SLOTS) {
+            if (slot == 13) continue
+            val kind = scalars[slot]?.first
+            if (kind == "i64") {
+                off = (off + 7) / 8 * 8
+                layout += Triple(slot, off, "i64")
+                off += 8
+            } else {
+                layout += Triple(slot, off, kind ?: "ref")
+                off += 4
+            }
+        }
+        val tableSize = (off + 7) / 8 * 8
+
+        val out = Out()
+        out.zeros(8)
+        val vtPos = out.n
+        val vt = IntArray(SLOTS)
+        for ((slot, o, _) in layout) vt[slot] = o
+        out.u16(4 + 2 * SLOTS)
+        out.u16(tableSize)
+        vt.forEach { out.u16(it) }
+        out.align(8)
+        val tablePos = out.n
+        out.zeros(tableSize)
+        out.putI32(0, tablePos)
+        "MCTB".forEachIndexed { i, c -> out.b[4 + i] = c.code.toByte() }
+        out.putI32(tablePos, tablePos - vtPos)
+
+        fun string(s: String): Int {
+            out.align(4)
+            val p = out.n
+            val raw = s.toByteArray()
+            out.i32(raw.size)
+            raw.forEach { out.byte(it.toInt()) }
+            out.byte(0)
+            return p
+        }
+
+        fun vector(kind: String, items: List<Any>): Int {
+            if (kind == "i64" || kind == "f64") out.align(8, 4) else out.align(4)
+            val p = out.n
+            out.i32(items.size)
+            when (kind) {
+                "i8" -> items.forEach { out.byte(it as Int) }
+                "i32" -> items.forEach { out.i32(it as Int) }
+                "i64" -> items.forEach { out.i64(it as Long) }
+                "f64" -> items.forEach { out.f64(it as Double) }
+                "str" -> {
+                    val slots = out.n
+                    out.zeros(4 * items.size)
+                    items.forEachIndexed { i, s -> val sp = string(s as String); out.putI32(slots + 4 * i, sp - (slots + 4 * i)) }
+                }
+            }
+            return p
+        }
+
+        for ((slot, o, _) in layout) {
+            val at = tablePos + o
+            val scalar = scalars[slot]
+            when {
+                scalar != null -> if (scalar.first == "i64") out.putI64(at, scalar.second) else out.putI32(at, scalar.second.toInt())
+                slot in texts -> out.putI32(at, string(texts.getValue(slot)) - at)
+                else -> {
+                    val (kind, items) = vectors.getValue(slot)
+                    out.putI32(at, vector(kind, items) - at)
+                }
+            }
+        }
+        out.align(4)
+        return out.bytes()
+    }
+}

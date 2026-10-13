@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The mark unlit, as the system splash shows it: the app takes it from here and lights it (stage/MarkIntro.kt). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#1D1D1F"
+        android:pathData="M31.03,34.31 L44.86,34.31 L52.83,74.16 L50.95,74.16 Z M76.97,34.31 L63.14,34.31 L55.17,74.16 L57.05,74.16 Z" />
+</vector>

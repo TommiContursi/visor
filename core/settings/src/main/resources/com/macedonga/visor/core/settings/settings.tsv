@@ -1,0 +1,371 @@
+# key, svc31 field, kind, default, namespace, parsed. Made from reference/lensbreak/lensbreak/data.
+accessibility_display_daltonizer		int	-1	individual_device_settings	
+accessibility_display_daltonizer_enabled		bool	false	individual_device_settings	
+accessibility_display_magnification_enabled		bool	false	individual_device_settings	
+action_button_assistant_custom_prompt	110	str	what is the weather	individual_device_settings	1
+action_button_assistant_custom_prompt_long_press	123	str		individual_device_settings	
+action_button_spotify_uri		str		individual_device_settings	
+active_device	31	bool	true	individual_device_settings	1
+advanced_video_quality_profile	218	bool	false	individual_device_settings	1
+ai_agent_mock_business_phone_number		str	6508874145	shared_settings_namespace_1	
+ai_lens_user_enabled	200	bool	false	individual_device_settings	1
+airship_on_c50_developer_mode	186	bool			
+amazon_music_explicit_songs_blocked	82	bool	false	individual_device_settings	
+ancs_enabled	54	bool	false	individual_device_settings	
+assignable_action_button_long_press_mapping	102	int	0	individual_device_settings	1
+assignable_action_button_short_press_mapping	101	int	4	individual_device_settings	1
+assignable_action_led_mapping	103	int	2	individual_device_settings	1
+assistant_ai_phone_call_enabled	131	bool	false	individual_device_settings	1
+assistant_ai_phone_call_mvp_enabled	143	bool	false	individual_device_settings	1
+assistant_audio_mode		int	0	individual_device_settings	
+assistant_auto_trim_video	22	bool	false	individual_device_settings	
+assistant_comms_provider_settings	11	int	185273091	individual_device_settings	1
+assistant_comms_provider_settings_protobuf	75	str		individual_device_settings	1
+assistant_detailed_logging_enabled	18	bool	false	individual_device_settings	1
+assistant_detailed_logging_mode	68	int	0	individual_device_settings	
+assistant_display_enabled		bool	true	individual_device_settings	
+assistant_enabled	2	bool	true	individual_device_settings	1
+assistant_follow_up_enabled	52	bool	true	individual_device_settings	1
+assistant_llm_enabled	30	bool	true	individual_device_settings	1
+assistant_multimodal_enabled	33	bool	false	individual_device_settings	
+assistant_preview_via_file_handle	12001	bool	false	individual_device_settings	1
+assistant_store_mmai_media	87	bool	false	individual_device_settings	
+assistant_store_voice_recordings	10	bool	true	individual_device_settings	1
+assistant_store_voice_transcripts	9	bool	true	individual_device_settings	1
+assistant_voice_id	4	str	en_US.58	individual_device_settings	1
+assistant_voice_verification_enabled	55	bool	false	individual_device_settings	1
+assistant_wakeword	53	str		individual_device_settings	
+attention_deferral_user_enabled	231	bool	false	individual_device_settings	
+audio_balance	225	float	0.0	individual_device_settings	1
+audio_noise_reduction_enabled	159	bool	false	individual_device_settings	
+audio_playback_during_capture_enabled	122	bool	false	individual_device_settings	1
+auto_play_pause_on_don_doff	6	bool	true	individual_device_settings	1
+autocapture_action_exp_enabled	99	bool	false	individual_device_settings	1
+autocapture_capture_earcon	256	bool			
+autocapture_capture_mode	26	int	0	individual_device_settings	1
+autocapture_enable_imu_stream	28	bool	false	individual_device_settings	1
+autocapture_enable_mcu_mode	41	bool	false	individual_device_settings	
+autocapture_imu_capture_mode	64	int	0	individual_device_settings	1
+autocapture_imu_enabled	62	bool	false	individual_device_settings	1
+autocapture_imu_video_duration	66	int	3	individual_device_settings	1
+autocapture_interactive_exp_enabled	120	bool	false	individual_device_settings	1
+autocapture_interval	24	int	15	individual_device_settings	1
+autocapture_long_capture_exp_enabled	98	bool	false	individual_device_settings	
+autocapture_low_power_mode_enabled	190	bool	true	shared_settings_namespace_1	1
+autocapture_motion_exp_enabled	136	bool	false	individual_device_settings	1
+autocapture_phone_low_res_enabled	191	bool	false	shared_settings_namespace_1	1
+autocapture_session_length	25	int	30	individual_device_settings	1
+autocapture_show_viewfinder	236	bool	false	individual_device_settings	
+autocapture_timed_imu_exp_enabled	97	bool	false	individual_device_settings	1
+autocapture_timed_interval_capture_mode	65	int	0	individual_device_settings	1
+autocapture_timed_interval_enabled	63	bool	true	individual_device_settings	1
+autocapture_timed_interval_video_duration	67	int	3	individual_device_settings	1
+autocapture_video_length	27	int	5	individual_device_settings	1
+avc_enabled	80	bool	false	individual_device_settings	1
+battery_saver_mode_enabled	214	bool	false	individual_device_settings	
+bluetooth_map_status		int	0	individual_device_settings	
+blv_scene_reader_enabled	89	bool	false	individual_device_settings	1
+camera_use_enabled	150	bool	true	individual_device_settings	1
+captouch2d_1finger_2tap_release		str	KEYCODE_INSTANT_ACTION	individual_device_settings	
+captouch2d_1finger_long_press		str	KEYCODE_UNKNOWN	individual_device_settings	
+captouch2d_1finger_long_press_release		str	KEYCODE_UNKNOWN	individual_device_settings	
+captouch2d_1finger_swipe_down		str	KEYCODE_DPAD_DOWN	individual_device_settings	
+captouch2d_1finger_swipe_front		str	KEYCODE_DPAD_RIGHT	individual_device_settings	
+captouch2d_1finger_swipe_rear		str	KEYCODE_DPAD_LEFT	individual_device_settings	
+captouch2d_1finger_swipe_up		str	KEYCODE_DPAD_UP	individual_device_settings	
+captouch2d_1finger_tap_release		str	KEYCODE_DPAD_CENTER	individual_device_settings	
+captouch2d_2finger_2tap_release		str	KEYCODE_WAKEUP_OR_SYSTEM_KEY	individual_device_settings	
+captouch2d_2finger_long_press		str	KEYCODE_UNKNOWN	individual_device_settings	
+captouch2d_2finger_long_press_release		str	KEYCODE_UNKNOWN	individual_device_settings	
+captouch2d_2finger_swipe_down		str	KEYCODE_UNKNOWN	individual_device_settings	
+captouch2d_2finger_swipe_front		str	KEYCODE_VOLUME_UP	individual_device_settings	
+captouch2d_2finger_swipe_rear		str	KEYCODE_VOLUME_DOWN	individual_device_settings	
+captouch2d_2finger_swipe_up		str	KEYCODE_UNKNOWN	individual_device_settings	
+captouch2d_2finger_tap_release		str	KEYCODE_BACK	individual_device_settings	
+captouch_enabled	148	bool	true	individual_device_settings	1
+capture_aspect_ratio	252	int			
+capture_auto_review	118	bool	true	individual_device_settings	
+capture_button_assistant_shortcut	50	str		individual_device_settings	
+capture_button_double_press	57	int	0	individual_device_settings	1
+capture_button_short_long_press	7	int	0	individual_device_settings	1
+capture_mode	105	int	3	individual_device_settings	1
+capture_mode_selection_long_press	121	int	0	individual_device_settings	1
+carrier_config_max_width_height_message_size		str		individual_device_settings	
+cellular_updates		bool	false	individual_device_settings	
+cloud_ai_understanding_enabled	39	bool	true	individual_device_settings	1
+cloud_media_processing_enabled	56	bool	false	shared_settings_namespace_1	1
+cloud_ota_enabled	19	bool	false	shared_settings_namespace_1	1
+cloud_ota_factory_reset_after_check	195	bool			
+cloud_ota_preferred_bandwidth	45	int	0	individual_device_settings	1
+comms_in_hatch_enabled	202	bool			
+comms_phone_number		str		individual_device_settings	
+companion_app_locale		str		individual_device_settings	
+companion_developer_mode_enabled	254	int			
+companion_e2ee_pk_uuid		str		individual_device_settings	
+companion_phone_numbers		str		individual_device_sensitive_settings	
+companion_untethered_relay_status		str		individual_device_settings	
+connections_enabled	210	bool	false	individual_device_settings	
+constellation_states	11001	str		individual_device_settings	
+continue_maneuvers_reassurance_distance	180	int			
+continuous_ai_camera_calendar_and_profiles	194	str		individual_device_settings	1
+continuous_ai_camera_chunk_size	146	int	150	individual_device_settings	1
+continuous_ai_camera_device_feedback_mode	251	int	0	individual_device_settings	1
+continuous_ai_camera_enabled	132	bool	false	individual_device_settings	1
+continuous_ai_camera_fps	135	float	0.25	individual_device_settings	1
+continuous_ai_camera_headband_mode_enabled	253	bool			
+continuous_ai_camera_notification_led_on_pause_enable	197	bool	false	individual_device_settings	1
+continuous_ai_camera_paused		bool	false	local_device_settings	
+conversation_focus_eap_enabled	172	bool	false	individual_device_settings	1
+conversation_focus_geogate	175	bool	false	individual_device_settings	1
+conversation_focus_is_in_eap	174	bool	false	individual_device_settings	1
+conversation_focus_use_eap_settings	173	bool	false	individual_device_settings	1
+crowdsourcing_enabled	203	bool	false	individual_device_settings	1
+crowdsourcing_location_enabled	211	bool	false	individual_device_settings	1
+crowdsourcing_wifi_enabled	212	bool	false	individual_device_settings	1
+current_media_provider	96	str		individual_device_settings	1
+custom_wake_word_enabled	196	bool	false	individual_device_settings	1
+dashcam_duration_ms	182	int			
+dashcam_fall_detection_enabled	206	bool			1
+dashcam_resolution_and_framerate	192	int			
+debug_video_capture_mode	94	int	0	individual_device_settings	
+default_music_provider	72	int	0	individual_device_settings	1
+default_providers	84	str		individual_device_settings	1
+default_sms_app_package_name		str		individual_device_settings	
+detailed_responses_live_ai_enabled	154	bool	false	individual_device_settings	1
+developer_charging_leds_enabled	201	bool	false	individual_device_settings	
+developer_mode	86	bool	false	individual_device_settings	
+device_custom_name	199	str			1
+device_privacy_identifier	40	str		individual_device_settings	
+device_share_additional_data_enabled	79	bool	false	individual_device_settings	1
+devkit_developer_mode_enabled	88	bool	false	individual_device_settings	
+display_mapping_enabled		bool	true	individual_device_settings	
+eap_eligibility_enabled	47	bool	false	shared_settings_namespace_1	1
+eap_opt_in_enabled	48	bool	false	individual_device_settings	1
+education_partner_1_enabled	81	bool	false	individual_device_settings	1
+eis_mode	108	int	2	individual_device_settings	1
+emg_instant_action	117	int	0	individual_device_settings	1
+enable_calendar_event_alert	133	bool	false	shared_settings_namespace_1	1
+enable_calendar_event_alert_announce_details	167	bool	false	individual_device_settings	
+enable_calendar_event_alert_wake_display	168	bool	true	individual_device_settings	
+enable_calling_with_meta_ai	134	bool			
+enable_google_calendar_event_alert	166	bool	false	individual_device_settings	
+enable_nova_ica	213	bool	false	individual_device_settings	
+enable_outlook_calendar_event_alert	169	bool	false	individual_device_settings	
+enable_outlook_calendar_event_alert_announce_details	179	bool	false	individual_device_settings	
+enable_outlook_calendar_event_alert_wake_display	171	bool	true	individual_device_settings	
+enable_phone_to_wearable_call_log_sync		bool	false	individual_device_settings	
+enable_phone_to_wearable_contacts_sync		bool	false	individual_device_settings	
+enable_sms_mms_relay		bool	false	individual_device_settings	
+enable_untethered_relay		bool	false	individual_device_settings	
+enable_warp_in_air	188	bool	false	individual_device_settings	1
+exposure_bias	221	float	0.0	individual_device_settings	1
+fast_auth_enabled	92	bool	false	individual_device_settings	1
+feature_rollout_thru_settings_example_enabled	10001	bool	false	individual_device_settings	1
+flicker_reduction_mode	223	int	0	individual_device_settings	1
+font_weight_adjustment		int	0	individual_device_settings	
+forest_enabled	46	bool	false	individual_device_settings	1
+gesture_emg_index_finger_double_tap		str	KEYCODE_UNKNOWN	individual_device_settings	
+gesture_emg_index_finger_ia		str	KEYCODE_UNKNOWN	individual_device_settings	
+gesture_emg_index_finger_press		str	KEYCODE_UNKNOWN	individual_device_settings	
+gesture_emg_index_finger_release		str	KEYCODE_UNKNOWN	individual_device_settings	
+gesture_emg_index_finger_single_tap		str	KEYCODE_DPAD_CENTER	individual_device_settings	
+gesture_emg_index_finger_tap_hold		str	KEYCODE_UNKNOWN	individual_device_settings	
+gesture_emg_index_finger_tap_hold_release		str	KEYCODE_UNKNOWN	individual_device_settings	
+gesture_emg_middle_finger_double_tap		str	KEYCODE_WAKEUP_OR_SYSTEM_KEY	individual_device_settings	
+gesture_emg_middle_finger_ia		str	KEYCODE_WAKEUP	individual_device_settings	
+gesture_emg_middle_finger_press		str	KEYCODE_UNKNOWN	individual_device_settings	
+gesture_emg_middle_finger_release		str	KEYCODE_UNKNOWN	individual_device_settings	
+gesture_emg_middle_finger_single_tap		str	KEYCODE_BACK	individual_device_settings	
+gesture_emg_middle_finger_tap_hold		str	KEYCODE_UNKNOWN	individual_device_settings	
+gesture_emg_middle_finger_tap_hold_release		str	KEYCODE_UNKNOWN	individual_device_settings	
+gesture_emg_thumb_finger_double_tap		str	KEYCODE_INSTANT_ACTION	individual_device_settings	
+gesture_emg_thumb_finger_ia		str	KEYCODE_INSTANT_ACTION	individual_device_settings	
+gesture_emg_thumb_finger_single_tap		str	KEYCODE_UNKNOWN	individual_device_settings	
+gesture_emg_thumb_finger_swipe_down		str	KEYCODE_DPAD_DOWN	individual_device_settings	
+gesture_emg_thumb_finger_swipe_left		str	KEYCODE_DPAD_LEFT	individual_device_settings	
+gesture_emg_thumb_finger_swipe_right		str	KEYCODE_DPAD_RIGHT	individual_device_settings	
+gesture_emg_thumb_finger_swipe_up		str	KEYCODE_DPAD_UP	individual_device_settings	
+gesture_x_assistant_shortcut	49	str		individual_device_settings	
+gesture_x_mapping	23	int	1	individual_device_settings	1
+hand_tracking_enabled	124	bool	false	individual_device_settings	1
+hand_tracking_point_at_action	127	str	Describe the object I am pointing at in 1 to 3 words. For example, "Glowing blue lightbulb", or "Red Bicycle"	individual_device_settings	1
+hand_tracking_point_at_custom_prompt	137	str	Describe the object I am pointing at in 1 to 3 words. For example, "Glowing blue lightbulb", or "Red Bicycle"	individual_device_settings	1
+hand_tracking_without_wake_enabled	162	bool	false	individual_device_settings	1
+handwriting_enabled	164	bool	false	individual_device_settings	
+has_unmigrated_threads		bool	false	individual_device_settings	
+hatch_enabled	193	bool	false	individual_device_settings	1
+he_enabled	44	bool	false	individual_device_settings	1
+head_nod_controls_enabled	255	bool			
+hearing_boost_expiration_time	114	int	0	individual_device_settings	1
+hearing_boost_nux_completed	113	bool	false	individual_device_settings	1
+hearing_boost_subscription_status	112	int	0	individual_device_settings	1
+high_text_contrast_enabled		bool	false	individual_device_settings	
+homer_factory_reset_interval_minutes	215	int	20	individual_device_settings	1
+homer_reset_enabled	204	bool	false	individual_device_settings	1
+is_c50_enabled	104	bool	false	individual_device_settings	1
+is_c50_with_in_app_meta_ai_enabled	116	bool	false	individual_device_settings	1
+landscape_mode_enabled	189	bool	false	individual_device_settings	1
+language_pack_build_number	34	str		individual_device_settings	
+leak_crusher_enabled	160	bool	false	individual_device_settings	1
+leak_crusher_intensity	161	int	2	individual_device_settings	1
+lens_brightness	224	int	-1	individual_device_settings	
+lens_tint	230	int	-1	individual_device_settings	1
+lens_tint_toggle_mode	237	int			
+live_ai_enabled	93	bool	false	individual_device_settings	1
+live_ai_mss_start_async_enabled	147	bool	false	individual_device_settings	1
+live_ai_voice_only	107	bool	false	individual_device_settings	1
+live_caption_voice_id	78	str		individual_device_settings	1
+live_notes_user_consented	216	bool			1
+live_speech_translation_eap_enabled	95	bool	false	individual_device_settings	1
+live_speech_translation_server_enabled	155	bool	false	individual_device_settings	1
+live_translation_voice_id	77	str		individual_device_settings	1
+location_camera_geotagging_enabled	16	bool	false	individual_device_settings	
+location_chatbot_enabled	35	bool	false	individual_device_settings	
+location_global_enabled	15	bool	false	individual_device_settings	
+mdm_enabled	111	bool	false	individual_device_settings	
+media_auto_leveling_enabled	151	bool	false	individual_device_settings	
+media_cloud_enabled	32	bool	false	individual_device_settings	
+media_gesture_emg_index_finger_single_tap		str	KEYCODE_MEDIA_PLAY_PAUSE	individual_device_settings	
+media_gesture_emg_middle_finger_single_tap		str	KEYCODE_UNKNOWN	individual_device_settings	
+media_gesture_emg_thumb_finger_swipe_down		str	KEYCODE_VOLUME_DOWN	individual_device_settings	
+media_gesture_emg_thumb_finger_swipe_left		str	KEYCODE_MEDIA_PREVIOUS	individual_device_settings	
+media_gesture_emg_thumb_finger_swipe_right		str	KEYCODE_MEDIA_NEXT	individual_device_settings	
+media_gesture_emg_thumb_finger_swipe_up		str	KEYCODE_VOLUME_UP	individual_device_settings	
+media_occlusion_removal_enabled	152	bool	false	individual_device_settings	
+messenger_contacts_syncing	60	int	0	individual_device_settings	
+meta_ai_handwriting_enabled	205	bool	false	individual_device_settings	
+meta_ai_in_call_concurrency_enabled	163	bool	false	individual_device_settings	1
+metadata	250	other			
+miranda_dc_service_enabled		bool	false	individual_device_settings	
+mirrored_notification_app_settings		str		individual_device_settings	
+mmai_double_press_enabled	58	bool	true	individual_device_settings	1
+mmai_user_consent_enabled	149	bool	false	individual_device_settings	
+mobileconfig_apex_rollout_target_state	10002	int			
+mono_audio_enabled	228	bool	false	individual_device_settings	1
+motion_blur_reduction_enabled	220	bool	true	individual_device_settings	1
+mps_transfer_unprocessed_image_assets	126	int	0	individual_device_settings	
+mps_transfer_unprocessed_video_assets	125	int	0	individual_device_settings	
+music_concurrency_enabled	183	bool	false	individual_device_settings	1
+music_partner_3_enabled	71	bool	false	individual_device_settings	1
+mute_announcements_default_duration	90	int	3600	individual_device_settings	1
+mute_announcements_end_time	70	str		individual_device_settings	1
+mute_announcements_mode	119	int	0	individual_device_settings	1
+natural_invocation_enabled	74	bool	false	individual_device_settings	1
+nose_occlusion_tuning_enabled	42	bool	false	individual_device_settings	1
+notification_led_brightness	14	int	3	individual_device_settings	1
+notification_volume	5	int	90	individual_device_settings	1
+occlusion_detection_enabled	12	bool	true	individual_device_settings	1
+oobe_session_id		str		individual_device_settings	
+oxide_enabled		bool	false	individual_device_settings	1
+paired_phone_os_type		int	0	individual_device_settings	
+palm_auth_eap_enabled	177	bool			
+palm_auth_enabled	115	bool	false	individual_device_settings	1
+partner_app_settings	83	str		individual_device_settings	1
+passive_audio_capture_enabled	185	bool	false	individual_device_settings	1
+passive_audio_self_speech_only_enabled	243	bool			
+passive_meal_capture_enabled	184	bool	false	individual_device_settings	1
+passive_phone_unlock_enabled	51	bool	false	individual_device_settings	1
+passive_visual_capture_enabled	187	bool	true	individual_device_settings	1
+phone_contacts_syncing	59	int	0	individual_device_settings	
+posture_detection_enabled	999	bool			
+qr_payments_india_mc_enabled	142	bool	false	individual_device_settings	
+qr_payments_india_setup_completed	145	bool	false	individual_device_settings	1
+qr_payments_india_toggle_enabled	139	bool	false	individual_device_settings	1
+qr_payments_india_upi_eligible	141	bool	false	individual_device_settings	1
+qr_payments_india_whatsapp_enabled	140	bool	false	individual_device_settings	1
+quick_actions	106	str		individual_device_settings	1
+quick_clips_photo_capture_enabled	100	bool	false	individual_device_settings	1
+qva_enabled	129	bool	false	individual_device_settings	1
+qva_wellness_sync_enabled	138	bool	false	individual_device_settings	
+reminders_eap_toggle_enabled	91	bool	false	individual_device_settings	1
+resolution_and_framerate	109	int	0	individual_device_settings	1
+sample_app_1_enabled	85	bool	true	individual_device_settings	1
+screen_brightness		int	0	local_device_settings	
+screen_brightness_mode		bool	true	individual_device_settings	
+sdr_enabled	219	bool	false	individual_device_settings	1
+sg_accounts_sync_metadata		str		individual_device_settings	
+sg_action_button_long_press		bool	false	individual_device_settings	
+sg_action_button_short_press		bool	false	individual_device_settings	
+sg_allow_mirrored_notifications		bool	false	individual_device_settings	
+sg_captouch_interaction_model		int	0	individual_device_settings	
+sg_captouch_interaction_model_coherence		int	1	individual_device_settings	
+sg_captouch_invert_swipe_direction_horizontal		bool	false	individual_device_settings	
+sg_captouch_invert_swipe_direction_vertical		bool	false	individual_device_settings	
+sg_caterpillar_invert_swipe_direction_horizontal		bool	false	individual_device_settings	
+sg_caterpillar_invert_swipe_direction_vertical		bool	false	individual_device_settings	
+sg_disable_thermal_shutdown		bool	false	local_device_settings	
+sg_display_thermal_mitigation_enabled		bool	false	local_device_settings	
+sg_display_timeout_event		bool	false	individual_device_settings	
+sg_do_not_disturb		bool	false	local_device_settings	
+sg_emg_display_off	198	bool	false	individual_device_settings	1
+sg_emg_instant_action		int	2	individual_device_settings	
+sg_glass_onboarding_status		int	1	local_device_settings	
+sg_headphone_mode_enabled		bool	false	individual_device_settings	
+sg_instant_action		int	1	individual_device_settings	
+sg_invert_wrist_roll_direction		bool	false	individual_device_settings	
+sg_meta_ai_live_transcription_enabled		bool	false	individual_device_settings	
+sg_mwa_onboarding_status		int	0	individual_device_settings	
+sg_sample		bool	false	local_device_settings	
+sg_screen_reader_disabled		int	0	individual_device_settings	
+sg_screen_reader_speech_pitch		int	50	individual_device_settings	
+sg_screen_reader_speech_rate		int	50	individual_device_settings	
+sg_show_display_temperature_warning		bool	false	local_device_settings	
+sg_simplified_captouch_calling		bool	false	individual_device_settings	
+sg_sync_accessibility_display_magnification_scale		int	2	individual_device_settings	
+sg_sync_enabled_accessibility_services		bool	false	individual_device_settings	
+sg_sync_font_scale		int	0	individual_device_settings	
+sg_user_comms_setup_status	130	str		individual_device_settings	
+sg_user_setup_input_enable		int	0	individual_device_settings	
+smart_reply_enabled	165	bool	true	individual_device_settings	
+spatial_media_enabled	158	int	0	individual_device_settings	1
+spotify_tap_enabled	3	bool	false	individual_device_settings	1
+standby_gesture_emg_index_finger_ia		str	KEYCODE_CONTEXT_SWITCH_MEDIA	individual_device_settings	
+standby_gesture_emg_middle_finger_ia		str	KEYCODE_UNKNOWN	individual_device_settings	
+tap_and_hold_assistant_custom_prompt	178	str			1
+tap_and_hold_mapping	29	int	2	individual_device_settings	1
+telecom_enable_untethered_relay		bool	false	individual_device_settings	
+telecom_wearable_e2ee_pk_uuid		str		individual_device_settings	
+telecom_wearable_untethered_relay_status		str		individual_device_settings	
+test_setting_bool	207	bool	false	individual_device_settings	1
+test_setting_float	208	float	0.0	individual_device_settings	1
+test_setting_int		int	1	individual_device_settings	
+test_setting_int32	1	int	0	individual_device_settings	1
+test_setting_string	209	str	abc	individual_device_settings	1
+test_shared_setting_int		int	1	shared_settings_namespace_1	
+test_shared_setting_string		str	abc	shared_settings_namespace_1	
+tts_speak_speed	43	int	100	individual_device_settings	1
+two_stage_eis	226	bool	false	individual_device_settings	1
+two_stage_eis_buffer_size	232	int	10	individual_device_settings	1
+two_stage_eis_buffer_size_3k	239	other			
+two_stage_eis_num_neighbor_frames	235	int	4	individual_device_settings	1
+two_stage_eis_num_neighbor_frames_3k	242	other			
+two_stage_eis_output_height	234	int	1512	individual_device_settings	1
+two_stage_eis_output_height_3k	241	other			
+two_stage_eis_output_width	233	int	2016	individual_device_settings	1
+two_stage_eis_output_width_3k	240	other			
+user_setup_ica_toggle_enabled	176	bool	false	individual_device_settings	1
+verified_session_enabled	8	bool	false	individual_device_settings	1
+video_duration_ms	17	int	180000	individual_device_settings	1
+video_fps	217	int	0	individual_device_settings	1
+video_hdr_mode	238	int			
+video_stabilization_mode	73	int	0	individual_device_settings	
+video_white_balance	222	int	0	individual_device_settings	1
+voice_memo_eligibility_verified	227	bool			1
+voice_notes_eap_enabled	181	bool			1
+voice_notification_enabled	13	bool	false	individual_device_settings	
+wake_duration	144	int	5	individual_device_settings	1
+wake_handedness	153	int	2	individual_device_settings	1
+wake_only_mode_enabled	156	bool	false	individual_device_settings	1
+wake_thumb_middle_distance_threshold	157	int	30	individual_device_settings	1
+wakeword_enabled	36	bool	true	individual_device_settings	1
+wakeword_sound_enabled	37	bool	true	individual_device_settings	1
+water_eject_enabled	128	bool	false	individual_device_settings	
+wear_detection_enabled	38	bool	true	individual_device_settings	1
+wearable_e2ee_pk_uuid		str		individual_device_settings	
+wearable_untethered_relay_status		str		individual_device_settings	
+web_ai_link_preview_for_comms_enabled		bool	false	individual_device_settings	
+wellness_partner_1_enabled	69	bool	false	individual_device_settings	1
+wellness_partner_5_enabled	76	bool	false	individual_device_settings	1
+whatsapp_contacts_syncing	61	int	0	individual_device_settings	
+wifi_password	21	str		individual_device_settings	
+wifi_ssid	20	str		individual_device_settings	

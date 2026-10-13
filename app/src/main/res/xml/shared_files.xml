@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What Visor hands to other apps when sharing: the photos Meta AI answered with. -->
+<paths>
+    <files-path name="assistant" path="assistant/photos/" />
+</paths>

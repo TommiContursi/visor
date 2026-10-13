@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget's type, after VisorTypography: Inter with its optical size axis. -->
+<resources>
+    <dimen name="widget_radius">24dp</dimen>
+
+    <style name="WidgetText">
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="WidgetText.Label">
+        <item name="android:fontVariationSettings">"'wght' 450, 'opsz' 14"</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:letterSpacing">0.005</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+
+    <style name="WidgetText.Heading">
+        <item name="android:fontVariationSettings">"'wght' 500, 'opsz' 20"</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:letterSpacing">-0.01</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="WidgetText.Readout">
+        <item name="android:fontVariationSettings">"'wght' 300, 'opsz' 32"</item>
+        <item name="android:fontFeatureSettings">tnum</item>
+        <item name="android:textSize">44sp</item>
+        <item name="android:letterSpacing">-0.035</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+</resources>

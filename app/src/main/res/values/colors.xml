@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Must stay equal to VisorColors in :core:design. -->
+    <color name="canvas">#000000</color>
+    <color name="surface">#161617</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#86868B</color>
+    <color name="text_dim">#73FFFFFF</color>
+    <color name="signal">#FF5F34</color>
+</resources>

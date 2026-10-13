@@ -1,0 +1,10 @@
+# Keeps the pinned actions current. Gradle dependencies are updated by hand, per gradle/libs.versions.toml.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # The project takes only releases that are at least two weeks old.
+    cooldown:
+      default-days: 14

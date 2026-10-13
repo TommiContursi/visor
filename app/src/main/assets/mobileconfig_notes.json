@@ -1,0 +1,2066 @@
+{
+"active_glasses_demo_sessionless.sg_capture_instruction":{
+"product":"glasses",
+"does":"Text of slot 5 of the default demo scenario. C0Mz.A00 takes 13 strings in order; this is argument 5, the capture instruction. The default scenario is used only when the scenario ID is 'default' or empty.",
+"change":"Replaces the text of that slot in the default scenario."
+},
+"active_glasses_demo_sessionless.sg_capture_retry":{
+"product":"glasses",
+"does":"Text of slot 7 of the default demo scenario (C0Mz.A00 argument 7). Used only when the scenario ID is 'default' or empty.",
+"change":"Replaces the text of that slot in the default scenario."
+},
+"active_glasses_demo_sessionless.sg_capture_success":{
+"product":"glasses",
+"does":"Text of slot 6 of the default demo scenario (C0Mz.A00 argument 6). Used only when the scenario ID is 'default' or empty.",
+"change":"Replaces the text of that slot in the default scenario."
+},
+"active_glasses_demo_sessionless.sg_charging_state_debounce_ms":{
+"product":"glasses",
+"does":"Delay in ms before the shelf display mode is changed. The device-state handler starts debouncedSetShelfDisplayMode with this value; a newer change cancels the pending one.",
+"change":"Sets how long the device-state change must hold before the shelf display mode is applied."
+},
+"active_glasses_demo_sessionless.sg_default_volume_percentage":{
+"product":"glasses",
+"does":"Percent volume that the glasses reset to. resetVolumeToDefault passes it on, and the shelf-activation event logs it as volume_percent.",
+"change":"Sets the volume percent applied on reset and logged on shelf activation."
+},
+"active_glasses_demo_sessionless.sg_demo_led_color":{
+"product":"glasses",
+"does":"Colour name mapped to an LED id. 'orange' maps to 123. An unknown name logs a warning and the LED indicator is disabled.",
+"change":"Only 'orange' is shown in the code given. Any other name not in the switch disables the LED indicator."
+},
+"active_glasses_demo_sessionless.sg_disable_pairing_education_tts":{
+"product":"glasses",
+"does":"When on, the pairing education TTS is skipped, logged as 'Skipping pairing TTS - disabled via MobileConfig'. When off, the TTS plays.",
+"change":"On: the pairing education TTS does not play. Off (now): it plays."
+},
+"active_glasses_demo_sessionless.sg_doff_full_reset_timeout_ms":{
+"product":"glasses",
+"does":"Two uses. A DOFF shorter than this value is logged as Medium DOFF. After this many ms in the paused state following a DOFF, the handler resets to IDLE.",
+"change":"A different value moves the Medium DOFF threshold and the reset delay. At 0, the reset delay is 0 ms."
+},
+"active_glasses_demo_sessionless.sg_don_debounce_ms":{
+"product":"glasses",
+"does":"Debounce for the DON state. The debounce logged is the larger of this value and sg_don_earcon_duration_ms. The state is set to DON_DEBOUNCING.",
+"change":"Sets the debounce part of the larger value. The earcon value can lengthen the wait if it is larger."
+},
+"active_glasses_demo_sessionless.sg_don_earcon_duration_ms":{
+"product":"glasses",
+"does":"Earcon duration. It enters the DON debounce as max(debounce, earcon) (see sg_don_debounce_ms), logged as 'earcon='.",
+"change":"Lengthens the DON debounce only when it is larger than sg_don_debounce_ms."
+},
+"active_glasses_demo_sessionless.sg_enable_demo_receiver":{
+"product":"glasses",
+"does":"When on and no demo ATC client exists, the handler creates ActiveGlassesDemoAtcClient and reads the C0N5 provider. The key is 4630012314511540224, which is this param's id in MobileConfigParams.",
+"change":"On: the demo ATC client is created. Off (now): it is not created."
+},
+"active_glasses_demo_sessionless.sg_enable_idle_led":{
+"product":"glasses",
+"does":"When on, the LED update runs. It sets LED notification id 124 when the battery is at or below sg_low_battery_threshold, otherwise 122.",
+"change":"Off: the LED update returns without doing anything."
+},
+"active_glasses_demo_sessionless.sg_enable_server_session":{
+"product":"glasses",
+"does":"When on, the server demo session branch runs. It logs 'Server demo session MC enabled=' and reads the C0N5 provider's config. What that branch does next is not in the code given.",
+"change":"On: the server-session branch is taken."
+},
+"active_glasses_demo_sessionless.sg_enable_session_watchdog":{
+"product":"glasses",
+"does":"When on, a session watchdog coroutine (C0fL task 28) is started and logged as 'Session watchdog enabled via MobileConfig'. What the watchdog checks is not in the code given.",
+"change":"On: the watchdog coroutine runs."
+},
+"active_glasses_demo_sessionless.sg_fade_step_ms":{
+"product":"glasses",
+"does":"Step interval in ms for a volume fade. WavAudioPlayer's fade thread sleeps this long between volume updates. The value is passed to the WavAudioPlayer constructor in two audio setups.",
+"change":"Sets the sleep between fade volume steps. Smaller values make the fade update more often."
+},
+"active_glasses_demo_sessionless.sg_genre_music_prompt":{
+"product":"glasses",
+"does":"Text of slot 2 of the default demo scenario (C0Mz.A00 argument 2), used in the music step. Used only when the scenario ID is 'default' or empty.",
+"change":"Replaces the text of that slot in the default scenario."
+},
+"active_glasses_demo_sessionless.sg_genre_music_retry":{
+"product":"glasses",
+"does":"Text of slot 3 of the default demo scenario (C0Mz.A00 argument 3), the retry for the music step. Used only when the scenario ID is 'default' or empty.",
+"change":"Replaces the text of that slot in the default scenario."
+},
+"active_glasses_demo_sessionless.sg_is_retail_demo":{
+"product":"glasses",
+"does":"Read by AbstractC03260Mq.A00(), which logs the value and returns false on a read error. When on, the pairing education coordinator skips the pairing TTS on the retail demo device.",
+"change":"On: the pairing education TTS is skipped as a retail demo device. Off is the normal state."
+},
+"active_glasses_demo_sessionless.sg_low_battery_threshold":{
+"product":"glasses",
+"does":"Battery percentage threshold. A battery change that crosses it, while the glasses are idle, triggers the LED update. The LED update uses it to choose LED id 124 or 122.",
+"change":"Sets the battery level at which the idle LED switches to id 124."
+},
+"active_glasses_demo_sessionless.sg_max_consecutive_dictation_failures":{
+"product":"glasses",
+"does":"After this many consecutive empty dictation results, the handler logs 'Max consecutive dictation failures reached' and aborts the Q&A session.",
+"change":"Sets how many empty dictation results in a row end the Q&A session."
+},
+"active_glasses_demo_sessionless.sg_meta_ai_canned_response":{
+"product":"glasses",
+"does":"Text of slot 9 of the default demo scenario (C0Mz.A00 argument 9). Used only when the scenario ID is 'default' or empty.",
+"change":"Replaces the text of that slot in the default scenario."
+},
+"active_glasses_demo_sessionless.sg_meta_ai_prompt":{
+"product":"glasses",
+"does":"Text of slot 8 of the default demo scenario (C0Mz.A00 argument 8). Used only when the scenario ID is 'default' or empty.",
+"change":"Replaces the text of that slot in the default scenario."
+},
+"active_glasses_demo_sessionless.sg_meta_ai_retry":{
+"product":"glasses",
+"does":"Text of slot 11 of the default demo scenario (C0Mz.A00 argument 11), the retry for the Meta AI step. Used only when the scenario ID is 'default' or empty.",
+"change":"Replaces the text of that slot in the default scenario."
+},
+"active_glasses_demo_sessionless.sg_meta_ai_success":{
+"product":"glasses",
+"does":"Text of slot 10 of the default demo scenario (C0Mz.A00 argument 10). Used only when the scenario ID is 'default' or empty.",
+"change":"Replaces the text of that slot in the default scenario."
+},
+"active_glasses_demo_sessionless.sg_meta_ai_unrecognized":{
+"product":"glasses",
+"does":"Text of slot 12 of the default demo scenario (C0Mz.A00 argument 12), used when the Meta AI question is not recognized. Used only when the scenario ID is 'default' or empty.",
+"change":"Replaces the text of that slot in the default scenario."
+},
+"active_glasses_demo_sessionless.sg_music_duration_ms":{
+"product":"glasses",
+"does":"Starts audio resource 0 and then waits this many ms before the step continues.",
+"change":"Sets how long the step waits after the music resource starts."
+},
+"active_glasses_demo_sessionless.sg_music_fade_in_duration_ms":{
+"product":"glasses",
+"does":"Fade-in length. The music player volume is set to 0 and the resource starts, then WavAudioPlayer.A03 fades the volume to its target over this many ms.",
+"change":"Sets the fade-in length of the music."
+},
+"active_glasses_demo_sessionless.sg_music_fade_out_duration_ms":{
+"product":"glasses",
+"does":"Fade-out length. When the server demo stops the background bed (topic_exit), WavAudioPlayer.A09 fades the volume to 0 over this many ms.",
+"change":"Sets the fade-out length when the background music stops."
+},
+"active_glasses_demo_sessionless.sg_music_volume_level":{
+"product":"glasses",
+"does":"Music volume as a percent. The handler sets the WavAudioPlayer volume to value / 100 (0.70 now). WavAudioPlayer.A07 clamps it to 0 to 1 and sets the AudioTrack volume.",
+"change":"Sets the music player volume, 0 to 100 percent."
+},
+"active_glasses_demo_sessionless.sg_oacr_transcription_timeout_ms":{
+"product":"glasses",
+"does":"Dictation timeout. The dictation step starts with this timeout (logged in seconds). A dictation that times out is logged as 'Dictation timed out after N ms, abandoning' and counts as an empty result.",
+"change":"Sets how long the Q&A dictation listens before it gives up."
+},
+"active_glasses_demo_sessionless.sg_qa_scenario":{
+"product":"glasses",
+"does":"Selects the demo scenario ID. The system property persist.activeglasses.qa_scenario is used first when set. Otherwise this MC value is used, and if it is empty the ID is 'default'.",
+"change":"A scenario ID other than 'default' loads the built-in scenario from C0Mz.A01, and the MC speech strings are not used."
+},
+"active_glasses_demo_sessionless.sg_topic_order":{
+"product":"glasses",
+"does":"Comma-separated list of topic names for the default scenario. It is split on commas, empty entries are dropped, and each name is checked against the step map in that order.",
+"change":"Changes which topics run and their order in the default scenario. Unknown names are checked against the step map at C0Mz.java:71-72."
+},
+"active_glasses_demo_sessionless.sg_tts_meta_ai_voice_id":{
+"product":"glasses",
+"does":"TTS voice for the Meta AI line. The Settings.Global override 'sg_tts_meta_ai_voice_id' is used first when set. Otherwise this MC value is used if non-empty, else the default voice. A read error gives the default.",
+"change":"A non-empty Settings.Global override replaces this value."
+},
+"active_glasses_demo_sessionless.sg_tts_speed":{
+"product":"glasses",
+"does":"Speed passed to the TTS request. The value is passed as the first argument of TtsRepositoryImpl.A01, which is stored as $speed. A value of 0 or less is passed as null.",
+"change":"Sets the TTS speed for demo speech. 0 or less sends no speed."
+},
+"active_glasses_demo_sessionless.sg_tts_voice_id":{
+"product":"glasses",
+"does":"TTS voice id for demo speech. The Settings.Global override 'sg_tts_voice_id' is used first when set. Otherwise this MC value is used if non-empty, else the default voice. A read error gives the default.",
+"change":"A non-empty Settings.Global override replaces this value."
+},
+"active_glasses_demo_sessionless.sg_volume_prompt":{
+"product":"glasses",
+"does":"Text of slot 4 of the default demo scenario (C0Mz.A00 argument 4), the volume step prompt. Used only when the scenario ID is 'default' or empty.",
+"change":"Replaces the text of that slot in the default scenario."
+},
+"active_glasses_demo_sessionless.sg_volume_timeout_ms":{
+"product":"glasses",
+"does":"Timeout in ms for the wait for a volume change. The step logs 'Playing audio and waiting for volume change (timeout: N ms)' with this value.",
+"change":"Sets how long the demo waits for a volume change before moving on."
+},
+"active_glasses_demo_sessionless.sg_welcome_template":{
+"product":"glasses",
+"does":"Text of slot 1 of the default demo scenario (C0Mz.A00 argument 1), the welcome. It contains a {model_name} placeholder. Where the placeholder is filled in is not in the code given.",
+"change":"Replaces the welcome text of the default scenario."
+},
+"appmanager_sn_sessioned.aging_maximum_threshold":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long and used as the aging maximum SOC threshold only if it is 1 to 100. Otherwise the code uses 100. It is logged as 'Aging maximum SOC threshold: %d (MC value: %ld)'.",
+"change":"A value outside 1 to 100 is replaced by 100."
+},
+"appmanager_sn_sessioned.disable_call_rejection_while_doffed":{
+"product":"Ray-Ban Meta",
+"does":"isCallRejectionWhileDoffedEnabled() returns the inverse of this flag (mov w8,#1; bic w0,w8,w0). The caller is not in the code given.",
+"change":"On makes isCallRejectionWhileDoffedEnabled() return false."
+},
+"appmanager_sn_sessioned.earcon_music_volume_step_distance":{
+"product":"Ray-Ban Meta",
+"does":"Read in Volume.getMusicToNotificationVolumeStepDistance(), code default 0. SgVolumeController.calculateNotificationVolumeFromMusicVolume passes it to Volume.getVolumePercentageNStepDistance() when converting music volume to notification volume.",
+"change":"The value is the step distance used in that music-to-notification conversion. The code does not show the resulting volume numbers."
+},
+"appmanager_sn_sessioned.enable_wake_gesture":{
+"product":"Ray-Ban Meta",
+"does":"Read as enableHandTracking in SmartglassesConfig and GlobalInputFilterGating. GlobalInputFilterLogic.onMobileConfigFetched sets the system property sys.settings.enable_alwaysoncamera to match it when they differ. SmartglassesEffects observes the value.",
+"change":"The code copies the value into sys.settings.enable_alwaysoncamera. The code does not show what the always-on camera then does."
+},
+"ar_assisted_demo.assisted_demo_hn_screen_timeout":{
+"product":"glasses",
+"does":"Read in SgDisplayMobileConfigClient.screenOffTimeoutRetailDemoMobileConfigVal(), code default 120000 ms. When retail demo mode is on, SgDisplayScreenOffTimeoutHandler writes it to Settings.System screen_off_timeout.",
+"change":"Sets the screen-off timeout in ms used while retail demo mode is on."
+},
+"ar_passive_phone_unlock.allow_multiple_verified_session_requests":{
+"product":"glasses",
+"does":"Read as the fallback when the system property persist.allow_multiple_verified_session_requests is not set (C08N.A00: property wins if set to 1 or true). When true, a new verified-session request replaces the stored callback. When false, a new request is ignored while one is pending.",
+"change":"Off: a second request is refused while the first is pending."
+},
+"ar_wearables_latency.image_stream_use_high_priority":{
+"product":"glasses",
+"does":"In sharingservice, the image stream is set to high priority when this flag is on, or when assistant_warp_use_warp_idnm is on. The log is 'Set image stream priority to high: %s'.",
+"change":"On (or assistant_warp_use_warp_idnm on): the image stream is set to high priority."
+},
+"assistant_on_hn.ai_home_enabled":{
+"product":"Ray-Ban Display",
+"does":"Read in AssistantAppMobileConfigs and passed as the second argument of new C0FC(z2, flag). Native code in the assistant binary reads the same id and, when it is set, logs that a double thumb tap on an active assistant is not canceling it. When clear, that branch is skipped.",
+"change":"On: the double thumb tap on an active assistant takes the branch that logs 'not canceling assistant'. Off: that branch is skipped. The rest of the path is not shown."
+},
+"assistant_on_hn.auto_start_template_channel":{
+"product":"Ray-Ban Display",
+"does":"When set, AssistantTemplateRepository calls startObserveAssistantState() during its init. When clear, it does not.",
+"change":"On: assistant state observation starts when the template repository is set up."
+},
+"assistant_on_hn.hn_live_ai_cache_client_frame":{
+"product":"Ray-Ban Display",
+"does":"LiveAiService: when the flag is clear it logs 'Frame caching is not enabled via mobile config' and returns. When set, it goes on to a second dispatch (C0Q4.A03 with id 10) for the frame cache.",
+"change":"On: the frame caching dispatch runs."
+},
+"assistant_on_hn.live_ai_image_res_height":{
+"product":"Ray-Ban Display",
+"does":"LiveAiService.A01 uses this value as the height argument of ImageReader.newInstance(width, height, 35, 6) for frame capture, and logs 'Setting up Assistant frame capture: WxH'.",
+"change":"Sets the height of the Live AI / Assistant frame capture image reader."
+},
+"assistant_on_hn.live_ai_image_res_width":{
+"product":"Ray-Ban Display",
+"does":"LiveAiService.A01 uses this value as the width argument of ImageReader.newInstance(width, height, 35, 6) for frame capture, and logs it in 'Setting up Assistant frame capture: WxH'.",
+"change":"Sets the width of the Live AI / Assistant frame capture image reader."
+},
+"assistant_on_hn.mmllm_mid_size_snapshot_height":{
+"product":"Ray-Ban Display",
+"does":"When the privacy LED is on, the code logs 'Privacy LED is enabled, using default snapshot height' and uses a default height. Otherwise it reads this value as a long (id 0x70510000 in the fe3 space) and uses it.",
+"change":"Changes the snapshot height only when the privacy LED is off."
+},
+"assistant_on_hn.mmllm_mid_size_snapshot_width":{
+"product":"Ray-Ban Display",
+"does":"When the privacy LED is on, the code logs 'Privacy LED is enabled, using default snapshot width' and uses a default width. Otherwise it reads this value as a long (id 0x70520000 in the fe3 space) and uses it.",
+"change":"Changes the snapshot width only when the privacy LED is off."
+},
+"assistant_on_hn.use_mapless_template":{
+"product":"Ray-Ban Display",
+"does":"When C0F6.A03 is set and the template is opened from navigation, getBackgroundAvailabilityOverride returns a persistence of 300000 ms (5 minutes) for template type 18. Otherwise it returns null.",
+"change":"On: templates of type 18 opened from navigation stay available in the background for 5 minutes."
+},
+"assistant_on_hn.use_wakeword_hal":{
+"product":"Ray-Ban Display",
+"does":"When set, the code logs 'Wakeword HAL enabled by mobile config'. When clear, it logs 'Wakeword HAL disabled by mobile config'. The wake word path itself is not in the code shown."
+},
+"assistant_on_sn.assistant_shutdown_waiting_interaction_loop_count":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long (id 0x72b90000 in the be5 space) at shutdown, and logged as 'assistant service shutdown maxloopcount: {}' in ShutdownerImpl.cpp."
+},
+"assistant_on_sn.btc_device_connected_announce":{
+"product":"Ray-Ban Meta",
+"does":"In onBtcConnected, the companion app launch call runs first, then the flag is read (id 0x70740000 in the be5 space). When clear, it logs 'Not announcing BTC connected. MC disabled.' and skips the announce. When set and the device is not primary, the code takes the announce path (not shown). When primary, it logs 'Not announcing BTC connected since its the primary device.'",
+"change":"On: a BTC device that is not primary is announced."
+},
+"assistant_on_sn.default_asr_timeout_s":{
+"product":"Ray-Ban Meta",
+"does":"Read by getter key 0x44 (68) through getter 0x155e0ac. The timeout is adjusted by VAD. If the result is not positive, the code logs 'ASR timeout became non-positive after VAD adjustment ({}s). Skipping ASR.'"
+},
+"assistant_on_sn.music_pt_integration_enabled":{
+"product":"Ray-Ban Meta",
+"does":"When on, the assistant registers an AVRCP handler (setAvrcpHandler) on ARWirelessServiceProvider. When off, that call is skipped. setBtcHandler runs either way.",
+"change":"On: the AVRCP handler is registered with the wireless service provider. Off: it is not."
+},
+"audio_on_xn.call_rejection_on_mount_change_enabled":{
+"product":"glasses",
+"does":"Read as SgAudioManagerMobileConfigClient.isCallRejectionOnMountChangeEnabled() (code default true; glasses value false). SgAudioPolicyController stores it and uses it on mount change: it logs call disconnects on doff and passes it as the shouldDisconnectAudioOnDoff argument of routeHfpCall. MecCallRoutingController passes it into decideRouting.",
+"change":"When true, an active call's HFP audio is disconnected from the glasses on doff (routeHfpCall, mount-change path). When false, that path does not disconnect for doff in that call."
+},
+"audio_on_xn.call_rejection_while_doffed_enabled":{
+"product":"glasses",
+"does":"Read as SgAudioManagerMobileConfigClient.isCallRejectionWhileDoffedEnabled() (code default true; glasses value true). SgAudioPolicyController stores it and passes it as shouldDisconnectAudioOnDoff to routeHfpCall. MecCallRoutingController passes it into decideRouting, which has a RINGING_REJECTED_BY_DOFF state.",
+"change":"When true, a call taken while the glasses are doffed is routed away from the glasses (HFP disconnected). When false, that routeHfpCall disconnect path is skipped."
+},
+"audio_on_xn.video_capture_music_concurrency_ducking_duration_ms":{
+"product":"glasses",
+"does":"Read in SgAudioManagerMobileConfigClient.getVideoCaptureMusicConcurrencyDuckingDurationMs() (MC default 0; code fallback 3000). SgAudioPolicyController stores it in mVideoCaptureConcurrencyDuckDelayMs and writes system property persist.audio.video_capture_music_duck_delay_ms.",
+"change":"Sets the delay used for ducking music during video capture, through the persist.audio.video_capture_music_duck_delay_ms property. The code does not show the audio stack that reads that property."
+},
+"audio_on_xn.video_capture_music_concurrency_mute_duration_ms":{
+"product":"glasses",
+"does":"Read in SgAudioManagerMobileConfigClient.getVideoCaptureMusicConcurrencyMuteDurationMs() (MC default 0; code fallback 0). SgAudioPolicyController stores it in mVideoCaptureConcurrencyMuteDurationMs and writes system property persist.audio.video_capture_music_mute_duration_ms.",
+"change":"Sets the mute duration for music during video capture, through the persist.audio.video_capture_music_mute_duration_ms property. The code does not show the reader of that property."
+},
+"audio_on_xn.xn_leak_crusher":{
+"product":"glasses",
+"does":"Read as SgAudioManagerMobileConfigClient.isLeakCrusherGKEnabled() (code default false). It gates the leak-crusher setting: SgAudioServerController.setLeakCrusherSettingChange returns early when the gate is off, and setLeakCrusherIntensity does nothing when off.",
+"change":"When on, the user's leak crusher setting is accepted, and can be turned on and tuned (intensity). When off, those setting changes are dropped."
+},
+"audio_on_xn.xn_music_concurrency":{
+"product":"glasses",
+"does":"Read as isMusicConcurrencyGKEnabled() (code default false). SgAudioPolicyController stores it in mIsMusicConcurrencyGKEnabled. On camera and autocapture session state it decides the music-concurrency state, unless live-AI decoupling picks the interactive flag instead.",
+"change":"When on, music concurrency is allowed for these sessions. When off, that path does not use it."
+},
+"audio_on_xn.xn_music_concurrency_interactive_autocapture":{
+"product":"glasses",
+"does":"Read as isInteractiveAutocaptureMusicConcurrencyGKEnabled() (code default false). In SgAudioPolicyController, when this is off shouldSkipDuckingForInteractiveAutocapture returns false (no skip). It also selects the music-concurrency state during interactive autocapture sessions when live-AI decoupling applies.",
+"change":"When on, music ducking can be skipped for interactive autocapture (for example Live AI running, so music is not paused). When off, that skip does not apply."
+},
+"audio_on_xn.xn_music_concurrency_v2":{
+"product":"glasses",
+"does":"Read as isMusicConcurrencyV2GKEnabled() (code default false; glasses value true). Gates the video-capture music mute/duck policy in SgAudioPolicyController (camera capture start) and the setMusicConcurrency call in SgAudioServerController.setMusicConcurrencySettingChange.",
+"change":"When on, video capture ducks or mutes music per the v2 policy and the user's music-concurrency setting is applied. When off, those calls are skipped."
+},
+"audio_on_xn.xn_spatial_media":{
+"product":"glasses",
+"does":"Read as isSpatialMediaGKEnabled() (code default false). SgAudioServerController.setSpatialMediaSettingChange sends message 31 or 32 only when the gate is on. When off and the user setting is true, it logs that xn_spatial_media MC is off and does nothing.",
+"change":"When on, the user's spatial media setting is applied to the audio server. When off, the setting is ignored."
+},
+"audio_on_xn.xn_water_detect":{
+"product":"glasses",
+"does":"Read as isWaterDetectGKEnabled() (code default false). SgWaterIngressController.notifyWaterDetected does its work only when the gate is on: it logs a water_detected analytics event and passes the water-detected state on.",
+"change":"When on, water-ingress detection events are handled and logged. When off, notifyWaterDetected does nothing."
+},
+"audio_on_xn.xn_water_detect_tts":{
+"product":"glasses",
+"does":"Read as isWaterDetectTTSEnabled() (code default false). SgWaterIngressController plays the WATER_INGRESS_DETECTED_TTS earcon when water is detected and this gate is on.",
+"change":"When on, a water-detected event plays the water ingress detected TTS earcon. When off, that earcon is not played."
+},
+"autocapture_on_sn.allow_arbitrary_smart_watch_name":{
+"product":"Ray-Ban Meta",
+"does":"When the watch type is not allowed, the code falls back to 'Garmin' and logs 'Smart watch type not allowed: <type>, falling back to Garmin'. The allowed check is c01510Cm.A00.A03.A01(C0Cv.A00) OR the known list AbstractC01570Da.A00.",
+"change":"On: the watch type passes the first check and is kept. Off: only known names are accepted."
+},
+"autocapture_on_sn.default_video_length":{
+"product":"Ray-Ban Meta",
+"does":"When the per-trigger override is null, AutoCaptureTriggerManagerImpl sets the video duration to this value * 1000 ms and passes it as CAPTURE_VIDEO_DURATION for video captures."
+},
+"autocapture_on_sn.delayed_trigger_max_delay_ms":{
+"product":"Ray-Ban Meta",
+"does":"A delayed trigger is dropped with reason 'Exceeded max delay time' when the time since it was created is larger than this value.",
+"change":"A larger value keeps older delayed triggers alive."
+},
+"autocapture_on_sn.first_time_user_ed_count":{
+"product":"Ray-Ban Meta",
+"does":"The first-time autocapture earcon education plays while the stored count (SharedPreferences 'first_time_user_ed_count') is below this value, and the count is then incremented."
+},
+"autocapture_on_sn.glasses_skip_cloud_media_check":{
+"product":"Ray-Ban Meta",
+"does":"PhoneBasedExperience.handleFailure returns false and logs 'Skipping CLOUD_MEDIA_DISABLED error' when this flag is on, so that failure is not reported."
+},
+"autocapture_on_sn.hinges_closed_timer":{
+"product":"Ray-Ban Meta",
+"does":"When the value is not 0, schedules the HINGE_CLOSED_TIMEOUT alarm for this many ms and logs 'Starting hinge closed timer'.",
+"change":"0 schedules no hinge-closed alarm."
+},
+"autocapture_on_sn.live_ai_decoupling_enabled":{
+"product":"Ray-Ban Meta",
+"does":"When on, AutoCaptureManagerImpl builds the Live AI coupling C04S (with WearableConcurrencyManager); when off it builds C04n. It also gates a wake lock 'AutoCapture::InteractiveStreamWakeLock' in the interactive experience."
+},
+"autocapture_on_sn.mmai_during_autocapture_enabled":{
+"product":"Ray-Ban Meta",
+"does":"Selects whether the Live AI coupling is given the WearableConcurrencyManager: when on, the context's WearableConcurrencyManager is passed to C04S; when off it is null."
+},
+"autocapture_on_sn.pause_reminder_timeout_ms":{
+"product":"Ray-Ban Meta",
+"does":"When > 0, schedules the PAUSE_REMINDER alarm for this many ms; the callback plays the pause reminder earcon. 0 schedules no reminder.",
+"change":"A few minutes would fire the reminder during a pause, per the code path."
+},
+"autocapture_on_sn.reconnect_max_retry_attempts":{
+"product":"Ray-Ban Meta",
+"does":"AutoCaptureDataXClient stops reconnecting after this many attempts: 'ConnectionClosedTimeout: Maximum retries reached, stop attempting to reconnect'; the recovery path gives up with 'recovery budget exhausted'.",
+"change":"More attempts keep the client retrying longer."
+},
+"autocapture_on_sn.starting_chime_enabled":{
+"product":"Ray-Ban Meta",
+"does":"When on, playing the start/resume earcon plays sound id 23 (C0Q4.A06 with 23) when the session starts or resumes.",
+"change":"On plays the chime on start; off keeps the start silent (the current setting)."
+},
+"capture_on_assistant.meta_ai_queries_during_capture":{
+"product":"glasses",
+"does":"Meta AI queries during capture are allowed only when this reads true (isMetaAiConcurrencyDuringCaptureEnabled). If the read fails, the gate logs 'Failed to read MetaAiQueriesDuringCapture mobile config, defaulting to concurrency disabled'.",
+"change":"On allows Meta AI queries while capture runs; off keeps the concurrency gate closed."
+},
+"captureengine_on_xn.enable_lcvm_capture_analysis":{
+"product":"glasses",
+"does":"Turns on LCVM quality analysis of recorded video: CaptureEngine::analyzeVideoQuality and isLcvmEnabled return true when this is on or the system property persist.vendor.meta.camera.lcvm_enabled is set; logs 'LCVM: Enabled via mobile config'. With no file yet it logs 'LCVM: Video file does not exist yet, skipping quality analysis'.",
+"change":"On runs the quality analysis of recorded video after capture; off leaves it to the system property."
+},
+"constellation_direct_connection.sg_central_mode_enabled":{
+"product":"Meta AI app",
+"does":"The Bluetooth properties code returns this value as the central-mode flag. The system property persist.setting.meta.bt.central_mode overrides it when set (SystemProperties.getBoolean(prop, mc value))."
+},
+"continuous_ai_camera.acs_voice_controls_enabled":{
+"product":"glasses",
+"does":"When the flag is off, AmbientSensingIntentHandler skips the ACS voice controls and logs 'ACS voice controls MC disabled, skip'.",
+"change":"On lets the ACS voice-control intents run."
+},
+"continuous_ai_camera.doff_deffered_finalize_delay_ms":{
+"product":"glasses",
+"does":"After capture stops, the zip is not finalised at once: 'Deferring zip finalization - will finalize in %ld ms if not resumed'. If the camera is taken by another app it logs 'Skipping zip finalization - camera temporarily taken by another app'.",
+"change":"Longer keeps the zip open longer before finalising."
+},
+"continuous_ai_camera.pause_schedule_change_tts_enable":{
+"product":"glasses",
+"does":"When on, the schedule-update result (w20: 0, 1 or 2) picks a phrase that goes to a 'say' (TTS) call. For result 2 the phrase 'Schedule update failed' is used under one condition (byte at sp+0x78).",
+"change":"On: schedule changes are spoken. The off branch (skip to 87898) is not in the shown code."
+},
+"continuous_ai_camera.periodic_high_res_capture_enabled":{
+"product":"glasses",
+"does":"Flag on: if the call at d1328 returns true it logs 'PeriodicHighRes: Not starting periodic capture - PMC is enabled' and does not start; otherwise it continues to the start path (d136c). Flag off: logs 'PeriodicHighRes: Not starting periodic capture - disabled via MobileConfig'.",
+"change":"On: timed high-res captures start when PMC is not enabled. Off: none start."
+},
+"continuous_ai_camera.periodic_high_res_capture_interval_ms":{
+"product":"glasses",
+"does":"Read as a long. The value divided by 1000 gives seconds (d1430-d144c), used only when that is at least 1; otherwise the interval already in w20 is kept. Logs 'PeriodicHighRes: Starting periodic capture (session: %s, interval: %d seconds)'.",
+"change":"Sets the periodic capture interval in seconds (MC value in ms / 1000)."
+},
+"continuous_ai_camera.pmc_debug_features":{
+"product":"glasses",
+"does":"Bool id 0xd00a0000 4081 read at eba94 (after the 'PMC: end of PMC - success=%s' log). When true, the bundle zip is kept after upload. When false, the zip is removed and 'PMC: Deleted bundle zip after upload: %s' is logged.",
+"change":"On: uploaded PMC bundle zips are kept on the device instead of being deleted."
+},
+"dashcam_capture_exp.max_duration_ms":{
+"product":"glasses",
+"does":"For case 4 of the capture-duration switch in CaptureFlowManagerImpl, the duration is A0C.A39() in milliseconds. Cases 6 and 7 use A4z and A4A, and case 8 uses a fixed 60 s.",
+"change":"Caps the DashCam capture length in ms (value is 1800000 now, 30 min)."
+},
+"dashcam_capture_exp.video_capture_fps":{
+"product":"glasses",
+"does":"For DashCam (case 4), the frame rate from A3A() replaces the built-in value c00lA00.A0O when it is not null. The value is passed into the new C00L(...) config.",
+"change":"Sets the DashCam frame rate when set. Null keeps the built-in value."
+},
+"dashcam_capture_exp.video_height":{
+"product":"glasses",
+"does":"For DashCam (case 4), the frame height from A3B() replaces the built-in value c00lA00.A0a when it is not null, and is passed into the new C00L(...) config.",
+"change":"Sets the DashCam output height when set. Null keeps the built-in value."
+},
+"dashcam_capture_exp.video_width":{
+"product":"glasses",
+"does":"For DashCam (case 4), the frame width from A3C() replaces the built-in value c00lA00.A0b when it is not null, and is passed into the new C00L(...) config.",
+"change":"Sets the DashCam output width when set. Null keeps the built-in value."
+},
+"enable_acoustic_dondoff.enable_acoustic_dondoff_gk":{
+"product":"glasses",
+"does":"MC default false, copied to persist.settings.acoustic_dondoff_enabled by syncBooleanConfig. AcousticDonDoffController.acousticDonDoffEnabled() reads it. SgDeviceStateActiveMount uses that controller when it is on. Otherwise it falls back to persist.settings.should_gate_on_active_mount_state, and to an emulator controller if persist.settings.emulator_wake_on_don is set.",
+"change":"When on, the acoustic don/doff controller is the mount-state controller. When off, the older should_gate_on_active_mount_state path is used."
+},
+"firmwareota_on_hn.app_manager_enabled":{
+"product":"Ray-Ban Display",
+"does":"Bool id 0x401a0000 1075 4081 read at 93a94. When false, logs 'AppUpdateState::runAppUpdateTrigger(): app_manager_enabled is false, skipping' and skips the app-update trigger.",
+"change":"On: the trigger continues past this check (the code after it is not in the shown code)."
+},
+"hearing_on_sn.audio_playback_pause_delay_seconds":{
+"product":"Ray-Ban Meta",
+"does":"getAudioPlaybackPauseDelayMs returns the long (id 0x20000000 12ad 4082) times 1000, so the caller gets milliseconds from a seconds value."
+},
+"hearing_on_sn.cf_phone_call_feature_timeout_seconds":{
+"product":"Ray-Ban Meta",
+"does":"getCFPhoneCallTimeoutDelayMs returns the long (id 0x200f0000 12ad 4082) times 1000, in milliseconds."
+},
+"hearing_on_sn.phone_call_feature_timeout_seconds":{
+"product":"Ray-Ban Meta",
+"does":"getPhoneCallTimeoutDelayMs returns the long (id 0x20030000 12ad 4082) times 1000, in milliseconds."
+},
+"highfps_60_capture_exp.capture_height":{
+"product":"glasses",
+"does":"For the high-fps capture type (case 3), the height from A3f() replaces the built-in value c00l2.A0a when it is not null, and is passed into the capture config (C00L).",
+"change":"Sets the high-fps capture height when set. Null keeps the built-in value."
+},
+"highfps_60_capture_exp.capture_width":{
+"product":"glasses",
+"does":"For the high-fps capture type (case 3), the width from A3o() replaces the built-in value c00l2.A0b when it is not null.",
+"change":"Sets the high-fps capture width when set. Null keeps the built-in value."
+},
+"highfps_60_capture_exp.video_capture_fps":{
+"product":"glasses",
+"does":"For the high-fps capture type (case 3), the frame rate from A3e() replaces the built-in value c00l2.A0O when it is not null.",
+"change":"Sets the high-fps video frame rate when set. Null keeps the built-in value."
+},
+"highres_3k_capture_exp.capture_height":{
+"product":"glasses",
+"does":"For the 3K capture type (case 2), the height from A3v() replaces the built-in value c00l2.A0a when it is not null.",
+"change":"Sets the 3K capture height when set. Null keeps the built-in value."
+},
+"highres_3k_capture_exp.capture_width":{
+"product":"glasses",
+"does":"For the 3K capture type (case 2), the width from A44() replaces the built-in value c00l2.A0b when it is not null.",
+"change":"Sets the 3K capture width when set. Null keeps the built-in value."
+},
+"highres_3k_capture_exp.video_capture_fps":{
+"product":"glasses",
+"does":"For the 3K capture type (case 2), the frame rate from A3u() replaces the built-in value c00l2.A0O when it is not null.",
+"change":"Sets the 3K video frame rate when set. Null keeps the built-in value."
+},
+"hn_app_capture_gallery.is_capture_app_concurrency_enabled":{
+"product":"Ray-Ban Display",
+"does":"When the getter C07J.A6J() (C1J2.java:38) is true, CaptureEventQueue runs extra steps. For captures other than DynamicPhoto with A08 not 0 or 1, it calls c06n6.A72(CALLING_MODE, ...). A second check (A0A == 1, not DynamicPhoto) calls A72(VOICE_MODE, ...). The steps sit only inside the true branch.",
+"change":"On: the CALLING_MODE and VOICE_MODE steps run for captures in the event queue. Off: those steps are skipped."
+},
+"hn_app_capture_gallery.track_incomplete_events":{
+"product":"Ray-Ban Display",
+"does":"Chooses the analytics store: when true, C03120Lw(c0lo, c0m82, context.getFilesDir()); when false, new C0EJ(). The bodies of C03120Lw and C0EJ are not in the code.",
+"change":"On: analytics are written by C03120Lw using the app files directory. Off: analytics use C0EJ."
+},
+"hn_app_capture_gallery.wait_for_camera_timeout_ms":{
+"product":"Ray-Ban Display",
+"does":"Read only on the wait path, i.e. when wait_for_camera_state_before_open is false. It is the timeout passed to CaptureEventQueueImpl.A0D(); if the wait fails, the queue logs 'Failed to open camera, camera was not ready within %d ms', reports it through A6l, and raises CameraInitializationError.",
+"change":"Setting it changes how long the queue waits for the camera before that error. It has no effect while wait_for_camera_state_before_open is true, because the code takes the no-wait branch."
+},
+"hn_messaging.enable_cancel_previous_linked_account_sync":{
+"product":"Ray-Ban Display",
+"does":"When true (and RL.A01(TH.A00) holds with a non-null str), each linked-account sync is added to a per-account-type synchronized list in the map A04. At line 865 the list is searched for str4 and, when found, a TB branch runs. When false, the sync is not added to the map.",
+"change":"On: syncs are kept per account type, so the list lookup can find an earlier sync for the same account type."
+},
+"hn_messaging.enable_commshub_send_wa":{
+"product":"Ray-Ban Display",
+"does":"In sendMessage, a bool gate (id 0x3027_119a, bool tag 0x4081; the 0x3028 id is a second read in the same function) decides whether the request goes to sendViaCommsHub. When the gate is true, the request goes to sendViaCommsHub on the path where the request type is 2 and the byte at [x24+0x20] is set, or on the other branch. When false, the code continues at 0x994d8 to the COMMS_SERVICE_BEGIN path.",
+"change":"On: sends that reach this gate are passed to sendViaCommsHub instead of the COMMS_SERVICE_BEGIN path."
+},
+"hn_messaging.enable_highway_with_empty_obfuscated_id_on_logout":{
+"product":"Ray-Ban Display",
+"does":"In LinkedAccountSyncManager, the empty-obfuscated-id rejection applies when the flag is false (any request), or when the request is a login, or when the account type is unknown. When the flag is true and the request is not a login, the empty id is not rejected, so a logout sync with an empty id passes this check.",
+"change":"Off: a request with an empty obfuscated id is rejected for every request, including logout."
+},
+"hn_messaging.enable_only_send_link_account_response_if_request":{
+"product":"Ray-Ban Display",
+"does":"In LinkedAccountSyncManager, the response is skipped only when both z3 and the bool are true: then QN.A05 logs 'skip_send_linked_account_response_to_companion' and TS.A00().A02 is not called. Otherwise TS.A00().A02 sends the response. Where z3 is set is not in the shown code. A second check at line 654 sends when z3 is true, whatever the bool is.",
+"change":"Off: at line 602 the response is sent whatever z3 is."
+},
+"hn_messaging.linked_account_sync_scheduler_backoff_delay_seconds":{
+"product":"Ray-Ban Display",
+"does":"Read as TH.A02 and converted from seconds, then passed to JobInfo.Builder.setBackoffCriteria as the initial backoff, with policy argument 1, for the linked-account sync job (JobInfo id 42).",
+"change":"A longer value sets a longer initial backoff before the job retries after a failure."
+},
+"hn_messaging.linked_account_sync_scheduler_retry_interval_seconds":{
+"product":"Ray-Ban Display",
+"does":"Read as TH.A04, converted from seconds, and passed to JobInfo.Builder.setPeriodic for the linked-account sync job (JobInfo id 42). The job repeats at this period.",
+"change":"A shorter value makes the periodic sync run more often; a longer value less often."
+},
+"hn_sysux.enable_browser_aware_overlay":{
+"product":"Ray-Ban Display",
+"does":"In AbstractC01280Aw, when the foreground activity is com.meta.smartglass.app.browser, the flag z is set from AnonymousClass082.A00 with the persist property persist.enable_browser_aware_overlay and this MobileConfig key as the fallback. z is then passed to InterfaceC008408b.A03 for that component. What the overlay does inside A03 is not shown."
+},
+"hn_sysux.overlay_policy_rewrite_enabled":{
+"product":"Ray-Ban Display",
+"does":"Gates the V2 policy manager's device-state callbacks on AbstractC13480oP.A01 (A2B). When true, onCameraStateChanged posts AbstractC15110sP.A00 with the camera state to the main thread, and onForegroundActivityChanged compares the new component with the last one. When false, both callbacks do nothing.",
+"change":"On: the V2 policy callbacks run for camera-state and foreground-activity changes. Off: they return at once."
+},
+"hypernova_device_connectivity.central_default_ci":{
+"product":"Ray-Ban Display",
+"does":"Set as the central default BLE connection interval in HammerheadSystem.createBtProperties. The value is a list of suppliers tried in order: the MobileConfig value hypernova_device_connectivity.central_default_ci, then the system property persist.system_ext.meta.bt.central_default_ci, then a static 12. The BLE code that uses the interval is not in the shown code.",
+"change":"The MobileConfig value is the first source. Setting it changes the central default connection interval used when no other source overrides it in code that is not shown."
+},
+"hypernova_device_connectivity.central_dynamic_ci":{
+"product":"Ray-Ban Display",
+"does":"isCentralDynamicCIEnabled returns the MobileConfig bool hypernova_device_connectivity.central_dynamic_ci. On an exception it keeps the CENTRAL_DYNAMIC_CI constant and logs 'Failed to MC ...'. It logs 'Dynamic CI enabled: <value>' on every call. The callers are not in the code, so the effect on the leases is not shown."
+},
+"hypernova_device_connectivity.central_dynamic_ci_on_screen_state":{
+"product":"Ray-Ban Display",
+"does":"isCentralDynamicCIOnScreenStateEnabled returns the MobileConfig bool hypernova_device_connectivity.central_dynamic_ci_on_screen_state. On an exception it returns the CENTRAL_DYNAMIC_CI_ON_SCREEN_STATE constant. The screen-off lease that uses the screen-off interval is not in the shown code."
+},
+"hypernova_device_connectivity.central_dynamic_ci_on_video_call_state":{
+"product":"Ray-Ban Display",
+"does":"isCentralDynamicCIOnVideoCallStateEnabled returns the MobileConfig bool hypernova_device_connectivity.central_dynamic_ci_on_video_call_state. On an exception it returns the CENTRAL_DYNAMIC_CI_ON_VIDEO_CALL_STATE constant. The lease that uses the video-call interval is not in the shown code."
+},
+"hypernova_device_connectivity.central_dynamic_ci_screen_off_interval":{
+"product":"Ray-Ban Display",
+"does":"getScreenOffCentralConnectionInterval returns the MobileConfig long hypernova_device_connectivity.central_dynamic_ci_screen_off_interval, cast to int. On an exception it returns the CENTRAL_DYNAMIC_CI_SCREEN_OFF_INTERVAL constant. The interval is used by a caller that is not in the shown code."
+},
+"hypernova_device_connectivity.central_dynamic_ci_video_call_interval":{
+"product":"Ray-Ban Display",
+"does":"getVideoCallCentralConnectionInterval returns the MobileConfig long hypernova_device_connectivity.central_dynamic_ci_video_call_interval, cast to int. On an exception it returns the CENTRAL_DYNAMIC_CI_VIDEO_CALL_INTERVAL constant. The interval is used by a caller that is not in the shown code."
+},
+"input_on_hn.captouch_continuous_volume_control":{
+"product":"Ray-Ban Display",
+"does":"Read in SmartglassesConfig.getCaptouchContinuousVolumeControl() (MC delegate; glasses value true). GlobalInputFilterLogic uses it to gate continuous volume control on captouch swipes (key 24/25 path, and the one-finger and two-finger volume branches).",
+"change":"When on, captouch swipes adjust volume continuously. When off, those branches do not run."
+},
+"input_on_hn.emg_double_tap_delay_ms":{
+"product":"Ray-Ban Display",
+"does":"Sets emgDoubleTapDelayMs (MobileConfig, live MC read; system property persist.input.emg.double_tap_delay_ms overrides it; default 300). SmartglassesConfig.getEmgDoubleTapDelayMs() is the timer length for the EMG index, double-tap, middle and thumb tap timers in GlobalInputFilterLogic. A single index tap is held for this long, so a second tap inside it counts as a double tap.",
+"change":"The value is the wait in ms before a single EMG tap is emitted. Larger gives more time for a second tap; smaller makes single taps fire sooner."
+},
+"input_on_hn.emg_wrist_roll_for_universal_volume_control":{
+"product":"Ray-Ban Display",
+"does":"When off, key events 24 and 25 (volume up/down) from the EMG wrist roll are dropped before handleKeyEvent. Read through SmartglassesConfig.getEnableEmgWristRollVolumeControl() (MobileConfig, default false in code, property persist.emg_wrist_roll_for_universal_volume_control).",
+"change":"On lets wrist roll send volume keys (the glasses' current value). Off makes wrist roll volume keys do nothing."
+},
+"input_on_hn.enable_abs_accum_for_wrist_axis_lock":{
+"product":"Ray-Ban Display",
+"does":"Selects the absolute-accumulation path for the wrist axis lock in SgScrollMerger. SmartglassesConfig.getUseAbsAccumForWristAxisLock() (MobileConfig, default false, property persist.use_abs_accum_for_wrist_axis_lock) switches an accumulation loop over timestamped positions. The check at line 761 returns false for captouch input before it reads the flag. The loop body was not traced further.",
+"change":"On uses the absolute-accumulation loop for wrist axis lock; off keeps the other path. Captouch input is excluded either way."
+},
+"input_on_hn.enable_captouch_motion":{
+"product":"Ray-Ban Display",
+"does":"Gates the captouch motion-gesture path in GlobalInputFilterLogic. SmartglassesConfig.getCaptouchMotion() (MobileConfig, default true, property persist.captouch_motion_enabled) is checked before the motion gesture interaction is used.",
+"change":"Off stops captouch motion events from taking the motion gesture path (lines 1731 and 1771). On is the current setting."
+},
+"input_on_hn.enable_device_access_toolkit_input_injection":{
+"product":"Ray-Ban Display",
+"does":"WearableWindowManagerGating reads it with mcManager.getBoolean (default true in code). DATKeyEventHandler.handle returns false and logs \"input injection disabled by gating\" when it is off, so Device Access Toolkit key injection is skipped.",
+"change":"Off stops Device Access Toolkit apps from injecting key events into the window manager. On is the current setting."
+},
+"input_on_hn.enable_sticky_axis":{
+"product":"Ray-Ban Display",
+"does":"Turns sticky scroll axes on or off in SgScrollMerger. SmartglassesConfig.getEnableStickyAxes() (MobileConfig, default false, property persist.enable_sticky_axes) gates the axis-lock logic. When it is off and an axis is locked, the scroll coords are returned unchanged.",
+"change":"Off disables sticky scroll-axis locking. On is the current setting."
+},
+"input_on_hn.exp_thumb_tap_select":{
+"product":"Ray-Ban Display",
+"does":"When on, a thumb tap (keycode 1038) is turned into KEYCODE_DPAD_CENTER (23) in GlobalInputFilterLogic. SmartglassesConfig.getEnableEmgThumbTapSelect() (MobileConfig, default false, no system property).",
+"change":"On makes an EMG thumb tap act as a centre/select key press. Off is the current setting."
+},
+"input_on_hn.hn_enable_2d_imu_on_launcher":{
+"product":"Ray-Ban Display",
+"does":"In SgScrollMerger, when on and launcher-style axis-lock expansion applies to the axis, the result is the XY-lock check. SmartglassesConfig.getHnEnable2dImuOnLauncher() (MobileConfig, default false, property persist.settings.hn_enable_2d_imu_on_launcher).",
+"change":"On applies the XY-axis lock expansion on the launcher. Off is the current setting."
+},
+"input_on_hn.smartglass_simplified_dismissal_captouch":{
+"product":"Ray-Ban Display",
+"does":"Remaps single captouch taps in GlobalInputFilterLogic (SmartglassesConfig.getSmartglassSimplifiedDismissalCaptouch(), MobileConfig, default false, property persist.input.smartglass_simplified_dismissal_captouch). During a ringing call, keycode 1039 (single tap) becomes 1045 (double tap). While the assistant is active and no call, live AI or PTT is active, 1039 becomes 1052 (hold).",
+"change":"On makes a one-finger single tap dismiss a ringing call (as a double tap) and act as a hold while the assistant is active. Off is the current setting."
+},
+"input_on_hn.smartglass_simplified_dismissal_captouch_hn":{
+"product":"Ray-Ban Display",
+"does":"HN version of the simplified dismissal (SmartglassesConfig.getSmartglassSimplifiedDismissalCaptouchHN(), MobileConfig, default false, property persist.input.smartglass_simplified_dismissal_captouch_hn). With a call ringing or active and captouch source, MEDIA_PLAY_PAUSE (85) accepts a ringing call. With the assistant active and the display off, it cancels TTS (1082).",
+"change":"On makes a one-finger tap (play/pause keycode 85) accept a ringing call and dismiss assistant TTS when the display is off. Off is the current setting."
+},
+"input_on_hn.wearable_enable_wrist_roll_system_volume":{
+"product":"Ray-Ban Display",
+"does":"SmartglassesConfig.getWearableEnableWristRollSystemVolume() (MobileConfig, default false, property persist.settings.wearable_enable_wrist_roll_system_volume) is one of the conditions in GlobalInputFilterLogic that decide whether wrist-roll input goes to the system volume handler. When it is false the volume route is skipped and the code takes the other branch.",
+"change":"Off sends wrist roll away from the system volume route. On is the current setting."
+},
+"live_ai.ai_lens_ui_enabled":{
+"product":"glasses",
+"does":"AbstractC01930Es computes isLiveAiAiLensUiEnabled from the MobileConfig bool (A2B(C0FA.A00), called zA2B) and the Settings.Global value ai_lens_user_enabled (default -1). z2 starts true and is set false only when the flag is false and the user setting is below 1. So the flag on forces true, and the flag off means the user setting must be 1 or more. The function's returned value after that point is cut off in the shown code.",
+"change":"On: AI lens UI is enabled whatever the user setting is. Off: it is enabled only when ai_lens_user_enabled is 1 or more."
+},
+"live_ai.sub_interaction_timeout_ms":{
+"product":"glasses",
+"does":"The value is stored and logged as 'timeout' when the sub-interaction timer starts: '[SUB_INTERACTION_TIMEOUT] Starting sub interaction timeout timer for subInteractionId={} timeout={}', in startSubInteractionTimeoutTimer.",
+"change":"A larger value makes the sub-interaction timer run longer before it times out. A smaller value ends it sooner."
+},
+"live_ai.warp_enabled":{
+"product":"glasses",
+"does":"LiveAiController logs 'startLiveAiService warpEnabled=' with a value taken from live_ai.warp_enabled when the Live AI session is not activating, not active and not paused (a fresh start). For an active or paused session the value comes from the autocapture branch instead.",
+"change":"On: a session started from idle logs warpEnabled=true, so the WARP path is requested for it. Off: warpEnabled=false."
+},
+"live_ai.warp_enabled_autocapture":{
+"product":"glasses",
+"does":"For a session that is already activating, active or paused, live_ai.warp_enabled_autocapture set true makes warpEnabled 1, then warpEnabled is set to 0 unless live_ai.warp_enabled is also true.",
+"change":"On, with live_ai.warp_enabled on: autocapture sessions (active or paused) log warpEnabled=1. On, with warp_enabled off: they log warpEnabled=0."
+},
+"media_experiences_sn.eis_mode":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long (key 0xc48b02b, C1JG.A03, via A5y). If the value is 4 and this.A02 is set, the value is dropped (null) and the log 'MetaEIS requested but not supported on HN; falling back to OFF_DEVICE' is written. Otherwise a non-null value is passed to the config as an int.",
+"change":"1 selects ON_DEVICE_LOOKAHEAD, 2 selects ON_DEVICE_REALTIME, 4 selects ON_DEVICE_METAEIS, on the non-HN path. 4 is refused on HN (this.A02) and becomes OFF_DEVICE. 0 and other values match no branch, so the OFF_DEVICE config stays."
+},
+"media_experiences_sn.enable_dynamic_video_peak_power":{
+"product":"Ray-Ban Meta",
+"does":"Read as a bool (key 0xc48b073, C1JG.A04, via C1J2/C1JD.A3K). In CaptureEventQueueImpl, for an AUTOCAPTURE capture with the value on and A03.A07 == 1, if the peak-power set contains 0 (music playback path), the capture is blocked with the log 'All capture experiences blocked by peak power (music playback path)'.",
+"change":"Off: that music-playback peak-power block is skipped (the nested check is under 'if (zA3K)'). The value is also passed on to later capture calls (A6k, A08); their use is not shown."
+},
+"media_experiences_sn.end_video_on_mcu_disconnect":{
+"product":"Ray-Ban Meta",
+"does":"When the MCU reports disconnected (onMcuStateChanged 2), capture is stopped with MCU_DISCONNECT only if this value is true. If false, the log 'onMcuDisconnected detected, not stopping capture' is written and capture continues.",
+"change":"Off: capture keeps running after the MCU disconnects, with the log 'onMcuDisconnected detected, not stopping capture'. On: capture stops with MCU_DISCONNECT."
+},
+"media_experiences_sn.heic":{
+"product":"Ray-Ban Meta",
+"does":"Photo format: when true the still is HEIC (AnonymousClass032.HEIC), when false it is JPEG. The value is passed as the format argument of the C00U photo config.",
+"change":"Off: photos use the JPEG format."
+},
+"media_experiences_sn.hevc":{
+"product":"Ray-Ban Meta",
+"does":"Video codec: when true it is HEVC, when false it is AVC (H.264). The value is passed as the codec argument of the C00L video config.",
+"change":"Off: video is encoded as AVC (H.264)."
+},
+"media_experiences_sn.image_height":{
+"product":"Ray-Ban Meta",
+"does":"Still photo height, a long read through A4N (C1JG.A09). It is the second size argument (iA032) of the C00U photo config. When the photo_raw_compression setting (sys.settings.photo_raw_compression_enabled == 1) is set, the height is forced to 2016 and the value is not used.",
+"change":"Setting it changes the photo height in the config, unless the raw-compression setting forces 2016."
+},
+"media_experiences_sn.image_width":{
+"product":"Ray-Ban Meta",
+"does":"Still photo width, a long read through A4O (C1JG.A0A). It is the first size argument (iA03) of the C00U photo config. When the photo_raw_compression setting is on, the width is forced to 6048 and the value is not used.",
+"change":"Setting it changes the photo width in the config, unless the raw-compression setting forces 6048."
+},
+"media_experiences_sn.low_res_video_height":{
+"product":"Ray-Ban Meta",
+"does":"Height of the low-res video config. Read as a long (A4c, C1JG.A0B). In the LOW_RES capture mode, the value replaces the config field A0T when it is set; if it is unset, A0T of the base config is kept.",
+"change":"Setting it changes the output height only in LOW_RES mode (C09Y.LOW_RES). Other modes do not read it here."
+},
+"media_experiences_sn.low_res_video_width":{
+"product":"Ray-Ban Meta",
+"does":"Width of the low-res video config. Read as a long (A4d, C1JG.A0C). In the LOW_RES capture mode, the value replaces the config field A0S when it is set; if it is unset, A0S of the base config is kept.",
+"change":"Setting it changes the output width only in LOW_RES mode. Other modes do not read it here."
+},
+"media_experiences_sn.nova_capture_boot_optimize":{
+"product":"Ray-Ban Meta",
+"does":"SgActivityManagerMobileConfigClient.isCaptureBootOptimizeEnabled() = MC value (default true in code) AND system property persist.settings.enable_capture_boot_optimize (default false). When both are true, SgDeviceStateActivityLauncher.onBootPhase(1000) sends the broadcast CAPTURE_COLD_BOOT_OPTIMIZE to com.meta.smartglass.app.systemui.",
+"change":"The MC value alone does not enable it, because the system property also has to be set. Setting the MC value to false turns the cold-boot capture broadcast off even when the property is set."
+},
+"media_experiences_sn.start_capture_on_presense_consecutive_timeout_threshold":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long (C1JG.A0E, spec 0xc48b03c). In CaptureWarmupReceiver, for a BUTTON_PRESENSE warmup, when the counter this.A00 is at or above the value, the warmup is skipped with 'Camera warmup skipped: reason=false_positive, source='.",
+"change":"A higher value lets more warmups run before the false-positive skip. A lower value skips them sooner."
+},
+"media_experiences_sn.video_calling_bitrate":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long (C1JG.A0J, spec 0xc48b02a, via A5q). It is used only when eis_mode is 2 (ON_DEVICE_REALTIME): the value, or A01(5,...) or A5v when unset, becomes the int argument iA5v of the C01R realtime config (C07F.java:69 and 84).",
+"change":"Set only matters in eis_mode 2 (ON_DEVICE_REALTIME). In the lookahead (1) and MetaEIS (4) branches it is not read here."
+},
+"media_experiences_sn.video_calling_height":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long (C1JG.A0L, spec 0xc48b027, via A5s). Used only when eis_mode is 2 (ON_DEVICE_REALTIME): it becomes numA033 (fallback A5z when unset), the third argument of the C01R realtime config.",
+"change":"Set only matters in eis_mode 2. Other branches do not read it here."
+},
+"media_experiences_sn.video_calling_width":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long (C1JG.A0M, spec 0xc48b028, via A5t). Used only when eis_mode is 2 (ON_DEVICE_REALTIME): it becomes numA032 (fallback A5x when unset), the second argument of the C01R realtime config.",
+"change":"Set only matters in eis_mode 2. Other branches do not read it here."
+},
+"media_experiences_sn.video_capture_fps":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long (C1JG.A0N, spec 0xc48b026, via A5w). It is the third argument of the OFF_DEVICE default C01R config (C07F.java:56-57) and the fallback for the realtime fourth argument (C07F.java:72). Also the video config value in the capture-config constructors (C07F.java:174 region).",
+"change":"Set changes the value passed into the OFF_DEVICE default config and the realtime fallback. What the config does with it is not in the code shown."
+},
+"media_experiences_sn.video_height":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long (C1JG.A0O, spec 0xc48b005, via A60) in the capture config builder. It is the numA03 value unless the HN/A4S path is taken (then A4X). numA03 is the second argument of the OFF_DEVICE default C01R (C07F.java:56) and an argument of the C00L constructor (C07F.java:201).",
+"change":"Setting it changes the value passed into the OFF_DEVICE config and the capture config. What the sensor does with it is not in the code shown."
+},
+"media_experiences_sn.video_height_eis":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long (C1JG.A0P, spec 0xc48b011, via A5x). It is the second argument of the C01R config in the lookahead branch (eis_mode 1) and the MetaEIS branch (eis_mode 4), where it is passed as numA032.",
+"change":"Set matters only for eis_mode 1 (lookahead) and 4 (MetaEIS, not on HN). Realtime (2) uses video_calling_* values instead."
+},
+"media_experiences_sn.video_width":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long (C1JG.A0Q, spec 0xc48b004, via A61). It becomes numA036 (from jA61, or A4Y on the HN path) passed as the third argument of the OFF_DEVICE default C01R (C07F.java:56) and in the C00L path (C07F.java:168 region).",
+"change":"Setting it changes the value passed into the OFF_DEVICE config. What the sensor does with it is not in the code shown."
+},
+"media_experiences_sn.video_width_eis":{
+"product":"Ray-Ban Meta",
+"does":"Read as a long (C1JG.A0R, spec 0xc48b010, via A5z). In the lookahead branch (eis_mode 1) and the MetaEIS branch (eis_mode 4) it is the third argument of the C01R config (numA033). In the realtime branch (eis_mode 2) it is the fallback for video_calling_height when that is unset.",
+"change":"Setting it changes the EIS-mode width in lookahead and MetaEIS. In realtime it only applies when video_calling_height is unset."
+},
+"media_libmc2.enable_async_surface_input_encode_drain":{
+"product":"glasses",
+"does":"In MetaC2InputSurface::createDrainer, the flag is read only for DrainMode 0 (DrainMode 2 always takes the first path and DrainMode 1 or others always take the second). When true, the first path builds a 256-byte drainer object (with a log line 'MetaC2'); when false, the second path builds a 112-byte MetaC2ConsumerListener object.",
+"change":"Only DrainMode 0 is affected. Off: DrainMode 0 builds the 112-byte MetaC2ConsumerListener drainer. The vendor copy (libmc2_vendor.so) has the same branch."
+},
+"media_libmc2.enable_metac2_player_hidl_mc2":{
+"product":"glasses",
+"does":"When persist.vendor.media.metac2_player.enable_hidl_mc2 is not set, the bool (spec 0x14ccc006) is read in MetaC2VideoPlayer::init. True keeps w24=1; false sets w24=0. w24 is then the bool argument of MetaC2Codec::Create(preference, bool).",
+"change":"On: the codec is created with the bool true. Off: created with false. The meaning of that bool inside MetaC2Codec::Create is not in the snippet."
+},
+"media_stream_service.gesture_1finger_tap_enabled":{
+"product":"glasses",
+"does":"When the flag is on, a key up of keycode 1039 (one-finger tap) sends view-model action 6 and consumes the event. When off, no action 6 is sent (the code after the inner block is cut off in the snippet).",
+"change":"On: a one-finger tap sends action 6 to the live stream. Off: no action 6. Action 6 is not decoded in the code shown."
+},
+"media_stream_service.gesture_capture_button_press_enabled":{
+"product":"glasses",
+"does":"When on and the event is a key up, the capture button (keycode 1029) sends view-model action 17 and consumes the event. When off, the press is consumed (return true) and no action is sent.",
+"change":"On: a capture-button press sends action 17 to the live stream. Off: the press is consumed without an action. Action 17 is not decoded in the code shown."
+},
+"media_stream_service.gesture_double_tap_enabled":{
+"product":"glasses",
+"does":"When on, a key up of keycode 1045 (double-tap) sends view-model action 1 and calls endCallIfPossible(). The handler returns false in both cases, so the event is passed on.",
+"change":"Off: a double-tap does nothing for the live stream (no action 1, no end call)."
+},
+"media_stream_service.gesture_tap_and_hold_enabled":{
+"product":"glasses",
+"does":"When on, a key up of keycode 1052 (hold) sends view-model action 2 and calls endCallIfPossible(). The handler returns false, so the event is passed on.",
+"change":"On: a hold ends the live stream (action 2 and endCallIfPossible). Off: nothing happens for this key."
+},
+"mediaprocessing_on_xn.enable_mediaprocessing_photos":{
+"product":"glasses",
+"does":"The photo mode gate in C07H returns this flag directly for photo capture mode (case 0 of the mode switch): 'return this.A00.A4g()'. A4g reads C1JC.A00. When false, photo capture is not sent through media processing.",
+"change":"On: photo mode passes the gate (the C07H photo case returns true). Off: it returns false."
+},
+"mediaprocessing_on_xn.enable_mediaprocessing_videos":{
+"product":"glasses",
+"does":"For video capture modes (cases 1, 5, 7 and 8 of the mode switch in C07H), after the switch the code returns false unless this flag is true: 'if (!c07j.A4r()) { return false; }'. Cases 4 and 9 return false before that, and case 6 returns it in its own expression.",
+"change":"Off: every video mode in this gate returns false. On: video modes pass this check and go on to the rest of the gate."
+},
+"mediaprocessing_on_xn.hyperlapse_sdr_enabled":{
+"product":"glasses",
+"does":"Read as bool C1JC.A03 (id 0x40811026602d0000) and used by the Hyperlapse gate (mode 7 in C07H.A09): with the request flag A07 off, the gate returns this value; with A07 on, it needs A06 and uses A02 instead. The gate returns false when A4r() is false. The code does not name which of the two flags is the SDR one.",
+"change":"On: with A07 off, the Hyperlapse gate returns true (if A4r() is also true)."
+},
+"mediaprocessing_on_xn.mediaprocessing_app_scheduler_timeout":{
+"product":"glasses",
+"does":"getMediaProcessingSessionTimeout() returns this long (id 0x60110000) and logs it as 'Media processing session timeout: %ld' (LibMpsSettingsController). The unit is not in the code."
+},
+"mediaprocessing_on_xn.mediaprocessing_photos_transfer_raw":{
+"product":"glasses",
+"does":"getPhotoProcessingTransferRaw() returns the bool (id 0x60020000) OR'd with a controller field at offset 0xc (true when that field equals 1). The result is logged as 'Media processing photos transfer raw files: %d'. getVideoProcessingTransferRaw() reads the same id 0x60020000, ORs a field at offset 0x8, and logs 'Media processing videos transfer raw files'.",
+"change":"On: the getter returns true. What the caller does with true is not in the code shown."
+},
+"mediaprocessing_on_xn.mediaprocessing_videos_ae_compute":{
+"product":"glasses",
+"does":"getIsVideoAutoEnhanceComputeHTP() returns true only when the long (id 0x60150000) equals 2. Now it is 0, so it returns false.",
+"change":"Value 2: the getter returns true (HTP compute). Other values: false."
+},
+"mediaprocessing_on_xn.mediaprocessing_videos_eis_compute":{
+"product":"glasses",
+"does":"getIsVideoEisComputeEVA() returns true only when the long (id 0x60140000) equals 2. Now it is 2, so it returns true.",
+"change":"Value 2: the getter returns true (EVA compute). Other values: false."
+},
+"mediaprocessing_on_xn.mediaprocessing_videos_occlusion_detection_enabled":{
+"product":"glasses",
+"does":"getIsVideoOcclusionDetectionEnabled() returns the bool (id 0x60350000) AND a byte at controller offset 0x10 (nonzero). So it is true only when both are set. The meaning of the byte is not in the code shown.",
+"change":"On: the getter returns true only if the byte at offset 0x10 is also nonzero."
+},
+"mediaprocessing_on_xn.photos_process_hinges_closed":{
+"product":"glasses",
+"does":"getProcessPhotosOnHingesClosed() returns the bool (id 0x60030000) and logs it as 'Media processing photos when hinges closed: %d' (LibMpsSettingsController).",
+"change":"On: the getter returns true and logs 1. What processing then runs is not in the code shown."
+},
+"mediaprocessing_on_xn.slowmotion_hdr_enabled":{
+"product":"glasses",
+"does":"In the gate for slow motion (C07H.A09 case 8, C07Y.SlowMotion), this is the secondary flag (A04, zA4l). The gate reads it only when the request sets A07 and A06 is also set; otherwise it returns false (A06 unset) or uses the primary flag (A07 unset).",
+"change":"On: with the request setting A07 and A06, the gate returns true (if A4r() is also true)."
+},
+"mediaprocessing_on_xn.slowmotion_sdr_enabled":{
+"product":"glasses",
+"does":"In the same gate (case 8), this is the primary flag (A05, zA4m via A4o()). The gate returns it when the request does not set A07, and A4r() is true.",
+"change":"On: with the request not setting A07, the gate returns true (if A4r() is also true)."
+},
+"mediaprocessing_on_xn.video_3k_hdr_enabled":{
+"product":"glasses",
+"does":"In the gate for VideoHighRes (C07H.A09 case 2), this is the secondary flag (A06, zA4l via A4h()). The gate reads it only when the request sets A07 and A06 is also set.",
+"change":"On: with the request setting A07 and A06, the gate returns true for VideoHighRes (if A4r() is also true)."
+},
+"mediaprocessing_on_xn.video_3k_sdr_enabled":{
+"product":"glasses",
+"does":"In the same gate (case 2), this is the primary flag (A07, zA4m via A4i()). The gate returns it when the request does not set A07, and A4r() is true.",
+"change":"On: with the request not setting A07, the gate returns true for VideoHighRes (if A4r() is also true)."
+},
+"mediaprocessing_on_xn.video_60fps_hdr_enabled":{
+"product":"glasses",
+"does":"In the gate for VideoHighFrameRate (C07H.A09 case 3), this is the secondary flag (A08, zA4l via A4j()). The gate reads it only when the request sets A07 and A06 is also set.",
+"change":"On: with the request setting A07 and A06, the gate returns true for 60 fps (if A4r() is also true)."
+},
+"mediaprocessing_on_xn.video_60fps_sdr_enabled":{
+"product":"glasses",
+"does":"In the gate for VideoHighFrameRate (C07H.java A09, case 3), this is the primary flag (A09 via A4k(), C1JC.A09). The gate returns it when the request does not set A07, and A4r() is true.",
+"change":"On: with the request not setting A07, the gate returns true for 60 fps (if A4r() is also true)."
+},
+"mediaprocessing_on_xn.video_standard_hdr_enabled":{
+"product":"glasses",
+"does":"In the gate switch at C07H.java 116-117 (C07Y ordinals 0, 1, 5), this is the secondary flag (A4p(), C1JC.A0A). The gate reads it only when the request sets A07 and A06 is also set; otherwise it returns false (A06 unset) or uses the primary flag (A07 unset).",
+"change":"On: with the request setting A07 and A06, the gate returns true for those modes (if A4r() is also true)."
+},
+"mediaprocessing_on_xn.video_standard_sdr_enabled":{
+"product":"glasses",
+"does":"In the same switch (C07H.java 116-117, ordinals 0, 1, 5), this is the primary flag (A4q(), C1JC.A0B). The gate returns it when the request does not set A07, and A4r() is true.",
+"change":"Off: with the request not setting A07, the gate returns false for those modes."
+},
+"music_concurrency_behaviors.enable_meta_wearables_concurrency_music_interrupts_sessions":{
+"product":"glasses",
+"does":"WearableConcurrencyAudioGating.isMusicInterruptionAllowed() reads it (default false). The only reader found is the action-button path in WearableAmSgDelegate: for key case 2, when it is allowed and the action-button handler says the key launches music, the key is handled there.",
+"change":"On lets the action button's launch-music action run through the action-button handler. Off is the current setting. The 'interrupts sessions' part of the name is not shown in the code read here."
+},
+"music_concurrency_behaviors.meta_wearables_concurrency_music_resume_timeout_ms":{
+"product":"glasses",
+"does":"Read as a double through WearableConcurrencyAudioGating.getMusicResumeTimeoutMs(). A value below 0 disables the resume timeout (isMusicResumeTimeoutEnabled() is false). MecMusicConcurrencyPolicy.isStaleByTimeout() returns true when the last music pause is older than this many ms, so the music is not resumed. SgAudioPolicyController also checks it for the A2DP resume.",
+"change":"Set to 0 or more to enable the resume window, in ms since the pause. Set below 0 to disable it. The glasses have -1.0 (disabled)."
+},
+"mwa_ios_landscape_mode.enabled":{
+"product":"iPhone app",
+"does":"The landscape flag (C1JI.A00, read as A4S). When it is on and InterfaceC008408b.A04(A01.A0I) is also true, the photo size and thumbnail reads use the landscape getters (C07H.java 41-49), and the video config reads in C07F.java take A4X and A4Y in place of A60 and A61 (47-49, 157-170). Otherwise the default getters are used. For the photo size, if sys.settings.photo_raw_compression_enabled is 1 the size is fixed at 6048 x 2016 instead.",
+"change":"On: the landscape getters are used when the A04 check is also true. Off (now): the default getters are used."
+},
+"mwa_ios_landscape_mode.image_height":{
+"product":"iPhone app",
+"does":"C1JI.A01 (A4T). It is the photo height (C07H.java 46). When sys.settings.photo_raw_compression_enabled is 1 the height is fixed at 2016. Otherwise it is this value on the landscape path (A4S and the A04 check), and A4N otherwise.",
+"change":"Changes the photo height on the landscape path, unless the raw-compression sys prop is 1."
+},
+"mwa_ios_landscape_mode.image_width":{
+"product":"iPhone app",
+"does":"C1JI.A02 (A4U). It is the photo width (C07H.java 41). When sys.settings.photo_raw_compression_enabled is 1 the width is fixed at 6048. Otherwise it is this value on the landscape path (A4S and the A04 check), and A4O otherwise.",
+"change":"Changes the photo width on the landscape path, unless the raw-compression sys prop is 1."
+},
+"mwa_ios_landscape_mode.thumbnail_capture_height":{
+"product":"iPhone app",
+"does":"C1JI.A03 (A4V). It is the sixth argument of the photo config object built at C07H.java 46-49 (new C00U(...)). It is used on the landscape path (A4S and the A04 check); otherwise A5l is used.",
+"change":"Changes the thumbnail height on the landscape path."
+},
+"mwa_ios_landscape_mode.thumbnail_capture_width":{
+"product":"iPhone app",
+"does":"C1JI.A04 (A4W). It is the fifth argument of the photo config object built at C07H.java 46-48 (new C00U(...)). It is used on the landscape path (A4S and the A04 check); otherwise A5m is used.",
+"change":"Changes the thumbnail width on the landscape path."
+},
+"mwa_ios_landscape_mode.video_height":{
+"product":"iPhone app",
+"does":"C1JI.A05 (A4X). In the video config builder (C07F.java 47-48) it becomes the first size argument of new C01R(OFF_DEVICE, ...) when the landscape path is on (A4S and the A04 check); otherwise A60 is used. The code does not show whether this argument is the height.",
+"change":"Changes that size argument on the landscape path."
+},
+"mwa_ios_landscape_mode.video_width":{
+"product":"iPhone app",
+"does":"C1JI.A06 (A4Y). In the same builder (C07F.java 47-49) it is read as jA61 and becomes the second size argument of C01R (after the value from A4X). On the landscape path it is used; otherwise A61 is used. The code does not show whether this argument is the width.",
+"change":"Changes that size argument on the landscape path."
+},
+"ondevicecapture.camera_stream_bitrate":{
+"product":"glasses",
+"does":"cameraStreamBitrate() returns the long (id 0xa0040000) and logs it as 'Camera bitrate %ld' (tag EDI_SGAPI_mobileconfig). The code shown does not use it further."
+},
+"ondevicecapture.camera_stream_dewarp":{
+"product":"glasses",
+"does":"cameraStreamDewarp() returns the bool (id 0xa0070000) and logs it as 'Camera dewarp %d' (tag EDI_SGAPI_mobileconfig). The code shown does not use it further."
+},
+"ondevicecapture.camera_stream_framerate":{
+"product":"glasses",
+"does":"cameraStreamFramerate() returns the long (id 0xa0030000) and logs it as 'Camera framerate %ld'. The value is None here; what the getter returns when the value is unset is not in the code shown."
+},
+"ondevicecapture.camera_stream_hdr":{
+"product":"glasses",
+"does":"cameraStreamHdr() returns the bool (id 0xa0060000) and logs it as 'Camera hdr %d'. The value is None here; the library default is not in the code shown."
+},
+"ondevicecapture.camera_stream_height":{
+"product":"glasses",
+"does":"cameraStreamHeight() returns the long (id 0xa0020000) and logs it as 'Camera height %ld'. The code shown does not use it further."
+},
+"ondevicecapture.camera_stream_stabilize":{
+"product":"glasses",
+"does":"cameraStreamStabilize() returns the bool (id 0xa0050000) and logs it as 'Camera stabilize %d'. The code shown does not use it further."
+},
+"ondevicecapture.camera_stream_width":{
+"product":"glasses",
+"does":"cameraStreamWidth() returns the long (id 0xa0010000) and logs it as 'Camera width %ld'. The code shown does not use it further."
+},
+"ondevicecapture.max_session_duration":{
+"product":"glasses",
+"does":"maxSessionDuration() returns the long (id 0xa0080000) and logs it as 'Max session duration %ld'. The unit (ms) is not in the code shown; the name says ms."
+},
+"ondevicecapture.min_session_duration":{
+"product":"glasses",
+"does":"minSessionDuration() returns the long (id 0xa00a0000) and logs it as 'Min session duration %ld'. The code shown does not show what happens to a shorter capture."
+},
+"ondevicecapture.skip_checks":{
+"product":"glasses",
+"does":"skipChecks() returns the bool (id 0x4081_17a3_a00e0000) and logs it as 'Skip device state checks %d' (tag EDI_SGAPI_mobileconfig). The code shown does not show which device checks are skipped."
+},
+"palm_auth.is_enabled":{
+"product":"glasses",
+"does":"PassivePhoneUnlockManager.A05() (C0XC.java 184-188) reads the bool C0Y8.A00 (id 0x4081_1439_9000_0000), stores it in a field, and logs 'Palm unlock enabled from mobile config: <value>' (tag SysUI.PassivePhoneUnlockManager). The batch's java caller (CaptureCameraManagerImpl) calls a different A05 and is not this reader. That the id is palm_auth.is_enabled comes from the first round; the code does not name the param. What the field does is not in the code shown."
+},
+"palmcheck.anti_spoof_enabled":{
+"product":"glasses",
+"does":"The palm vision service reads the bool 0x4081_16ef_3001_0000 (from 0x2480c), stores it in a struct byte at x23, and its constructor logs it as 'PalmVisionServiceV2: Constructor AntiSpoofEnabled: %d'. The code shown does not show what the anti-spoof check does."
+},
+"palmcheck.doff_detector_enabled":{
+"product":"glasses",
+"does":"SgPalmAuthUI reads the bool (C0V1.A00, id 0x6081_16ef_300b0000) into isDoffDetectorEnabled. When it is on, it starts a device-state listener on the background handler (DeviceStateManager) and logs 'Doff detector enabled - initializing device state listener'. When it is off, it logs 'Doff detector disabled via MC.palmcheck.doff_detector_enabled' and returns. A MobileConfig change re-runs this (C0NU.java 63: 'Doff detector MobileConfig changed: was X, now Y - reinitializing').",
+"change":"On: the listener is started and watches device state. Off (now): it is not started."
+},
+"power_state_hn.deep_sleep_check_imu":{
+"product":"glasses",
+"does":"Sets DeepSleepHandler.mCheckImuStateForDeepSleep (constructed true; overwritten at boot phase 550 with SgPowerMobileConfigClient.isDeepSleepCheckImuEnabled(), which is MC (default false) OR system property persist.settings.deep_sleep_check_imu_enabled). When the glasses count as mounted and this is on, the mounted state is cleared unless the IMU state is 1.",
+"change":"On requires the IMU state to be 1 before a mounted glasses state counts toward deep sleep. Off skips that IMU check. The glasses have false."
+},
+"power_state_hn.deep_sleep_timeout_ms":{
+"product":"glasses",
+"does":"DeepSleepHandler.getDeepSleepTimeout(): system property sys.settings.deepsleeptimeout (minutes) wins if above 0. Otherwise the MC value (ms, pushed through setDeepSleepTimeoutFromMobileConfig) is used if above 0. Otherwise the code default of 1200000 ms (20 min).",
+"change":"Sets the deep sleep timer length in ms. Unset or 0 keeps 20 minutes. The glasses have it unset (None)."
+},
+"power_state_hn.hibernate_abl_restore_enabled":{
+"product":"glasses",
+"does":"SgPowerMobileConfigClient.isHibernateAblRestoreEnabled() = MC (default false) OR system property persist.sys.meta.hibernate_abl_restore_enabled. In HibernateHandler, when on, the hibernation service is used with restore type set to \"abl\" and the power state service is not used. The dump reports hibernate version 2 when on, 1 when off.",
+"change":"On selects the ABL restore path for hibernate (hibernate version 2 in the dump). Off is the current setting."
+},
+"power_state_hn.hibernate_bt_watchdog_timeout_s":{
+"product":"glasses",
+"does":"SgPowerMobileConfigClient.getBTWatchdogTimeoutS() returns the MC value, falling back to 60 s if unset. HibernateHandler uses it when turning Bluetooth on after resume: it waits up to this many seconds for the Bluetooth adapter, retrying every 1 s.",
+"change":"Sets how many seconds the hibernate resume waits for the Bluetooth adapter. The glasses have 15."
+},
+"power_state_hn.hibernate_deep_sleep_enabled":{
+"product":"glasses",
+"does":"SgPowerMobileConfigClient.isHibernateDeepSleepEnabled() = MC (default false) OR system property persist.sys.meta.hibernate_deep_sleep_enabled. In HibernateHandler, deep-sleep hibernate is allowed when hibernate_por_all is on, or when hibernate_enabled and this flag are both on. canHibernate refuses the shutdown,deep_sleep reasons otherwise.",
+"change":"On allows hibernate from the deep sleep reasons (shutdown,deep_sleep and the hinge variants), but only with hibernate_enabled on (or hibernate_por_all). Off is the current setting."
+},
+"power_state_hn.hibernate_enabled":{
+"product":"glasses",
+"does":"SgPowerMobileConfigClient.isHibernateEnabled() = MC (default false) OR system property persist.sys.meta.hibernate_enabled. HibernateHandler stores it as mHibernateMCEnabled. The power-slider check requires it on, and deep sleep requires it unless hibernate_por_all is on.",
+"change":"On is the master switch for the power-slider hibernate reason and for deep-sleep hibernate unless por_all is on. Off is the current setting."
+},
+"power_state_hn.hibernate_por_all_enabled":{
+"product":"glasses",
+"does":"SgPowerMobileConfigClient.isHibernatePorAllEnabled() is true when MC (default false) or the system property persist.sys.meta.hibernate_por_all_enabled is on. It is also true when hibernate_enabled, deep_sleep and smart_charging are all on. In HibernateHandler, por_all lets deep sleep and smart charging hibernate without hibernate_enabled.",
+"change":"On enables deep-sleep and smart-charging hibernate even when hibernate_enabled is off. The power-slider check does not use it. The glasses have it unset (None)."
+},
+"power_state_hn.hibernate_power_slider_enabled":{
+"product":"glasses",
+"does":"SgPowerMobileConfigClient.isHibernatePowerSliderEnabled() = MC (default false) OR system property persist.sys.meta.hibernate_power_slider_enabled. In HibernateHandler the power-slider hibernate reason needs hibernate_enabled and this flag both on. por_all does not bypass it.",
+"change":"On allows hibernate from the power slider reason (shutdown,power_slider), with hibernate_enabled on. Off is the current setting."
+},
+"power_state_hn.hibernate_smart_charging_enabled":{
+"product":"glasses",
+"does":"Hibernate reason gate for the smart_charging shutdown state. HibernateHandler allows it when hibernate_por_all_enabled is on, or when hibernate_enabled and this flag are both on. When it is off, the shutdown reason \"smart_charging\" is refused with \"smart_charging_not_enabled\". Also a fallback sysprop persist.sys.meta.hibernate_smart_charging_enabled.",
+"change":"Setting it true lets the smart_charging hibernate state run, provided hibernate_enabled is also true (or hibernate_por_all_enabled is true). Setting it false blocks that state."
+},
+"power_state_hn.smart_charging_timeout_ms":{
+"product":"glasses",
+"does":"Fallback smart-charging timer length in ms. getSmartChargingTimeoutMs() uses the sysprop sys.settings.smart_charging_timeout first (minutes, if above 0); otherwise this value if above 0; otherwise the built-in mSmartChargingDefaultTimerLengthMs.",
+"change":"A value above 0 replaces the built-in default timer length; 0 or less keeps the default."
+},
+"quickclips_on_xn.enabled":{
+"product":"glasses",
+"does":"The shutter mode for the quick-clip path: when the flag A6Y() is true the code returns C07Y.DynamicPhoto, otherwise C07Y.Photo (C07V.java 104-108).",
+"change":"On: the shutter resolves to DynamicPhoto (a photo with a clip). Off (now): it resolves to Photo."
+},
+"quickclips_on_xn.end_earcon_lead_time_ms":{
+"product":"glasses",
+"does":"In EarconCoordinator (C1KB.java 317-332), for DynamicPhoto and only when the play-at-video-start flag is false, a value above 0 schedules the end earcon (id 12) at (video_duration_ms minus this lead time). The log reads 'Scheduling delayed earcon 12 in N ms'. A value of 0 schedules nothing.",
+"change":"Non-zero (with play-at-start off): the end earcon plays that many ms before the clip ends."
+},
+"quickclips_on_xn.on_device_processing_enabled":{
+"product":"glasses",
+"does":"The on-device gate for DynamicPhoto (C07H.java case 6) returns A4g() && A4r() && A5B(). This flag is the A5B term (the batch's caller), so it passes the gate only when the other two are also true.",
+"change":"On: with the other two terms true, DynamicPhoto passes this gate and uses on-device processing. Off (now): it does not."
+},
+"quickclips_on_xn.play_end_earcon_on_video_start":{
+"product":"glasses",
+"does":"The flag is read as A5C(). While it is true, the delayed end-earcon scheduling in EarconCoordinator (C1KB.java 321-346) does not run: both the scheduling block and the case 18 path require !A5C(). With it false, the end earcon is scheduled at duration minus lead time when the lead time is above 0. Where the earcon plays when true is not in the code shown.",
+"change":"Off: the end earcon is scheduled at (video_duration_ms minus end_earcon_lead_time_ms) when the lead time is above 0."
+},
+"quickclips_on_xn.video_capture_fps":{
+"product":"glasses",
+"does":"C07F.java 346: the value A5E() is an Integer override; when it is null the base config value c00l2.A0O is used. The result goes into the quick-clip C00L config.",
+"change":"Any value replaces the base config's frame rate. Unset: the base value is used."
+},
+"quickclips_on_xn.video_duration_ms":{
+"product":"glasses",
+"does":"In CaptureFlowManagerImpl (around line 212), for mode ordinal 6 (DynamicPhoto) the flow's duration is A4z() in milliseconds. EarconCoordinator (C1KB.java 324) uses the same value to schedule the end earcon.",
+"change":"Changes the length of a DynamicPhoto clip (the duration the flow uses)."
+},
+"quickclips_on_xn.video_enable_hdr":{
+"product":"glasses",
+"does":"C07F.java 382: the value A50() is the 8th argument of new C00L(...), which sets field A07 (C00L.java constructor, bool6 to A07). C07H.A09 reads c00l.A07 as the request flag: when it is set, the gate uses the secondary (HDR) flags and also requires A06. Whether this is the quick-clip HDR path in the wider sense is not shown.",
+"change":"On: the capture config sets A07, so the mode gate takes the secondary (HDR) flags path (requires A06 too)."
+},
+"quickclips_on_xn.video_height":{
+"product":"glasses",
+"does":"Read via A5F() in the case-6 camera config branch; the value is passed as a size into a new camera config (C00L). When unset it falls back to c00l2.A0a.",
+"change":"A set value replaces the fallback size in the case-6 config."
+},
+"quickclips_on_xn.video_width":{
+"product":"glasses",
+"does":"Read via A5G() in the same case-6 branch; passed as a size into the new camera config (C00L). When unset it falls back to c00l2.A0b.",
+"change":"A set value replaces the fallback width in the case-6 config."
+},
+"screen_off_timeout.value":{
+"product":"glasses",
+"does":"Screen-off timeout in ms. SgDisplayScreenOffTimeoutHandler writes it to Settings.System 'screen_off_timeout' (25000 when the param is unset). When retail demo mode is on (ar_assisted_demo.android_enable_assisted_demo_addon), the handler uses ar_assisted_demo.assisted_demo_hn_screen_timeout instead.",
+"change":"Sets the value the handler writes to Settings.System screen_off_timeout, which is the time before the display turns off."
+},
+"sessionservice_on_sg.tier_for_device_thermal_state_shutdown":{
+"product":"glasses",
+"does":"Read in the TierRule constructor (libenforcement.so). The value is used as a tier index. A value outside [0, N) is logged as 'TierRule: Config value %lld is out of bounds [0, %zu), using default ITier::HIGH' and HIGH is used.",
+"change":"A value in range picks that tier. The tier list is not in the excerpt."
+},
+"sg_ax.low_battery_warning_level":{
+"product":"glasses",
+"does":"C0C6.A00() gives the warning level: the persist.sg.low_battery_warning_level property when it parses as a number; otherwise the value from getter A4b (the param name is not shown at that call)."
+},
+"sg_ax.sg_2x_text_scaling":{
+"product":"glasses",
+"does":"Chooses the font-scale table for the settings font-size shadow property: fontScaleSettingMap2x when on, fontScaleSettingMapLegacy when off.",
+"change":"On: the 2x table maps setting values to font scales. Off: the legacy table is used."
+},
+"sg_ax.short_low_battery_tts_displayless":{
+"product":"glasses",
+"does":"C0Kf.java:430-432: when the getter A2B(AbstractC02920Kl.A02) is true, the low-battery earcon (203 at 15%, else 171) is played with TTS params use_short_low_battery_warning=1 and headset_battery. When false, the earcon plays alone. The param name behind A2B is not shown.",
+"change":"On: the earcon carries the short-phrase params. Off: the earcon plays alone."
+},
+"sg_ax.suppress_low_battery_15_earcon_tts_in_call":{
+"product":"glasses",
+"does":"C0Kf.java:395-420: at level 15, when field A0E is set and getter A2B(AbstractC02920Kl.A03) is true, the 15% earcon (203) and its TTS are skipped. The LED animation still plays. When the getter is false, earcon 0 plays, an event is logged, and the 15% earcon and TTS path runs. The param name behind A2B is not shown.",
+"change":"Off: earcon 0 plays and the 15% earcon and TTS run."
+},
+"sg_ble_peripheral_latency.enabled":{
+"product":"glasses",
+"does":"BluetoothProperties.loadPeripheralLatencyMode() reads it into PERIPHERAL_LATENCY_ENABLE, together with the three other params, and logs all four as 'PeripheralLatencyMode MC values: ...'. If the read throws, none are stored and 'Failed to fetch peripheral latency MC' is logged."
+},
+"sg_ble_peripheral_latency.fast_adv":{
+"product":"glasses",
+"does":"loadPeripheralLatencyMode() reads it and stores it in FAST_ADV_MODE, logged with the other three values."
+},
+"sg_ble_peripheral_latency.idle_timeout_ms":{
+"product":"glasses",
+"does":"loadPeripheralLatencyMode() reads it as an int and stores it in PERIPHERAL_LATENCY_IDLE_TIMEOUT, logged with the other three values."
+},
+"sg_ble_peripheral_latency.latency_timeout_ms":{
+"product":"glasses",
+"does":"loadPeripheralLatencyMode() reads it as an int and stores it in PERIPHERAL_LATENCY_TIMEOUT, logged with the other three values."
+},
+"sg_device_connectivity_config.a2dp_max_reconnection_attempt":{
+"product":"glasses",
+"does":"getA2dpMaxReconnectionAttempt() returns the MC long. On a read failure it logs an error and returns 0."
+},
+"sg_device_connectivity_config.btc_auto_connect_on_boot":{
+"product":"glasses",
+"does":"XNovaSystem.createBtPropertiesBuilder() puts this MC bool first in the list of suppliers for classicEnabledAtInit, then the system property persist.system_ext.meta.bt.classic_enabled_at_init, then a static true. How the list resolves a false value is not in the excerpt."
+},
+"sg_device_connectivity_config.enable_rfcomm_only_btc":{
+"product":"glasses",
+"does":"isRfcommOnlyBtcEnabled() reads the MC bool (false if the read throws), logs 'Rfcomm-only BTC feature enabled: <value>', and returns the value. Callers are not in the excerpt."
+},
+"sg_device_connectivity_config.hfp_max_reconnection_attempt":{
+"product":"glasses",
+"does":"getHfpMaxReconnectionAttempt() returns the MC long. On a read failure it logs an error and returns 0."
+},
+"sg_device_connectivity_config.profile_reconnection_attempt_wait_time":{
+"product":"glasses",
+"does":"Both getA2dpMaxReconnectionAttempt() and getHfpMaxReconnectionAttempt() store it as an int in PROFILE_RECONNECTION_TIMEOUT_MS. If the read fails, the store does not happen and an error is logged."
+},
+"sg_partner_ecosystem.next_gen_music_platform_enabled":{
+"product":"glasses",
+"does":"When on, the assistant logs 'NextGen music platform enabled, skipping handling gesture', so its own gesture handling is skipped. The off path (proxy forwarding to AIActionsHandler over DataX) is not in the excerpt."
+},
+"sg_partner_ecosystem.sn_mwsdk_redirect_payload":{
+"product":"Ray-Ban Meta",
+"does":"In assistant, when this bool is on, the code logs 'AIActionsHandler Payload redirection requested' and reads the package string (next param). If the bool is off, the code skips the redirect. The 'AIActionsHandler Sending [packageName=%s, payload=%s, voiceInteractionId=%s]' log is written before this bool is read, so the payload text is logged whether or not this is on.",
+"change":"On, a non-empty package name makes the payload go to that package. An empty package skips the redirect."
+},
+"sg_partner_ecosystem.sn_mwsdk_redirect_payload_package":{
+"product":"Ray-Ban Meta",
+"does":"Read as a string (id 0x503c) after the redirect bool is on. If it is empty the redirect is skipped; otherwise the code logs 'AIActionsHandler Redirecting payload to package: %s' and passes the package on.",
+"change":"Setting a package name sends the payload to that package while the redirect bool is on."
+},
+"sg_partner_ecosystem.sn_mwsdk_retry_timeout":{
+"product":"Ray-Ban Meta",
+"does":"In assistant datax::Service::Configuration, after the log 'AIActionsHandler Launch attempt was successful. Will resend payload after timeout', the code reads this long (id 0x5062) and then takes a mutex and acquires a wakelock. The log says the payload is resent after this timeout; the wait itself is past the batch.",
+"change":"Changes how long after a successful launch the payload is resent."
+},
+"sgtelemetry_on_device.pending_transfer_limit_count":{
+"product":"glasses",
+"does":"AirshipUploadProcessor::process reads this long (id 0x70020000). When the count loaded from the processor's field at +0x58 is above the limit, it logs 'Upload quota reached, dropping pending transfer %s' and calls airship Controller::dropFile on the pending entry.",
+"change":"A lower limit starts dropping pending transfers at a smaller count."
+},
+"slowmotion_capture_exp.capture_height":{
+"product":"glasses",
+"does":"The camera switch (case 8) reads the C07G getter A5c(), which returns the long from the MobileConfig constant C1J6.A00, and boxes it. If the value is null, the caller uses the built-in c00l2.A0a instead. So unset gives the built-in value and a set value replaces it.",
+"change":"A set value replaces the built-in height in that case."
+},
+"slowmotion_capture_exp.capture_width":{
+"product":"glasses",
+"does":"The same camera switch (case 8) reads the C07G getter A5d(), which returns the long from C1J6.A01, boxes it, and falls back to the built-in c00l2.A0b when null. So unset gives the built-in value and a set value replaces it.",
+"change":"A set value replaces the built-in width in that case."
+},
+"slowmotion_capture_exp.video_capture_fps":{
+"product":"glasses",
+"does":"Read through C1JD.A5b() and passed into the camera capture config built in C07F case 8 as numA0337. When the value is null, the built-in c00l2.A0O is used instead. The C00L field A0O is not named in the code read, so the exact capture setting it drives is not shown.",
+"change":"A non-null value replaces the built-in A0O in that camera config. Null keeps the built-in value."
+},
+"smartglasses_dsp_xra_version.enable_v2":{
+"product":"glasses",
+"does":"tesserd reads the bool through a config getter (vtable +0x50) and writes the string 'true' or 'false' to the system property persist.vendor.tesserd.dsp.xrav2.desired. What reads that property afterwards was not traced.",
+"change":"The value is copied into persist.vendor.tesserd.dsp.xrav2.desired as 'true' or 'false'."
+},
+"smartglasses_locationservice.fused_location_throttle_ms":{
+"product":"glasses",
+"does":"LocationUpdateThrottler::restart() reads one config getter (vtable +0x280) and stores the value as the throttle interval. If the value is at least 1, it logs 'Throttler enabled with %ldms. It throttled %ld locations last time.' with that value.",
+"change":"The value sets the throttle interval stored by restart(). The rule that decides when updates are emitted (shouldEmit) was not traced."
+},
+"sn_ar_daily_briefing.ignore_boot_reason":{
+"product":"glasses",
+"does":"When this flag is set, the boot-reason check is skipped and logs 'Skipping boot reason check. Boot reason: {}'.",
+"change":"On: the boot-reason check is skipped."
+},
+"sn_ar_daily_briefing.max_readiness_wait_time":{
+"product":"glasses",
+"does":"Sets the daily-briefing timeout timer to this value in ms and logs 'Set Daily Briefing timeout timer for {}ms' with maxWaitTime.",
+"change":"Sets the length of the timer; the code shows the set and the log only."
+},
+"system_health_service_on_sn.product_session_span_timeout_s":{
+"product":"Ray-Ban Meta",
+"does":"Used as the timeout for the ProductUsageSessionEnd task: SystemSessionController::setProductUsageSessionEndTask() sets that task with this value.",
+"change":"Changes when the ProductUsageSessionEnd task fires."
+},
+"video_quality_ar1g1.capture_3k_qp_i_max_hdr":{
+"product":"glasses",
+"does":"Read through A3w() (C1JE.java:222) as the first (HDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:245); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0K.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0K. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_3k_qp_i_max_sdr":{
+"product":"glasses",
+"does":"Read through A3x() (C1JE.java:227) as the second (SDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:245); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0K.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0K. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_3k_qp_i_min_hdr":{
+"product":"glasses",
+"does":"Read through A3y() (C1JE.java:232) as the first (HDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:243); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0L.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0L. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_3k_qp_i_min_sdr":{
+"product":"glasses",
+"does":"Read through A3z() (C1JE.java:237) as the second (SDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:243); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0L.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0L. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_3k_qp_p_min_hdr":{
+"product":"glasses",
+"does":"Read through A42() (C1JE.java:252) as the first (HDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:246); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0N.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0N. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_3k_qp_p_min_sdr":{
+"product":"glasses",
+"does":"Read through A43() (C1JE.java:257) as the second (SDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:246); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0N.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0N. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_3k_sdr_encode_bitrate":{
+"product":"glasses",
+"does":"Read through A3s() (C1JE.java:202) as the second (SDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:242); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0Z.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0Z. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_60fps_enable_hdr":{
+"product":"glasses",
+"does":"Read through A3d() (C1JE.java:127) and used in case 3 of the CaptureMode switch as z3 = A3d() || persist.vendor.camera.hlgenable (C07F.java:256). z3 is the HDR flag for the bitrate and QP pairs of this mode.",
+"change":"False: the pairs of this mode are read with z3 false. The code does not show HDR being switched off beyond that."
+},
+"video_quality_ar1g1.capture_60fps_hdr_encode_bitrate":{
+"product":"glasses",
+"does":"Read through A3a() (C1JE.java:112) as the first (HDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:277); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0Z.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0Z. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_60fps_i_frame_interval":{
+"product":"glasses",
+"does":"Read in case 3 as a nullable value, C07H.A03(A3p()) (C07F.java:273). Null falls back to the built-in c00l2.A0Q, not to the global interval.",
+"change":"Set: replaces the built-in keyframe interval for case 3. Unset: the built-in c00l2.A0Q applies."
+},
+"video_quality_ar1g1.capture_60fps_qp_i_max_hdr":{
+"product":"glasses",
+"does":"Read through A3g() (C1JE.java:142) as the first (HDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:280); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0K.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0K. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_60fps_qp_i_max_sdr":{
+"product":"glasses",
+"does":"Read through A3h() (C1JE.java:147) as the second (SDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:280); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0K.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0K. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_60fps_qp_i_min_hdr":{
+"product":"glasses",
+"does":"Read through A3i() (C1JE.java:152) as the first (HDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:278); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0L.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0L. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_60fps_qp_i_min_sdr":{
+"product":"glasses",
+"does":"Read through A3j() (C1JE.java:157) as the second (SDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:278); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0L.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0L. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_60fps_qp_p_min_hdr":{
+"product":"glasses",
+"does":"Read through A3m() (C1JE.java:172) as the first (HDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:281); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0N.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0N. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_60fps_qp_p_min_sdr":{
+"product":"glasses",
+"does":"Read through A3n() (C1JE.java:177) as the second (SDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:281); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0N.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0N. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_60fps_sdr_encode_bitrate":{
+"product":"glasses",
+"does":"Read through A3c() (C1JE.java:122) as the second (SDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:277); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0Z.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0Z. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_global_qp_i_max_hdr":{
+"product":"glasses",
+"does":"Shared value for all modes, read before the switch: A3R() (C1JE.java:72) via A01(2, value, z) at C07F.java:183, with the standard flag z. Read again in case 7 (Hyperlapse) as the first value of a pair: A4B() (C1JE.java:297), A02 with z3 at C07F.java:413, built-in default c00l2.A0K.",
+"change":"Set: the value is used for the pre-switch lookup and for case 7 when the lookup returns it. Unset: the SDR global value (raw) or the built-in default applies."
+},
+"video_quality_ar1g1.capture_global_qp_i_max_sdr":{
+"product":"glasses",
+"does":"Shared value for all modes, read before the switch: A3S() (C1JE.java:77) via raw (int) fallback at C07F.java:184, with the standard flag z. Read again in case 7 (Hyperlapse) as the second value of a pair: A4C() (C1JE.java:302), A02 with z3 at C07F.java:413, built-in default c00l2.A0K.",
+"change":"Set: the value is used for the pre-switch lookup and for case 7 when the lookup returns it. Unset: the SDR global value (raw) or the built-in default applies."
+},
+"video_quality_ar1g1.capture_global_qp_i_min_hdr":{
+"product":"glasses",
+"does":"Shared value for all modes, read before the switch: A3T() (C1JE.java:82) via A01(1, value, z) at C07F.java:181, with the standard flag z. Read again in case 7 (Hyperlapse) as the first value of a pair: A4D() (C1JE.java:307), A02 with z3 at C07F.java:412, built-in default c00l2.A0L.",
+"change":"Set: the value is used for the pre-switch lookup and for case 7 when the lookup returns it. Unset: the SDR global value (raw) or the built-in default applies."
+},
+"video_quality_ar1g1.capture_global_qp_i_min_sdr":{
+"product":"glasses",
+"does":"Shared value for all modes, read before the switch: A3U() (C1JE.java:87) via raw (int) fallback at C07F.java:182, with the standard flag z. Read again in case 7 (Hyperlapse) as the second value of a pair: A4E() (C1JE.java:312), A02 with z3 at C07F.java:412, built-in default c00l2.A0L.",
+"change":"Set: the value is used for the pre-switch lookup and for case 7 when the lookup returns it. Unset: the SDR global value (raw) or the built-in default applies."
+},
+"video_quality_ar1g1.capture_global_qp_p_max_hdr":{
+"product":"glasses",
+"does":"Shared value for all modes, read before the switch: A3V() (C1JE.java:92) via A01(4, value, z) at C07F.java:187, with the standard flag z. Read again in case 7 (Hyperlapse) as the first value of a pair: A4F() (C1JE.java:317), A02 with z3 at C07F.java:415, built-in default c00l2.A0M.",
+"change":"Set: the value is used for the pre-switch lookup and for case 7 when the lookup returns it. Unset: the SDR global value (raw) or the built-in default applies."
+},
+"video_quality_ar1g1.capture_global_qp_p_max_sdr":{
+"product":"glasses",
+"does":"Shared value for all modes, read before the switch: A3W() (C1JE.java:97) via raw (int) fallback at C07F.java:188, with the standard flag z. Read again in case 7 (Hyperlapse) as the second value of a pair: A4G() (C1JE.java:322), A02 with z3 at C07F.java:415, built-in default c00l2.A0M.",
+"change":"Set: the value is used for the pre-switch lookup and for case 7 when the lookup returns it. Unset: the SDR global value (raw) or the built-in default applies."
+},
+"video_quality_ar1g1.capture_global_qp_p_min_hdr":{
+"product":"glasses",
+"does":"Shared value for all modes, read before the switch: A3X() (C1JE.java:102) via A01(3, value, z) at C07F.java:185, with the standard flag z. Read again in case 7 (Hyperlapse) as the first value of a pair: A4H() (C1JE.java:327), A02 with z3 at C07F.java:414, built-in default c00l2.A0N.",
+"change":"Set: the value is used for the pre-switch lookup and for case 7 when the lookup returns it. Unset: the SDR global value (raw) or the built-in default applies."
+},
+"video_quality_ar1g1.capture_global_qp_p_min_sdr":{
+"product":"glasses",
+"does":"Shared value for all modes, read before the switch: A3Y() (C1JE.java:107) via raw (int) fallback at C07F.java:186, with the standard flag z. Read again in case 7 (Hyperlapse) as the second value of a pair: A4I() (C1JE.java:332), A02 with z3 at C07F.java:414, built-in default c00l2.A0N.",
+"change":"Set: the value is used for the pre-switch lookup and for case 7 when the lookup returns it. Unset: the SDR global value (raw) or the built-in default applies."
+},
+"video_quality_ar1g1.capture_hyperlapse_enable_hdr":{
+"product":"glasses",
+"does":"Read through A49() (C1JE.java:287) and used in case 7 of the CaptureMode switch as z3 = A49() || persist.vendor.camera.hlgenable (C07F.java:390). z3 is the HDR flag for the bitrate and QP pairs of this mode.",
+"change":"False: the pairs of this mode are read with z3 false. The code does not show HDR being switched off beyond that."
+},
+"video_quality_ar1g1.capture_hyperlapse_hdr_encode_bitrate":{
+"product":"glasses",
+"does":"Read through A46() (C1JE.java:272) as the first (HDR, by name) value of a pair. In case 7 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:411); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0Z.",
+"change":"Set: this value is used for case 7 before the built-in c00l2.A0Z. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_hyperlapse_i_frame_interval":{
+"product":"glasses",
+"does":"Read in case 7 as a nullable value, C07H.A03(A4M()) (C07F.java:407). Null falls back to the built-in c00l2.A0Q, not to the global interval.",
+"change":"Set: replaces the built-in keyframe interval for case 7. Unset: the built-in c00l2.A0Q applies."
+},
+"video_quality_ar1g1.capture_hyperlapse_sdr_encode_bitrate":{
+"product":"glasses",
+"does":"Read through A48() (C1JE.java:282) as the second (SDR, by name) value of a pair. In case 7 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:411); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0Z.",
+"change":"Set: this value is used for case 7 before the built-in c00l2.A0Z. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar1g1.capture_standard_hdr_encode_bitrate":{
+"product":"glasses",
+"does":"Read before the CaptureMode switch (switch at C07F.java:203) as A01(index, A5u(), z) at C07F.java:55, 69 and 172, with z the standard HDR flag. The SDR value A5v is the raw fallback (C07F.java:69, 173).",
+"change":"Set: the lookup returns this value for the standard encode before the mode cases run. Unset: the SDR value A5v is used."
+},
+"video_quality_ar1g1.florian_capture_3k_enable_hdr":{
+"product":"Oakley",
+"does":"HDR flag for 3K capture, read in case 2 of the CaptureMode switch: z3 = A3t() || persist.vendor.camera.hlgenable (C07F.java:221). A3t is this flag (C1JE.java:207, A2Q). C1JD.java:364 picks the constant by Build.DEVICE: hammerhead -> C1JR.A0t, greatwhite -> C1JR.A0r, otherwise C1JR.A0p. This entry is the default (any other device) branch, so it is read only on that device.",
+"change":"Sets the 3K HDR flag for the matching device (z3, case 2). What false does to the encoder beyond the value pairs is not shown."
+},
+"video_quality_ar1g1.florian_capture_standard_enable_hdr":{
+"product":"Oakley",
+"does":"HDR flag for standard capture: C07F.java:154 sets z when A3L() or persist.vendor.camera.hlgenable is true, and z is used by the standard lookups before the switch (C07F.java:55-173). A3L is this flag (C1JE.java:57, A32). C1JD.java:555 picks the constant by Build.DEVICE: hammerhead -> C1JR.A0u, greatwhite -> C1JR.A0s, otherwise C1JR.A0q. This entry is the default (any other device) branch.",
+"change":"Sets the standard HDR flag for the matching device (z at C07F.java:154). What false does beyond those lookups is not shown."
+},
+"video_quality_ar1g1.hn_capture_3k_enable_hdr":{
+"product":"Ray-Ban Display",
+"does":"HDR flag for 3K capture, read in case 2 of the CaptureMode switch: z3 = A3t() || persist.vendor.camera.hlgenable (C07F.java:221). A3t is this flag (C1JE.java:207, A2Q). C1JD.java:364 picks the constant by Build.DEVICE: hammerhead -> C1JR.A0t, greatwhite -> C1JR.A0r, otherwise C1JR.A0p. This entry is the greatwhite branch, so it is read only on that device.",
+"change":"Sets the 3K HDR flag for the matching device (z3, case 2). What false does to the encoder beyond the value pairs is not shown."
+},
+"video_quality_ar1g1.hn_capture_standard_enable_hdr":{
+"product":"Ray-Ban Display",
+"does":"HDR flag for standard capture: C07F.java:154 sets z when A3L() or persist.vendor.camera.hlgenable is true, and z is used by the standard lookups before the switch (C07F.java:55-173). A3L is this flag (C1JE.java:57, A32). C1JD.java:555 picks the constant by Build.DEVICE: hammerhead -> C1JR.A0u, greatwhite -> C1JR.A0s, otherwise C1JR.A0q. This entry is the greatwhite branch.",
+"change":"Sets the standard HDR flag for the matching device (z at C07F.java:154). What false does beyond those lookups is not shown."
+},
+"video_quality_ar1g1.sn_capture_3k_enable_hdr":{
+"product":"Ray-Ban Meta",
+"does":"HDR flag for 3K capture, read in case 2 of the CaptureMode switch: z3 = A3t() || persist.vendor.camera.hlgenable (C07F.java:221). A3t is this flag (C1JE.java:207, A2Q). C1JD.java:364 picks the constant by Build.DEVICE: hammerhead -> C1JR.A0t, greatwhite -> C1JR.A0r, otherwise C1JR.A0p. This entry is the hammerhead branch, so it is read only on that device.",
+"change":"Sets the 3K HDR flag for the matching device (z3, case 2). What false does to the encoder beyond the value pairs is not shown."
+},
+"video_quality_ar1g1.sn_capture_standard_enable_hdr":{
+"product":"Ray-Ban Meta",
+"does":"HDR flag for standard capture: C07F.java:154 sets z when A3L() or persist.vendor.camera.hlgenable is true, and z is used by the standard lookups before the switch (C07F.java:55-173). A3L is this flag (C1JE.java:57, A32). C1JD.java:555 picks the constant by Build.DEVICE: hammerhead -> C1JR.A0u, greatwhite -> C1JR.A0s, otherwise C1JR.A0q. This entry is the hammerhead branch.",
+"change":"Sets the standard HDR flag for the matching device (z at C07F.java:154). What false does beyond those lookups is not shown."
+},
+"video_quality_ar2g2.capture_120fps_enable_hdr":{
+"product":"glasses",
+"does":"Read through A5S() (C1JE.java:527) and used in case 8 of the CaptureMode switch as z3 = A5S() || persist.vendor.camera.hlgenable (C07F.java:424). z3 is the HDR flag for the bitrate and QP pairs of this mode.",
+"change":"False: the pairs of this mode are read with z3 false. The code does not show HDR being switched off beyond that."
+},
+"video_quality_ar2g2.capture_120fps_hdr_encode_bitrate":{
+"product":"glasses",
+"does":"Read through A5P() (C1JE.java:512) as the first (HDR, by name) value of a pair. In case 8 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:445); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0Z.",
+"change":"Set: this value is used for case 8 before the built-in c00l2.A0Z. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_120fps_i_frame_interval":{
+"product":"glasses",
+"does":"Read in case 8 as a nullable value, C07H.A03(A5e()) (C07F.java:441). Null falls back to the built-in c00l2.A0Q, not to the global interval.",
+"change":"Set: replaces the built-in keyframe interval for case 8. Unset: the built-in c00l2.A0Q applies."
+},
+"video_quality_ar2g2.capture_120fps_qp_i_max_hdr":{
+"product":"glasses",
+"does":"Read through A5T() (C1JE.java:532) as the first (HDR, by name) value of a pair. In case 8 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:447); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0K.",
+"change":"Set: this value is used for case 8 before the built-in c00l2.A0K. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_120fps_qp_i_max_sdr":{
+"product":"glasses",
+"does":"Read through A5U() (C1JE.java:537) as the second (SDR, by name) value of a pair. In case 8 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:447); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0K.",
+"change":"Set: this value is used for case 8 before the built-in c00l2.A0K. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_120fps_qp_i_min_hdr":{
+"product":"glasses",
+"does":"Read through A5V() (C1JE.java:542) as the first (HDR, by name) value of a pair. In case 8 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:446); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0L.",
+"change":"Set: this value is used for case 8 before the built-in c00l2.A0L. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_120fps_qp_i_min_sdr":{
+"product":"glasses",
+"does":"Read through A5W() (C1JE.java:547) as the second (SDR, by name) value of a pair. In case 8 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:446); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0L.",
+"change":"Set: this value is used for case 8 before the built-in c00l2.A0L. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_120fps_qp_p_max_hdr":{
+"product":"glasses",
+"does":"Read through A5X() (C1JE.java:552) as the first (HDR, by name) value of a pair. In case 8 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:449); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0M.",
+"change":"Set: this value is used for case 8 before the built-in c00l2.A0M. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_120fps_qp_p_max_sdr":{
+"product":"glasses",
+"does":"Read through A5Y() (C1JE.java:557) as the second (SDR, by name) value of a pair. In case 8 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:449); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0M.",
+"change":"Set: this value is used for case 8 before the built-in c00l2.A0M. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_120fps_qp_p_min_hdr":{
+"product":"glasses",
+"does":"Read through A5Z() (C1JE.java:562) as the first (HDR, by name) value of a pair. In case 8 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:448); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0N.",
+"change":"Set: this value is used for case 8 before the built-in c00l2.A0N. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_120fps_qp_p_min_sdr":{
+"product":"glasses",
+"does":"Read through A5a() (C1JE.java:567) as the second (SDR, by name) value of a pair. In case 8 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:448); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0N.",
+"change":"Set: this value is used for case 8 before the built-in c00l2.A0N. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_120fps_sdr_encode_bitrate":{
+"product":"glasses",
+"does":"Read through A5R() (C1JE.java:522) as the second (SDR, by name) value of a pair. In case 8 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:445); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0Z.",
+"change":"Set: this value is used for case 8 before the built-in c00l2.A0Z. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_3k_hdr_encode_bitrate":{
+"product":"glasses",
+"does":"Read through A3q() (C1JE.java:192) as the first (HDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:242); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0Z.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0Z. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_3k_i_frame_interval":{
+"product":"glasses",
+"does":"Read in case 2 as a nullable value, C07H.A03(A45()) (C07F.java:238). Null falls back to the built-in c00l2.A0Q, not to the global interval.",
+"change":"Set: replaces the built-in keyframe interval for case 2. Unset: the built-in c00l2.A0Q applies."
+},
+"video_quality_ar2g2.capture_3k_qp_i_max_hdr":{
+"product":"glasses",
+"does":"Read through A3w() (C1JE.java:222) as the first (HDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:245); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0K.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0K. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_3k_qp_i_max_sdr":{
+"product":"glasses",
+"does":"Read through A3x() (C1JE.java:227) as the second (SDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:245); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0K.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0K. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_3k_qp_i_min_hdr":{
+"product":"glasses",
+"does":"Read through A3y() (C1JE.java:232) as the first (HDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:243); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0L.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0L. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_3k_qp_i_min_sdr":{
+"product":"glasses",
+"does":"Read through A3z() (C1JE.java:237) as the second (SDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:243); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0L.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0L. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_3k_qp_p_min_hdr":{
+"product":"glasses",
+"does":"Read through A42() (C1JE.java:252) as the first (HDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:246); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0N.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0N. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_3k_qp_p_min_sdr":{
+"product":"glasses",
+"does":"Read through A43() (C1JE.java:257) as the second (SDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:246); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0N.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0N. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_3k_sdr_encode_bitrate":{
+"product":"glasses",
+"does":"Read through A3s() (C1JE.java:202) as the second (SDR, by name) value of a pair. In case 2 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:242); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0Z.",
+"change":"Set: this value is used for case 2 before the built-in c00l2.A0Z. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_60fps_enable_hdr":{
+"product":"glasses",
+"does":"Read through A3d() (C1JE.java:127) and used in case 3 of the CaptureMode switch as z3 = A3d() || persist.vendor.camera.hlgenable (C07F.java:256). z3 is the HDR flag for the bitrate and QP pairs of this mode.",
+"change":"False: the pairs of this mode are read with z3 false. The code does not show HDR being switched off beyond that."
+},
+"video_quality_ar2g2.capture_60fps_hdr_encode_bitrate":{
+"product":"glasses",
+"does":"Read through A3a() (C1JE.java:112) as the first (HDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:277); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0Z.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0Z. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_60fps_i_frame_interval":{
+"product":"glasses",
+"does":"Read in case 3 as a nullable value, C07H.A03(A3p()) (C07F.java:273). Null falls back to the built-in c00l2.A0Q, not to the global interval.",
+"change":"Set: replaces the built-in keyframe interval for case 3. Unset: the built-in c00l2.A0Q applies."
+},
+"video_quality_ar2g2.capture_60fps_qp_i_max_hdr":{
+"product":"glasses",
+"does":"Read through A3g() (C1JE.java:142) as the first (HDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:280); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0K.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0K. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_60fps_qp_i_max_sdr":{
+"product":"glasses",
+"does":"Read through A3h() (C1JE.java:147) as the second (SDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z4 flag (C07F.java:280); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0K.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0K. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_60fps_qp_i_min_hdr":{
+"product":"glasses",
+"does":"Read through A3i() (C1JE.java:152) as the first (HDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:278); if the lookup gives nothing it uses the paired SDR value, then the built-in c00l2.A0L.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0L. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_60fps_qp_i_min_sdr":{
+"product":"glasses",
+"does":"Read through A3j() (C1JE.java:157) as the second (SDR, by name) value of a pair. In case 3 of the CaptureMode switch, A02 takes it with the z3 flag (C07F.java:278); if the lookup gives nothing it uses the paired HDR value, then the built-in c00l2.A0L.",
+"change":"Set: this value is used for case 3 before the built-in c00l2.A0L. Unset: the paired value, then the built-in, applies."
+},
+"video_quality_ar2g2.capture_60fps_sdr_encode_bitrate":{
+"product":"glasses",
+"does":"Fallback 60 fps SDR bitrate: the 60 fps profile tries the other 60 fps bitrate first (A3a), then this value, then the built-in value (C07F.java:277).",
+"change":"Set: used when the first 60 fps bitrate is unset. The code does not show the effect on quality or power."
+},
+"video_quality_ar2g2.capture_global_i_frame_interval":{
+"product":"glasses",
+"does":"Read as an int into the base profile (C07F.java:180), used as is with no override and no fallback."
+},
+"video_quality_ar2g2.capture_hyperlapse_hdr_encode_bitrate":{
+"product":"glasses",
+"does":"First choice for the hyperlapse bitrate (C07F.java:411), with capture_hyperlapse_sdr_encode_bitrate as the fallback and the built-in value after that.",
+"change":"Set above 0 with the HDR flag on: replaces the hyperlapse bitrate. Unset: the SDR value is used."
+},
+"video_quality_ar2g2.capture_hyperlapse_sdr_encode_bitrate":{
+"product":"glasses",
+"does":"Fallback for the hyperlapse bitrate (C07F.java:411): used when capture_hyperlapse_hdr_encode_bitrate is not taken, before the built-in value.",
+"change":"Set: the hyperlapse bitrate when the HDR value is unset."
+},
+"video_quality_ar2g2.capture_standard_hdr_encode_bitrate":{
+"product":"glasses",
+"does":"First choice for the standard profile encode bitrate (C07F.java:172-173): used when above 0 with the flag set; otherwise capture_standard_sdr_encode_bitrate. Negative values read as 0 (C1JE.java:632-637).",
+"change":"Set above 0 with the flag set: replaces the standard bitrate. Unset: the SDR value is used."
+},
+"video_quality_ar2g2.capture_standard_sdr_encode_bitrate":{
+"product":"glasses",
+"does":"Fallback for the standard profile encode bitrate (C07F.java:173), used when the HDR value is not taken. Negative values read as 0 (C1JE.java:641-646).",
+"change":"Set: the standard bitrate when the HDR value is unset."
+},
+"video_quality_ar2g2.florian_capture_3k_enable_hdr":{
+"product":"Oakley",
+"does":"Read as a bool into the 3K profile flag z3 (C07F.java:221, OR-ed with persist.vendor.camera.hlgenable). The key is picked by device name: hammerhead, greatwhite, or other (C1JD.java:90-93).",
+"change":"On: flag z3 is true for the 3K profile (C07F.java:221)."
+},
+"video_quality_ar2g2.florian_capture_standard_enable_hdr":{
+"product":"Oakley",
+"does":"Read as a bool at C1JE.java:57. When it or the hlgenable property is set, the base profile HDR flag z is set to not InterfaceC008408b.A04(...) (C07F.java:154-155). The key is picked by device name: hammerhead, greatwhite, or other (C1JD.java:281-284).",
+"change":"On: z = not InterfaceC008408b.A04(...) for the base profile (C07F.java:154-155)."
+},
+"video_quality_ar2g2.hn_capture_3k_enable_hdr":{
+"product":"Ray-Ban Display",
+"does":"Read as a bool into the 3K profile flag z3 (C07F.java:221, OR-ed with persist.vendor.camera.hlgenable). The key is picked by device name: hammerhead, greatwhite, or other (C1JD.java:90-93).",
+"change":"On: flag z3 is true for the 3K profile (C07F.java:221)."
+},
+"video_quality_ar2g2.hn_capture_standard_enable_hdr":{
+"product":"Ray-Ban Display",
+"does":"Read as a bool at C1JE.java:57. When it or the hlgenable property is set, the base profile HDR flag z is set to not InterfaceC008408b.A04(...) (C07F.java:154-155). The key is picked by device name: hammerhead, greatwhite, or other (C1JD.java:281-284).",
+"change":"On: z = not InterfaceC008408b.A04(...) for the base profile (C07F.java:154-155)."
+},
+"video_quality_ar2g2.sn_capture_3k_enable_hdr":{
+"product":"Ray-Ban Meta",
+"does":"Read as a bool into the 3K profile flag z3 (C07F.java:221, OR-ed with persist.vendor.camera.hlgenable). The key is picked by device name: hammerhead, greatwhite, or other (C1JD.java:90-93).",
+"change":"On: flag z3 is true for the 3K profile (C07F.java:221)."
+},
+"video_quality_ar2g2.sn_capture_standard_enable_hdr":{
+"product":"Ray-Ban Meta",
+"does":"Read as a bool at C1JE.java:57. When it or the hlgenable property is set, the base profile HDR flag z is set to not InterfaceC008408b.A04(...) (C07F.java:154-155). The key is picked by device name: hammerhead, greatwhite, or other (C1JD.java:281-284).",
+"change":"On: z = not InterfaceC008408b.A04(...) for the base profile (C07F.java:154-155)."
+},
+"voice_memo.age_verification_enabled":{
+"product":"glasses",
+"does":"When the flag (H5.A00 in GX.java) is on, a voice memo is blocked unless Settings.Global voice_memo_eligibility_verified is 1 (default 1). It logs 'Voice memo blocked: user not age eligible' and reports a FAILED session result. The constant H5.A00 is not traced to the param name here.",
+"change":"On: memos need Settings.Global voice_memo_eligibility_verified = 1 on the device. The code does not show where that is set."
+},
+"voice_memo.enable_consents":{
+"product":"glasses",
+"does":"When the flag (H5.A01 in GX.java) is on, a voice memo is blocked unless Settings.Global live_notes_user_consented is 1 (default 0). It logs 'Voice memo blocked: user has not consented' and reports a FAILED session result. The constant H5.A01 is not traced to the param name here.",
+"change":"On: the device setting live_notes_user_consented must be 1. Off: this check is skipped."
+},
+"wearable_bug_reporter.enable_slow_dumpstate_skip":{
+"product":"glasses",
+"does":"DumpstateCollector::maybeSetSkipSlowDumpstateCollectionProp writes the system property wearable.bugreporter.skip_slow_dumpstate_collection as 'true' or 'false' (csel between the two strings) on one branch (libwearablebugreporter.so 49994-49a6c). The route from this flag to that branch is not traced."
+},
+"wearable_concurrency_v2.enable_concurrency_arbitrator_ar_param":{
+"product":"glasses",
+"does":"Copied into the system property persist.vendor.meta.enable_concurrency_arbitrator as 'true' or 'false' (propagateConcurrencyArbitratorV2ToSysProp). WearableConcurrencyArbitratorGating.isConcurrencyV2Enabled() reads that property ('true' or '1' is on). StreamingConcurrencyHelper branches on it at each of its four methods, and the legacy logger and the concurrency log tag check it.",
+"change":"On selects the concurrency arbitrator V2 path for streaming concurrency and tags its logs as V2. Off keeps the legacy path."
+},
+"wearable_feature_specific_device_state_sync_to_c50.calling_device_state":{
+"product":"glasses",
+"does":"This flag is C0YY.A00 (calling_device_state). When on, CallingSgDeviceStateProvider starts its reporter (A0y, java 151-155), which computes DeviceStateCallingInfo and sends it. When off, the older update path (C0YP.A02) pushes the state to the provider if it is available.",
+"change":"Off: no reporter is started, and the older update path runs instead."
+},
+"wearable_feature_specific_device_state_sync_to_c50.calling_device_state_call_id":{
+"product":"glasses",
+"does":"This flag is C0YY.A01 (calling_device_state_call_id). When the calling-state flag is on and this one is off, the call id string is blanked before the device state is built (CallingSgDeviceStateProvider$reportedCallingInfo$1.java:65-66).",
+"change":"On (with calling-state on): the call id is sent with the device state."
+},
+"wearable_hn_calling.captions_enabled_languages":{
+"product":"Ray-Ban Display",
+"does":"Read as a comma-separated string with default 'en' (C0XY.A01, InCallViewModel.java:197). Entries are split on commas, lowercased, and blanks dropped (lines 197-205).",
+"change":"The value is the list the call UI reads its caption languages from. What else it changes is not shown."
+},
+"wearable_hn_calling.enable_3p_active_call_state":{
+"product":"Ray-Ban Display",
+"does":"Flag C0XY.A04 (the name is not shown in these lines). In call state handling, an invalid HFP call in a terminal state gets a log line, and any other invalid HFP call is set to state 7 and logged 'Invalid HFP call detected, setting ACTIVE_3P.' (AbstractC02270Vg.java:195).",
+"change":"On: invalid HFP calls go through this block (non-terminal ones become state 7). Off: the block does not run."
+},
+"wearable_hn_calling.enable_avatar":{
+"product":"Ray-Ban Display",
+"does":"Read as a bool (C0XY.A06). It gates the codec avatar toggle in the call controls: the toggle is shown only when this is on, the service is not zA0Z, and two other states hold (InCallViewModel.java:149). In toggleCamera, when it is off and the avatar is in use, turning the camera off disables the avatar first (InCallViewModel$toggleCamera$1$1.java:90).",
+"change":"On: the avatar toggle can show in the call controls under those conditions. Off: turning the camera off disables the avatar first when it is in use."
+},
+"wearable_hn_calling.enable_captions":{
+"product":"Ray-Ban Display",
+"does":"When on, adds CallAction.TOGGLE_CAPTIONS to the in-call controls for calls on services outside a list (messenger, IG, WhatsApp and their HFP versions). The list is empty when enable_live_captions_for_calling is on. persist.calling.enable_captions overrides the flag. The action is skipped when persist.calling.restrict_captions_to_audio_only is set and z3 is true.",
+"change":"Off: no captions toggle in the call controls."
+},
+"wearable_hn_calling.enable_extended_outgoing_call_timeout_on_sn":{
+"product":"Ray-Ban Display",
+"does":"For AI-glasses calls with this flag on, the outgoing call timeout is outgoing_call_request_timeout_ms_on_sn (item 17). If that value is 0 or less, the on_hn value (item 16, code default 20000 ms) is used.",
+"change":"On: the SN timeout replaces the default for AI glasses. Off: that branch is not taken; the default is not in this code."
+},
+"wearable_hn_calling.enable_live_captions_for_calling":{
+"product":"Ray-Ban Display",
+"does":"Empties the service list used by the captions gate (item 6). With it on, the captions toggle is offered for every service; with it off, only for services outside the list of messenger, IG, WhatsApp and HFP services.",
+"change":"Off: captions toggle only for services outside that list."
+},
+"wearable_hn_calling.enable_relay_as_transport":{
+"product":"Ray-Ban Display",
+"does":"For AI and display glasses, when on, sets z=true and builds the relay connection objects (C1TU.java case 21). GlassesMwaRelayConnectionImpl also reads the flag. The non-relay branch is not shown.",
+"change":"On: relay path for AI and display glasses. Off: the other path."
+},
+"wearable_hn_calling.enable_tap_hold_decline_call":{
+"product":"Ray-Ban Display",
+"does":"Config field enableTapHoldHangupCall (default true). SmartglassesMappings.java:212: during a ringing or active call, when on, tap-and-hold emits KEYCODE_ENDCALL. Otherwise tap-and-hold emits the plain tap-and-hold. GlobalInputFilterLogic.java:1060: keycode 1068 maps to 1032 when the flag is off or no call is ringing or active.",
+"change":"Off: a tap-and-hold during a ringing or active call no longer ends the call; it does the plain tap-and-hold."
+},
+"wearable_hn_calling.enable_updated_call_ui":{
+"product":"Ray-Ban Display",
+"does":"Chooses the minimised call-view delay: when on, updated_call_ui_minimized_view_timeout (item 20; code default 2000 ms); when off, 15000 ms.",
+"change":"Off: 15000 ms for the minimised view."
+},
+"wearable_hn_calling.outgoing_call_datax_rpc_timeout_ms_on_sn":{
+"product":"Ray-Ban Display",
+"does":"With item 7 on and an AI-glasses device, this value is read as dataXRpcTimeoutMs, logged in [STEP:FOA_DIALER_TIMEOUTS] and passed to the outgoing-call coroutine (AnonymousClass1). The 0-or-less branch has an empty body in the decompile."
+},
+"wearable_hn_calling.outgoing_call_request_timeout_ms_on_sn":{
+"product":"Ray-Ban Display",
+"does":"For AI glasses with item 7 on, this is the outgoing call request timeout (FoADialerEngine.java:1086). If it is 0 or less, the on_hn value (item 16) is used. The value is logged as outgoingCallTimeoutMs.",
+"change":"On (with item 7): replaces the on_hn value when above 0."
+},
+"wearable_hn_calling.prioritize_seci_for_outgoing_wa_calls":{
+"product":"Ray-Ban Display",
+"does":"PhoneApplication copies this flag into C0Z8.A09. In the outgoing participant build (C0Z8.java:117-131), when A09 is on, the id is field A04 and the idType is ID_TYPE_WHATSAPP_SECI (A02 is added first only where A04 is blank). When off, A02 is used, and A04 with the SECI type is added when A02 is blank.",
+"change":"On: outgoing WhatsApp participants use A04 with the SECI id type."
+},
+"wearable_hn_calling.single_press_captouch_answer_call_enabled":{
+"product":"Ray-Ban Display",
+"does":"Config field singlePressCaptouchAnswerCallEnabled (default false). When on and a call is ringing or active, a single tap (keycode 1039) is forwarded to the phone app. When on, a call is active and the device is not interactive, the AVRCP play/pause key is treated as a single tap instead of Mute Mic.",
+"change":"On: a single tap during a call goes to the phone app, and play/pause with the screen off acts as a single tap instead of muting the mic. Off: neither happens."
+},
+"wearable_hn_calling.tap_hold_ends_call_enabled":{
+"product":"Ray-Ban Display",
+"does":"When a one-finger hold (TAP_HOLD key down) arrives while a call is not ringing and the check A0F(this) passes, the flag decides whether the call ends: when on, InCallViewModel.A0C hangs up and the handler returns true; when off, it returns false.",
+"change":"On: tap-and-hold hangs up an active call on the glasses."
+},
+"wearable_hn_calling.updated_call_ui_minimized_view_timeout":{
+"product":"Ray-Ban Display",
+"does":"Delay in ms before the minimised call view hides. Used only when enable_updated_call_ui (item 14) is on. Code default 2000 ms.",
+"change":"Only matters with the updated call UI on."
+},
+"wearable_hn_calling.video_bwe_config":{
+"product":"Ray-Ban Display",
+"does":"Text passed as the BWE v1 config JSON to the video sender (setBweV1ConfigJson). The code default is the empty string.",
+"change":"Non-empty text replaces the video bandwidth-estimator config."
+},
+"wearable_hn_calling.video_send_low_bandwidth_warning_thershold_kbps":{
+"product":"Ray-Ban Display",
+"does":"Video send bandwidth level in kbps. When above 0, it is mapped to VideoQualityState.WARNING in the video quality map.",
+"change":"Changes the level at which WARNING is reported."
+},
+"wearable_impressions.hn_dwell_threshold_ms":{
+"product":"Ray-Ban Display",
+"does":"Minimum time in ms a view must be visible before an impression counts. The tracker compares the elapsed time with this value."
+},
+"wearable_impressions.hn_impressions_enabled":{
+"product":"Ray-Ban Display",
+"does":"Turns the impression tracker on. In the app headless services, the flag is copied into EH.A02 and the tracker's runnable is posted when the config loads. On the phone, C07680sL.A02 is set from the same key, and logImpression writes wearable_impression_events only when it is on.",
+"change":"On: impressions are tracked and logged as wearable_impression_events."
+},
+"wearable_impressions.hn_poll_interval_ms":{
+"product":"Ray-Ban Display",
+"does":"Delay in ms before the impression tracker's poll runs after its listeners are attached."
+},
+"wearable_impressions.hn_visibility_threshold_percent":{
+"product":"Ray-Ban Display",
+"does":"Percent of a view that must be on screen for it to count as visible. The tracker compares a view measure from DM.A00(view) with this value."
+},
+"wearable_mc_needlechecks.bool1":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value 'true' and other value 'false'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks.bool2":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value 'false' and other value 'true'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks.double1":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value '746.28' and other value '-123.2839'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks.double2":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value '-2847.28' and other value '-27382.23'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks.int1":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value '284' and other value '-22832'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks.int2":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value '-374' and other value '-293'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks.string1":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value '' and other value 'This is a string'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks.string2":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value 'This is a sessionbased test of a Mobile Config String Param' and other value ''. The shown code has no other reader."
+},
+"wearable_mc_needlechecks_sessionless.bool1":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value 'true' and other value 'false'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks_sessionless.bool2":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value 'false' and other value 'true'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks_sessionless.double1":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value '283.82' and other value '910.29'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks_sessionless.double2":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value '-238.23' and other value '-230.02'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks_sessionless.int1":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value '898' and other value '9232'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks_sessionless.int2":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value '-459' and other value '2883'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks_sessionless.string1":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value '' and other value 'This is a default'. The shown code has no other reader."
+},
+"wearable_mc_needlechecks_sessionless.string2":{
+"product":"glasses",
+"does":"Test fixture: registered as a needle check with expected value 'Test String Here' and other value 'helloworld'. The shown code has no other reader."
+},
+"wearable_mcp.enable_app_tools_aosp_service":{
+"product":"glasses",
+"does":"AppToolsGating.isEnabled(). SgDatAppToolsService.onStart() returns early and logs 'App Tools disabled via MobileConfig; not starting' when it is off. When on, it starts its HandlerThread.",
+"change":"On: the App Tools service starts. Off (current): it does not start."
+},
+"wearable_motionalgorithms.fall_detection_sg":{
+"product":"glasses",
+"does":"Gate for fall detection in the media capture session. shouldEnableFallDetection returns this flag once its earlier checks pass, and resetFallDetectorForFlow resets the fall detector only when it is true.",
+"change":"On: the capture session may enable fall detection. Off: it does not."
+},
+"wearable_phone.filter_spurious_hfp_calls":{
+"product":"glasses",
+"does":"When on and a call is active, an HFP call that starts in the ACTIVE state without a RINGING phase is ignored (logged as 'filtering as spurious'). Within 60000 ms of the holder's creation, such calls are allowed as reconnecting calls. A call whose number was recently active is allowed as a reconnecting call.",
+"change":"Off: such calls are not filtered."
+},
+"wearable_session_monitors_configuration.fuelguage":{
+"product":"glasses",
+"does":"String config for the fuelgauge session monitor (MonitorType.fuelgauge). MonitorManager.applyMobileConfigOverrides() wraps the cached string as a monitor override {\"monitors\": {\"fuelgauge\": ...}} (a base64-style encoded string is decoded first) and applies it through MonitorConfigParser.applyOverride(). A rejected override is logged 'Rejected MobileConfig override'. An empty string is reported as status EMPTY.",
+"change":"Sets the fuelgauge monitor's session configuration from the MobileConfig string instead of the built-in config. The fields of that config were not traced."
+},
+"wearable_session_monitors_configuration.skinthermal":{
+"product":"glasses",
+"does":"String config for the thermalSkin session monitor (skin temperature). Handled the same way as fuelguage: MonitorManager wraps the cached string as {\"monitors\": {\"thermalSkin\": ...}} and applies it through MonitorConfigParser.applyOverride(). The fields of that config were not traced.",
+"change":"Sets the skin-temperature monitor's session configuration from the MobileConfig string instead of the built-in config. Changing it changes what the thermal monitor is configured to do; the code does not show the effect beyond that."
+},
+"wearable_settings_converged_sdk.hn_settingsproxyprovider_write_to_rldrive":{
+"product":"Ray-Ban Display",
+"does":"When on, RLDriveSettingsSubscriptionService.addAndroidSettingsToRlDriveSubscriptions() starts the Android Settings sync: for each InternalSetting it observes the Android setting and subscribes it to RLDrive. Its dump prints 'Write to RLDrive Enabled' with this value.",
+"change":"On: Android settings changes are pushed to RLDrive through the subscription service. Off: that sync is not started."
+},
+"wearable_settings_convergence.enable_rldrive_subscription_audit_trail":{
+"product":"glasses",
+"does":"SettingsAuditTrail.isEnabled() (true if forced or this flag is on). When on, recordChange() records each RLDrive and Android settings change (direction, key, error code) to the audit trail; sensitive keys are written as <redacted>.",
+"change":"On: each settings sync change is recorded in the audit trail. Off: nothing is recorded."
+},
+"wearable_system_health.hprof_upload_enabled":{
+"product":"glasses",
+"does":"Heap-dump (hprof) upload gate. When config.memory.hprof.enabled is unset, the Hearing app reads this flag. If a leak is found and config.memory.leak is off, the flag being on takes the hprof path: it then checks config.memory.hprof.leak, config.memory.hprof.cooldown and the stored next_leak_upload_time, then the sampling value (item 61), before uploading. The group and audio apps read the same key.",
+"change":"On: leak heap dumps may be uploaded (subject to the checks above). Off: no hprof upload from this path. Now off."
+},
+"wearable_system_health.upload_sampling":{
+"product":"glasses",
+"does":"Percent of leak heap dumps that are uploaded in the Hearing app. 0 or less uploads nothing; 100 or more always passes. Between, a random draw from 0-99 must be below the value to upload.",
+"change":"Higher uploads more leak dumps; 0 turns this path off."
+},
+"wearable_telecom_android_messaging.hn_telecom_messaging":{
+"product":"Ray-Ban Display",
+"does":"SgTelecomMessagingHandler stores this as the native telecom messaging gate (applyGateState) and logs 'MC gate ... = true/false'. isNativeMessagingEnabled returns it. applyGateState also combines it with a second stored flag before setting the handler's state.",
+"change":"On: native telecom messaging is enabled in the handler. Off: not."
+},
+"wearables_ai_connectivity.retry_app_launch_delay_ms":{
+"product":"glasses",
+"does":"Retry delay in ms. A value of 0 or less takes the skip path, logged as 'RetryAppLaunchDelayMs is <= 0, skipping retry app launch'. A value above 0 is logged as 'Scheduling retry app launch after {}ms if not connected'."
+},
+"wearables_ai_phone_call.enable_session_intent_handler":{
+"product":"glasses",
+"does":"The function that reads this key logs 'SessionIntentHandler is disabled' (SessionIntentHandler.cpp, line 47) on the disabled path. The excerpt does not show what else is skipped.",
+"change":"Off: the session intent handler is disabled, which is logged."
+},
+"wearables_ai_phone_call.extended_timeout_mvp_enabled":{
+"product":"glasses",
+"does":"Logged as 'AIPC Extended Timeout MC Enabled: {}'. When it is off, the runtime logs 'Disable AIPC since extended_timeout_mvp_enabled MC is disabled'.",
+"change":"Off: AIPC is disabled in this path, per the log."
+},
+"wearables_ai_phone_call.followup_ww_endpointing_override_ms":{
+"product":"glasses",
+"does":"When the override applies, the runtime logs 'Using MC override for follow-up endpointer: {}ms', so the value is used as the follow-up endpointer time in ms.",
+"change":"The follow-up endpointer uses this many ms instead of its default, per the log."
+},
+"wearables_ai_phone_call.music_playback_during_session_delay_ms":{
+"product":"glasses",
+"does":"Delay in ms before SgAudioPolicyController resumes media for the ambient state. It is posted with mHandler.postDelayed to maybeResumeMedia(). Read through SgAudioManagerMobileConfigClient.getMusicPlaybackDuringSessionDelayMs(), which defaults to 3000 when unset.",
+"change":"A longer value keeps media paused longer before it resumes; a shorter value resumes sooner."
+},
+"wearables_ai_phone_call.navigation_remote_fulfillment_override_enabled":{
+"product":"glasses",
+"does":"When navigation remote fulfilment is not enabled, GenericStartIntentHandler logs '[GenericStartIntentHandler]: Navigation remote fulfillment is not enabled' and returns. If the user is not in a navigation dialog it logs '[GenericStartIntentHandler]: User is not in navigation dialog'.",
+"change":"On: navigation start intents do not take the 'not enabled' return (the excerpt shows only the skip path)."
+},
+"wearables_ai_phone_call.sci_comms_enable":{
+"product":"glasses",
+"does":"With a comms provider linked and locale en_US, the runtime logs 'SCI disabled: en_US with comms provider linked and sci_comms_enable off' when this is off. When passthrough is on it logs 'SCI enabled: passthrough enabled, locale: {}'.",
+"change":"Off: SCI is disabled for en_US when a comms provider is linked."
+},
+"wearables_appmanager.companion_install_enabled":{
+"product":"glasses",
+"does":"The app manager reads persist.sys.smartglass.appmanager_datax_enabled first; if set, it is parsed as the answer. Otherwise it returns the MobileConfig value. If that read throws, it logs 'isCompanionInstallEnabled: MC read failed, using default=false' and returns false.",
+"change":"Off: isCompanionInstallEnabled returns false, unless the persist property is set."
+},
+"wearables_authentication_sessionless.meta_login_repair_overlay_enabled":{
+"product":"glasses",
+"does":"When the login is not snoozed and RL.A01(TR.A01) is true, the code posts M3.A00, the repair overlay. Otherwise no overlay is posted.",
+"change":"Off: no repair overlay is posted."
+},
+"wearables_authentication_sessionless.meta_login_repair_snooze_max_hours":{
+"product":"glasses",
+"does":"Sets the snooze cap: max(base snooze, RL.A00(TR.A02) * 60) minutes, so the value is in hours. The snooze is limited to this cap.",
+"change":"Lower: the cap drops, but never below the base snooze."
+},
+"wearables_authentication_sessionless.meta_login_repair_snooze_minutes":{
+"product":"glasses",
+"does":"Base snooze = max(5, RL.A00(TR.A03)) minutes. Each repeat adds 1 << (3 * count) minutes, count from M7.A05().",
+"change":"Shorter: the overlay returns sooner. Longer: fewer prompts."
+},
+"wearables_calling_audio.enable_delayed_sco_fallback":{
+"product":"glasses",
+"does":"Read into mIsDelayedScoFallbackEnabled (default false). shouldRequestScoFallback(b) is true when this is on, the calling state is 2 or 4, the glasses are mounted, and HFP audio is not connected. In that case a runnable is posted to request the SCO fallback (the delay used there was not traced).",
+"change":"On: a calling-state change with the glasses mounted and no HFP audio link requests the SCO fallback. Off: it does not."
+},
+"wearables_calling_uj_telemetry.enabled":{
+"product":"glasses",
+"does":"The gate C0XZ.A01 guards the journey telemetry calls shown: MainActivityViewModel sends WearableJourneyResult SUCCESS ('incoming_call'), and the hybrid engine sends the 'accepting_call' trigger.",
+"change":"On: call-journey telemetry is sent."
+},
+"wearables_camera_sg.enable_use_sensor_service":{
+"product":"glasses",
+"does":"useSensorService() returns true when the system property vendor.camera.enableUseSensorService is set (default true). Only when that property is false does it read the MC bool (id 0xf0350000). useImuDirectChannel() reads the same id when the property is false.",
+"change":"Only matters when the property is set false. Then the MC value decides."
+},
+"wearables_dat.enable_dwa":{
+"product":"glasses",
+"does":"The DAT Wearables App (DWA) gate. DATFeatureGate reads sysprop persist.enable_dwa first, then this value. When on and a DAT session requests DAM (usesDam), the session launches the DAT Wearables App and queries its version. When off, the start reports DWA_SKIPPED_GATE_DISABLED. In GlobalInputFilterLogic, DWA also has to be on for the action button, capture button and pinch-and-drag to route to the app during a DAT session.",
+"change":"On: DAT sessions that request DAM launch the DAT Wearables App. Off: they skip it and report it skipped."
+},
+"wearables_dat.enable_inputs_action_button":{
+"product":"glasses",
+"does":"Config field enableDatInputsActionButton (default false). GlobalInputFilterLogic.java:718: during a DAT session with DWA on, the action button key event is routed to the DWA, and the log says 'DAT session active; routing action button to DWA'.",
+"change":"On: action-button presses during a DAT session go to the DAT Wearables App instead of the normal action-button handling."
+},
+"wearables_dat.enable_inputs_captouch":{
+"product":"glasses",
+"does":"Read through DATFeatureGate (sysprop persist.dat.enable_inputs_captouch overrides) and as config field enableDatInputsCaptouch. With the display off during a DAT session, CaptouchGestureMappingProvider adds mappings for captouch up-events 1045 and 1047 when this is on. SmartglassesMappings checks it for the one-finger double and triple tap mappings.",
+"change":"On: captouch double and triple taps are handled in the DAT session mapping. Off: they are not."
+},
+"wearables_dat.enable_inputs_capture_button":{
+"product":"glasses",
+"does":"Config field enableDatInputsCaptureButton (default false) and DATFeatureGate persist.dat.enable_inputs_capture_button. isDatCaptureRoutingActive() is true when a DAT session is active, DWA is on and this is on. GlobalInputFilterLogic then routes capture-button key events to the DWA during a DAT session.",
+"change":"On: capture-button presses during a DAT session go to the DAT Wearables App."
+},
+"wearables_dat.enable_inputs_pinch_and_drag":{
+"product":"glasses",
+"does":"Config field enableDatInputsPinchAndDrag (default false). GlobalInputFilterLogic.shouldRouteEmgPinchAndDragToDwa(): a motion event with flags 268435488 goes to the DWA when a DAT session is active, DWA is on and this is on. The method name says EMG, which the batch notes identify as the neural band.",
+"change":"On: pinch-and-drag motion from that source goes to the DAT Wearables App during a DAT session."
+},
+"wearables_dat.gate_session_start_on_don_state":{
+"product":"glasses",
+"does":"DATGating field gateSessionStartOnDonState (default true; DATFeatureGate with sysprop persist.gate_session_start_on_don_state overriding). When on and the glasses are not mounted, a DAT session start is answered with ERROR_DEVICE_UNAVAILABLE and not started.",
+"change":"Off: DAT sessions can start while the glasses are not mounted."
+},
+"wearables_e2e_test_overrides.assistant_follow_up_ep_threshold_ms":{
+"product":"glasses",
+"does":"The assistant runtime reads it as a long (key 646 via getter 0x155e0ac). When a value is set, it logs 'Overriding follow-up wakeword endpointing to: {}ms', so the value replaces the wakeword follow-up endpointing time.",
+"change":"A value other than -1 overrides the wakeword follow-up endpointing time in ms, per the log line."
+},
+"wearables_group_conversations.device_supported":{
+"product":"glasses",
+"does":"Read at Group Conversations launch (MainActivity.java:329-333). When on, the launch also checks min_device_version_passed, unless the build incremental starts with 'eng'. If that check is false, it logs 'GC blocked: MC min_device_version_passed=false' and sets GROUP_EVENT_LAUNCH_DEVICE_VERSION_TOO_LOW.",
+"change":"Off skips the min_device_version_passed check."
+},
+"wearables_group_conversations.enabled":{
+"product":"glasses",
+"does":"Read at Group Conversations launch (MainActivity.java:325-329). When off, the activity logs 'GroupConversations disabled via MobileConfig, finishing' and finishes with GROUP_EVENT_LAUNCH_FEATURE_DISABLED.",
+"change":"On lets the launch continue to the device-version gate."
+},
+"wearables_group_conversations.join_timeout_ms":{
+"product":"glasses",
+"does":"Read in the group session config (C01034s.java:36-40), clamped to 0..2147483647 and passed as the first value of KF. J5.A0A passes it as the first argument of configParams.",
+"change":"Sets the join value passed to the session's configParams call."
+},
+"wearables_group_conversations.min_device_version_passed":{
+"product":"glasses",
+"does":"Read in the same launch gate (MainActivity.java:333). With device_supported on and the build not eng, false sets DEVICE_VERSION_TOO_LOW and the launch stops. True lets it continue.",
+"change":"True lets the launch continue on this build (when device_supported is on)."
+},
+"wearables_group_conversations.pgo_broadcast_timeout_ms":{
+"product":"glasses",
+"does":"Read in the group session config (C01034s.java:50-54), clamped to 0..2147483647. It is the third value of KF, which J5.A0A passes as the third argument of configParams.",
+"change":"Sets the PGO broadcast value passed to configParams."
+},
+"wearables_group_conversations.pgo_selection_scan_duration_ms":{
+"product":"glasses",
+"does":"Read in the group session config (C01034s.java:57), clamped to 0..2147483647. It is the fourth value of KF, passed as the fourth argument of configParams.",
+"change":"Sets the PGO selection scan value passed to configParams."
+},
+"wearables_group_conversations.reconnect_timeout_ms":{
+"product":"glasses",
+"does":"Read in the group session config (C01034s.java:43), clamped to 0..2147483647. It is the second value of KF, passed as the second argument of configParams.",
+"change":"Sets the reconnect value passed to configParams."
+},
+"wearables_group_conversations.rssi_join_threshold_dbm":{
+"product":"glasses",
+"does":"Read in the group session config (C01034s.java:64), clamped to -128..0. It is the fifth value of KF, passed as the fifth argument of configParams.",
+"change":"Sets the RSSI join value passed to configParams."
+},
+"wearables_group_conversations.rssi_reconnect_threshold_dbm":{
+"product":"glasses",
+"does":"Read in the group session config (C01034s.java:71), clamped to -128..0. It is the sixth value of KF, passed as the sixth argument of configParams.",
+"change":"Sets the RSSI reconnect value passed to configParams."
+},
+"wearables_group_conversations.unlock_timeout_seconds":{
+"product":"glasses",
+"does":"Read in the voice-started request path (IE.java:50), clamped to 0..2147483647 and passed as the timeout argument to SessionManager.A0F. A0F calls setGroupChatLock with that value when no lock change is already in flight.",
+"change":"Sets the timeout given to the group chat lock change for a voice-started request."
+},
+"wearables_imagine.runtime_enable_voice_share":{
+"product":"glasses",
+"does":"The assistant runtime reads it as a bool (key 235 via getter 0x155e11c). When it is off, the same block logs '[AssistantMediaGenSharing]: Imagine voice share not enabled', so the Imagine voice share path refuses.",
+"change":"On lets the Imagine voice share path run."
+},
+"wearables_input_platform.enable_interaction_model_mappings":{
+"product":"glasses",
+"does":"Config field enableInteractionModelMappings (default true). GlobalInputFilterLogic.java:1223-1226: when on, captouch key codes come from SmartglassesMappings.evaluateMappingKeyCode(getCaptouchMapping()); when off, from the older SgInputEventMappingManager.getKeyCodeForCaptouch(). The same flag also picks the mapping path at lines 1394 and 1703-1710.",
+"change":"Off: captouch and related gestures use the older mapping table instead of the interaction-model mappings."
+},
+"wearables_notifications_sdk.use_horizontal_notification_service_malibu":{
+"product":"glasses",
+"does":"WearableNotificationService.onMobileConfigChange(): the notification service starts (onStartInternal, which registers it with ServiceManager) when this flag is on or the device resource config_useGnssHardwareProvider is set. The flag value is logged per device.",
+"change":"On: the notification service starts on devices where it would not otherwise start."
+},
+"wearables_ota_core_edition.ceres_ota_enabled":{
+"product":"glasses",
+"does":"Read in system_firmwareota and logged as 'WorkflowManager::shouldTriggerEmgOtaAfterAutoOta(): MC ceres_ota_enabled=%d'. The value is kept as the function's result, so it decides whether an EMG OTA follows an auto OTA.",
+"change":"On lets an EMG OTA follow an auto OTA, per the function name and the log."
+},
+"wearables_ota_core_edition.ota_thermal_config":{
+"product":"glasses",
+"does":"Read as a string in system_firmwareota and parsed by a routine that uses the keys app_ota_start_thermal_with_display, app_ota_start_thermal_without_display, min_storage_mb and resource_ota_runtime_battery_min_charging. Empty now, so the parser's defaults apply (defaults not shown).",
+"change":"Setting values sets those keys, which the parser reads."
+},
+"wearables_ota_core_edition.resource_apk_verification_enabled":{
+"product":"glasses",
+"does":"Read in system_firmwareota. When on, the code tail-calls 0x73180 (the resource verification path). When off, it returns 0 without verifying.",
+"change":"On: resource APKs go through the verification path."
+},
+"wearables_ota_core_edition.v2_ota_service_enabled":{
+"product":"glasses",
+"does":"Read in AutoOtaJobService.isAutoOtaJobSchedulerEnabled (java:217): below Android 36 the auto OTA job continues only when this is on. Native firmwareota reads it and, when on, logs 'V2 OTA service is enabled, skip v1 Background OTA'.",
+"change":"Off: below Android 36 the auto OTA job is not run, and the v1 Background OTA path is not skipped."
+},
+"wearables_pmc.esrl_cutover_enabled":{
+"product":"glasses",
+"does":"Read as a bool in continuousaicamera_nova (0xe4bec). When it is on and a long read just before (family 0x1685..., compared with #2) equals 2, the code reads wearables_pmc.esrl_window_trigger_ratio (double) and more longs. Otherwise that branch is skipped.",
+"change":"On reads the ESRL trigger values in the suppression path, but only when the long equals 2 (continuous_ai_camera family, pmc_suppression_type now 2)."
+},
+"wearables_ptt.action_button_mute_unmute_enabled":{
+"product":"glasses",
+"does":"Read in the phone's displayless MainActivity (C0Xb.A00). When on, a key code 1071 (action button) during a call toggles mute (MainActivity.java:565-611). When on, not in a mute-state call and key 1071 or 1092, it logs 'Action button not mapped to mute/unmute during PTT call, not consuming' and returns false (MainActivity.java:621-629).",
+"change":"Off: the action button mute/unmute handling in those paths is not taken."
+},
+"wearables_ptt.enabled":{
+"product":"glasses",
+"does":"Read in many PTT paths. In MainActivity.java: a single tap toggles media play/pause for a WhatsApp voice chat when muted (654-665), a double tap skips to the next track (694-705), and the capture-button route checks it (961, 994). Also read in AbstractC02270Vg (99, 162), C0eK (1217) and C0Wl (249).",
+"change":"Off: those PTT paths are not taken."
+},
+"wearables_ptt.force_mute_onboarding":{
+"product":"glasses",
+"does":"Read in C0Wl.java:247 and passed as zA01 into the mute-onboarding fallback (C0eM, line 277). Line 281 branches on it. The debug log at line 264 prints 'forceMuteOnboarding=' with this value."
+},
+"wearables_ptt.music_triggered_a2dp_enabled":{
+"product":"glasses",
+"does":"Read in C04000gA.java:1406. When on, a music-triggered PTT path calls InCallViewModel requestA2dpProfileSwitch(callId) (C03940fy, lines 586-591) and waits. On timeout it logs 'A2DP profile switch timed out, proceeding with play command'.",
+"change":"On: the music-triggered PTT path asks for an A2DP profile switch first."
+},
+"wearables_vip_notifications.enabled":{
+"product":"glasses",
+"does":"When the flag is off, subscription notifications are dropped: the code logs 'VIP notifications disabled, silently dropping subscription notification'.",
+"change":"On: this check does not drop subscription notifications."
+},
+"web_on_hn.webapp_discovery":{
+"product":"Ray-Ban Display",
+"does":"Chooses the store catalogue use case. When true, the StoreCatalogQuery useCase is 'WEB_APP'; when false, 'ALL'. A set persist.appmanager.webapps_only property overrides the flag. An MC read failure logs 'isWebAppsOnlyEnabled: MC read failed, using default=false'.",
+"change":"On: the catalogue query asks only for web apps. Off (current): all apps."
+},
+"wss_appmanager.auto_update_allowlist":{
+"product":"glasses",
+"does":"The list of packages the app manager may auto-update, split on ';'. A system property (persist.experimental.appmanager.auto_update_allowlist) overrides the MC value when set. Packages not on the list are logged as 'Package not in auto-update allowlist' and skipped; the others go on to the batch update.",
+"change":"Adding a package lets the app manager auto-update it; removing one makes its updates skip with that log line."
+},
+"wss_appmanager.hn_allowed_package_list":{
+"product":"Ray-Ban Display",
+"does":"Read by GetUpdateReadinessCommand only when the entitlement payload is present. The package is OK ('entitled and allow-listed') if the list is empty or contains it, and WARN otherwise ('entitled; not in smartglass-store allow-list (display-only, does not block updates)'). A read failure gives an empty set.",
+"change":"Removing a package from the list gives it a WARN readiness check. It does not block updates, as the message says."
+},
+"wss_appmanager.signature_verification_enabled":{
+"product":"glasses",
+"does":"When true, the app manager checks each APK's signers before a session install (EX.java hasTrustedSignature). A missing signing info or signer list refuses the install; a signer hash that is not in the trusted set logs 'hasTrustedSignature: no match for ...' and the install is refused with 'APK not signed with trusted key'. The property persist.appmanager.signature_verification overrides the flag.",
+"change":"Off: the whole signer check is skipped, because it sits under the if (zA00) guard."
+},
+"wss_appmanager.stop_app_manager":{
+"product":"glasses",
+"does":"When true, the app manager stops at once: AppManagerHeadlessApplication.onCreate logs 'kill switch enabled, stopping AppManager' and calls System.exit(0); AppManagerService.onBind refuses to bind and calls stopSelf; the binder's getAppInfo path logs 'kill switch enabled, refusing request' instead of answering. A set persist.appmanager.stop_app_manager property overrides the flag.",
+"change":"On: the app manager exits on start and refuses binds and getAppInfo requests."
+}
+}

@@ -1,0 +1,21 @@
+name: Feature request
+description: Something the glasses can do that Visor does not do yet.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What you want to do
+      description: Describe the task, not the solution. For example, "see the battery of the case without opening the app".
+    validations:
+      required: true
+  - type: textarea
+    id: meta-app
+    attributes:
+      label: How the Meta AI app does it
+      description: If the Meta app already has this, say where and how it behaves. Visor implements what the glasses expect.
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Screenshots, logs, links.

@@ -1,0 +1,44 @@
+package com.macedonga.visor
+
+import android.content.Intent
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import com.macedonga.visor.core.design.VisorTheme
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
+
+/** The only activity. */
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+
+    /** Places to open, from a notification: each is taken once. */
+    private val opens = Channel<String>(Channel.CONFLATED)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        val open = if (savedInstanceState == null) intent?.getStringExtra(EXTRA_OPEN) else null
+        open?.let(opens::trySend)
+        // The mark opens the app where the system splash leaves it, unless the launch goes straight somewhere else.
+        val mark = savedInstanceState == null && (open == null || open == OPEN_ONBOARDING)
+        setContent {
+            VisorTheme { VisorNav(opens.receiveAsFlow(), mark) }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.getStringExtra(EXTRA_OPEN)?.let(opens::trySend)
+    }
+
+    companion object {
+        const val EXTRA_OPEN = "open"
+        const val OPEN_GALLERY = "gallery"
+        const val OPEN_LIVE = "live"
+        const val OPEN_META_AI = "metaai"
+        const val OPEN_ONBOARDING = "onboarding"
+    }
+}

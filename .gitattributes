@@ -1,0 +1,16 @@
+# Normalise to LF in the repository. Without this, gradlew is checked out with CRLF on
+# Windows and then fails to run anywhere else, which is a problem that only shows up on
+# the machine that did not create it.
+* text=auto eol=lf
+
+gradlew text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.jar binary
+*.ttf binary
+*.otf binary
+*.webp binary
+*.png binary
+*.bin binary
+*.glb binary

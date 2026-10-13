@@ -1,0 +1,292 @@
+package com.macedonga.visor.core.connection
+
+import com.macedonga.visor.core.identity.IdentityBundle
+import com.macedonga.visor.core.identity.IdentityStore
+import com.macedonga.visor.core.identity.SessionProbe
+import com.macedonga.visor.core.identity.diagnose
+import com.macedonga.visor.core.identity.verifyBundle
+import com.macedonga.visor.core.session.ConnectFailed
+import com.macedonga.visor.core.session.LinkState
+import com.macedonga.visor.core.session.LinkStateChanged
+import com.macedonga.visor.core.session.ProtocolError
+import com.macedonga.visor.core.session.ServiceData
+import com.macedonga.visor.core.session.SessionEvent
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+/** The one object that decides which glasses, holds one session, and publishes one state. */
+class GlassesConnection(
+    private val store: IdentityStore,
+    private val hosts: SessionHostFactory,
+    // Injectable so a test can keep the store reads on its own virtual clock.
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+) {
+
+    private val _state = MutableStateFlow(GlassesState())
+    val state: StateFlow<GlassesState> = _state.asStateFlow()
+
+    // Re-broadcast, because GlassesSession.events is documented as having exactly one consumer and
+    // this is it.
+    private val _serviceData = MutableSharedFlow<ServiceData>(
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    /** Every service message, undecoded. svc28 and svc100 are also decoded into [state]. */
+    val serviceData: SharedFlow<ServiceData> = _serviceData.asSharedFlow()
+
+    // Same buffering and the same reason as _serviceData: a slow reader must never stall the
+    // session's single event consumer.
+    private val _warnings = MutableSharedFlow<String>(
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    /**
+     * What the session reported as a protocol error, and any service message that would not decode.
+     */
+    val warnings: SharedFlow<String> = _warnings.asSharedFlow()
+
+    private var job: Job? = null
+
+    private val _running = MutableStateFlow(false)
+
+    /** True from [start] until [stop] has let go of the socket. */
+    val running: StateFlow<Boolean> = _running.asStateFlow()
+
+    @Volatile
+    private var host: SessionHost? = null
+
+    private var lastScope: CoroutineScope? = null
+    private var lastOverride: GlassesTarget? = null
+
+    // Per attempt, and reset on CONNECTING.
+    @Volatile
+    private var canaryAnswered = false
+    private val judged = AtomicBoolean(false)
+    private var deadline: Job? = null
+
+    /** Choose a target, open a session on it, and keep the state current until [stop]. */
+    fun start(scope: CoroutineScope, override: GlassesTarget? = null) {
+        lastScope = scope
+        lastOverride = override
+        _running.value = true
+        job = scope.launch {
+            // Both reads move together, not one withContext each: see the class doc for why
+            // they leave the caller's dispatcher at all.
+            val (bundles, bundle) = withContext(ioDispatcher) {
+                val bundles = store.all()
+                val bundle = if (override != null) {
+                    bundles.firstOrNull { it.serial == override.serial }
+                } else {
+                    store.load()
+                }
+                bundles to bundle
+            }
+            val target = override ?: bundle?.let {
+                GlassesTarget(GlassesLink.Bluetooth(it.glassesAddress), it.serial)
+            }
+            if (target == null) {
+                _state.value = GlassesState(reason = idleReason(bundles))
+                return@launch
+            }
+
+            _state.value = GlassesState(target = target)
+            val opened = hosts.create(target, bundle)
+            host = opened
+            opened.start(this)
+            opened.events.collect { event -> onEvent(event, opened, bundle, this) }
+        }
+    }
+
+    /** Let go of the link without ending the connection, so another session can have the glasses. */
+    suspend fun pause(why: String) {
+        host?.stop()
+        host = null
+        job?.cancelAndJoin()
+        job = null
+        _state.value = _state.value.copy(link = LinkState.DISCONNECTED, reason = why)
+    }
+
+    /** Reconnect after [pause], unless [stop] ran in between. */
+    fun resume() {
+        val scope = lastScope ?: return
+        if (_running.value && job == null) start(scope, lastOverride)
+    }
+
+    /** Ask svc28 again on the session's own status channel: the glasses answer with a fresh full snapshot. */
+    fun refreshDeviceState() {
+        val channel = statusChannel ?: return
+        submit { subscribeOn(it, channel) }
+    }
+
+    // The session's svc28 channel; a new one per refresh would multiply every push.
+    @Volatile
+    private var statusChannel: Int? = null
+
+    /** Run [work] on the live session with its mux. Dropped when nothing is connected. */
+    fun submit(work: suspend (com.macedonga.visor.core.session.DataXConnection) -> Unit) {
+        host?.submit(work)
+    }
+
+    /**
+     * Finish, and do not return until the session has let go of the socket AND the event collector
+     * has stopped.
+     */
+    suspend fun stop() {
+        host?.stop()
+        host = null
+        job?.cancelAndJoin()
+        job = null
+        _running.value = false
+    }
+
+    private suspend fun onEvent(
+        event: SessionEvent,
+        host: SessionHost,
+        bundle: IdentityBundle?,
+        scope: CoroutineScope,
+    ) {
+        when (event) {
+            is LinkStateChanged -> {
+                val fresh = event.state == LinkState.CONNECTING
+                if (fresh) newAttempt()
+                _state.value = _state.value.copy(
+                    link = event.state,
+                    // The session publishes CONNECTING at the top of every attempt, including a
+                    // reconnect, so that is where the slate is cleared.
+                    reason = if (fresh) "" else event.reason,
+                    failure = if (fresh) null else _state.value.failure,
+                )
+                when (event.state) {
+                    LinkState.READY -> onReady(host, bundle, scope)
+                    // An attempt that ended without a verdict gets one now.
+                    LinkState.LOST, LinkState.DISCONNECTED -> judge(host, bundle)
+                    else -> Unit
+                }
+            }
+
+            is ConnectFailed -> _state.value = _state.value.copy(failure = event.failure)
+
+            is ServiceData -> {
+                // Whenever it arrives. settleChannels publishes what landed during link setup
+                // before READY goes out, so an answer can legitimately come first.
+                if (event.serviceId == SVC_PEER_BUILD_INFO &&
+                    event.messageType == MT_PEER_DEVICE_INFO
+                ) {
+                    canaryAnswered = true
+                    decodeInto(event) { copy(info = decodePeerDeviceInfo(it.payload)) }
+                    judge(host, bundle)
+                }
+                if (event.serviceId == SVC_STATUS && isDeviceStateType(event.messageType)) {
+                    decodeInto(event) {
+                        val update = decodeDeviceStateUpdate(it.messageType, it.payload)
+                        copy(device = mergeDeviceState(device ?: DeviceState(), update.state))
+                    }
+                }
+                // Airship's file chunks and the live stream's frames are their responders' business,
+                // and thousands of them would push everything else out of this buffer.
+                if (event.serviceId != SVC_AIRSHIP && event.serviceId != SVC_MEDIA_STREAMING_CONTROL) _serviceData.emit(event)
+            }
+
+            is ProtocolError -> _warnings.tryEmit(event.detail)
+
+            else -> Unit
+        }
+    }
+
+    /** Fold a decoded service message into the state, or report why it would not decode. */
+    private fun decodeInto(event: ServiceData, apply: GlassesState.(ServiceData) -> GlassesState) {
+        try {
+            _state.value = _state.value.apply(event)
+        } catch (error: Exception) {
+            _warnings.tryEmit("could not decode $event: ${error.message}")
+        }
+    }
+
+    private fun newAttempt() {
+        canaryAnswered = false
+        judged.set(false)
+        deadline?.cancel()
+        deadline = null
+        _state.value = _state.value.copy(diagnosis = null, device = null, info = null)
+    }
+
+    /** Ask svc100, then start the clock on the answer. */
+    private suspend fun onReady(host: SessionHost, bundle: IdentityBundle?, scope: CoroutineScope) {
+        // One piece of work, so the two go out in this order every time. The desktop's
+        // run_status submits both at READY as well; neither needs identity auth.
+        host.submit { connection ->
+            announcePeerAppInfo(connection)
+            statusChannel = subscribeOn(connection, null)
+        }
+        if (canaryAnswered) {
+            judge(host, bundle)
+            return
+        }
+        deadline = scope.launch {
+            delay(CANARY_TIMEOUT_MILLIS)
+            judge(host, bundle)
+        }
+    }
+
+    /** Decide once per attempt, as soon as the answer cannot change. */
+    private suspend fun judge(host: SessionHost, bundle: IdentityBundle?) {
+        // Claim, so the deadline firing and the canary answering at the same moment produce
+        // one verdict and one store write rather than two of each.
+        if (!judged.compareAndSet(false, true)) return
+        deadline?.cancel()
+        deadline = null
+
+        val trustOk = host.trustComplete
+        val answered = canaryAnswered
+        if (bundle == null) {
+            // Bring-up against a peer with no stored identity. There is a verdict to publish
+            // and no bundle whose state could move.
+            _state.value = _state.value.copy(diagnosis = diagnose(trustOk, answered))
+            return
+        }
+        val checked = verifyBundle(bundle) {
+            object : SessionProbe {
+                override suspend fun runTrust(): Boolean = trustOk
+                override suspend fun readCanary(): Boolean = answered
+            }
+        }
+        if (checked.bundle.state != bundle.state) {
+            // A file write, off the caller's dispatcher for the same reason the store reads
+            // in start() are: see the class doc.
+            withContext(ioDispatcher) { store.save(checked.bundle) }
+        }
+        _state.value = _state.value.copy(diagnosis = checked.diagnosis)
+    }
+
+    /** Why there is nothing to connect to, in words a person can act on. */
+    private fun idleReason(bundles: List<IdentityBundle>): String = when {
+        bundles.isEmpty() ->
+            "No glasses are set up on this phone yet. Set up glasses to start."
+        else ->
+            "More than one pair of glasses is set up on this phone. Choose which one to use."
+    }
+
+    companion object {
+        /** 20 seconds, from `__main__.py`'s `_DEFAULT_TIMEOUT_SECONDS`. */
+        const val CANARY_TIMEOUT_MILLIS: Long = 20_000
+
+        private const val SVC_AIRSHIP = 20
+        private const val SVC_MEDIA_STREAMING_CONTROL = 51350
+    }
+}

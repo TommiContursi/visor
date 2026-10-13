@@ -1,0 +1,175 @@
+package com.macedonga.visor.core.media
+
+import android.content.ContentValues
+import android.content.Context
+import android.net.Uri
+import android.provider.MediaStore
+import java.io.File
+import java.io.OutputStream
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+
+/**
+ * Gathers each capture's files as they land, in any order, and once the photo or video and what goes with it are
+ * here, makes what the phone's gallery keeps: a Motion Photo for a live photo, a JPEG for a photo, the MP4 for a
+ * video. The HEIC and the two sensor logs stay in files/captures for the viewer and the editor. Making them takes
+ * seconds, so it runs on a queue of its own and never holds up what is still arriving.
+ */
+class Assembly(
+    private val context: Context,
+    private val index: GalleryIndex,
+    private val places: PlaceLog,
+    private val say: (String) -> Unit,
+    private val onSaved: (String) -> Unit,
+) {
+    private val staging = File(context.filesDir, "staging")
+    private val scratch = File(context.cacheDir, "develop")
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val queue = Channel<() -> Unit>(Channel.UNLIMITED)
+
+    init {
+        scope.launch { for (task in queue) task() }
+    }
+
+    /** Keeps [file], one of [capture]'s assets; queues the capture when it was the last piece. */
+    @Synchronized
+    fun take(capture: Capture, assetId: String, file: File) {
+        val name = partName(capture, assetId) ?: return
+        val dir = File(staging, capture.handle).apply { mkdirs() }
+        file.copyTo(File(dir, name), overwrite = true)
+        File(dir, META).writeText(JSONObject().put("type", capture.type.name).put("takenAt", capture.takenAtMillis ?: System.currentTimeMillis()).toString())
+        if (capture.wanted.mapNotNull { partName(capture, it.id) }.any { !File(dir, it).exists() }) return
+        queue.trySend { safely(dir) }
+    }
+
+    /** Whether some of [handle]'s files are here, waiting for the rest or for their turn. */
+    fun waiting(handle: String): Boolean = File(staging, handle).isDirectory
+
+    /**
+     * Whatever has its photo or video and has had nothing new for [olderThanMs] is saved with what came; a capture
+     * still missing that waits.
+     */
+    fun finish(olderThanMs: Long) {
+        queue.trySend {
+            val now = System.currentTimeMillis()
+            for (dir in staging.listFiles().orEmpty()) {
+                if (now - dir.lastModified() < olderThanMs) continue
+                when {
+                    File(dir, MAIN).exists() -> safely(dir)
+                    // A piece that came after its capture was already saved.
+                    index.entries.value.containsKey(dir.name) -> dir.deleteRecursively()
+                }
+            }
+        }
+    }
+
+    private fun safely(dir: File) {
+        if (!dir.isDirectory) return
+        runCatching { assemble(dir) }.onFailure { say("Could not save ${dir.name.take(8)}: ${it.message}") }
+    }
+
+    private fun assemble(dir: File) {
+        val meta = JSONObject(File(dir, META).readText())
+        val handle = dir.name
+        val type = CaptureType.valueOf(meta.getString("type"))
+        val takenAt = meta.getLong("takenAt")
+        val place = places.near(takenAt)
+        val keep = index.originals(handle).apply { mkdirs() }
+        val main = File(dir, MAIN)
+        val kept = when (type) {
+            CaptureType.VIDEO -> {
+                val uri = insert(video = true, takenAt) { out -> main.inputStream().use { it.copyTo(out) } }
+                say("Saved a video to Movies/Visor")
+                Kept(handle, uri.toString(), type, takenAt, lat = place?.lat, lon = place?.lon)
+            }
+            else -> {
+                val bitmap = decodeStill(main)
+                val motion = File(dir, MOTION).takeIf { type == CaptureType.LIVE && it.exists() }
+                val frames = readFrames(File(dir, FRAMES)).orEmpty()
+                val key = motion?.let { matchFrame(it, bitmap) }
+                val jpeg = try {
+                    jpegWithExif(bitmap, main, takenAt, place, File(scratch, "$handle.jpg"))
+                } finally {
+                    bitmap.recycle()
+                }
+                val keyUs = key?.second ?: -1
+                // The frame log has one record per clip frame, or a still's one record.
+                val shutterNs = when {
+                    key != null -> frames.getOrNull(key.first)?.timeNs ?: 0
+                    frames.size == 1 -> frames[0].timeNs
+                    else -> 0
+                }
+                val bytes = if (motion != null) motionPhoto(jpeg, motion.readBytes(), keyUs) else jpeg
+                val uri = insert(video = false, takenAt) { it.write(bytes) }
+                say(if (motion != null) "Saved a live photo to Pictures/Visor" else "Saved a photo to Pictures/Visor")
+                main.copyTo(File(keep, STILL), overwrite = true)
+                Kept(
+                    handle, uri.toString(), if (motion != null) CaptureType.LIVE else CaptureType.PHOTO, takenAt,
+                    clipBytes = motion?.length() ?: 0, keyFrameUs = keyUs, shutterNs = shutterNs, lat = place?.lat, lon = place?.lon,
+                )
+            }
+        }
+        File(dir, IMU).takeIf { it.exists() }?.copyTo(File(keep, IMU), overwrite = true)
+        File(dir, FRAMES).takeIf { it.exists() }?.copyTo(File(keep, FRAMES), overwrite = true)
+        val old = index.entries.value[handle]?.uri?.let(Uri::parse)
+        index.put(kept)
+        if (old != null && old.toString() != kept.uri) {
+            // The new copy took a "(1)" name beside the old one; with the old gone it takes the plain name.
+            runCatching { context.contentResolver.delete(old, null, null) }
+            val name = ContentValues().apply { put(MediaStore.MediaColumns.DISPLAY_NAME, fileName(type == CaptureType.VIDEO, takenAt)) }
+            runCatching { context.contentResolver.update(Uri.parse(kept.uri), name, null, null) }
+        }
+        dir.deleteRecursively()
+        onSaved(handle)
+    }
+
+    private fun insert(video: Boolean, takenAt: Long, write: (OutputStream) -> Unit): Uri {
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName(video, takenAt))
+            put(MediaStore.MediaColumns.MIME_TYPE, if (video) "video/mp4" else "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, if (video) "Movies/Visor" else "Pictures/Visor")
+            put(MediaStore.MediaColumns.DATE_TAKEN, takenAt)
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val collection = if (video) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        else MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        val resolver = context.contentResolver
+        val uri = resolver.insert(collection, values) ?: error("the gallery would not take it")
+        try {
+            checkNotNull(resolver.openOutputStream(uri)).use(write)
+            resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+        } catch (error: Exception) {
+            resolver.delete(uri, null, null)
+            throw error
+        }
+        return uri
+    }
+
+    companion object {
+        const val STILL = "still.heic"
+        const val IMU = "imu"
+        const val FRAMES = "frames"
+        private const val MAIN = "main"
+        private const val MOTION = "motion"
+        private const val META = "meta.json"
+
+        private val NAME: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(ZoneId.systemDefault())
+
+        private fun fileName(video: Boolean, takenAt: Long) = "Visor_" + NAME.format(Instant.ofEpochMilli(takenAt)) + if (video) ".mp4" else ".jpg"
+
+        private fun partName(capture: Capture, assetId: String): String? = when (assetId) {
+            capture.main?.id -> MAIN
+            capture.motion?.id -> MOTION
+            capture.imu?.id -> IMU
+            capture.frames?.id -> FRAMES
+            else -> null
+        }
+    }
+}

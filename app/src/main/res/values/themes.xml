@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The platform theme exists only to set the window background before Compose draws, so
+      launching does not flash white over a dark app. Everything else is themed in Compose
+      by VisorTheme.
+    -->
+    <style name="Theme.Visor" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/canvas</item>
+    </style>
+</resources>

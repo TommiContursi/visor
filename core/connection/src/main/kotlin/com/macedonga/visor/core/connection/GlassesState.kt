@@ -1,0 +1,35 @@
+package com.macedonga.visor.core.connection
+
+import com.macedonga.visor.core.identity.Diagnosis
+import com.macedonga.visor.core.session.LinkState
+import com.macedonga.visor.core.transport.ConnectFailure
+
+/** Where the glasses are reached. */
+sealed interface GlassesLink {
+
+    /** An address as `BluetoothAdapter.checkBluetoothAddress` reads it. */
+    data class Bluetooth(val address: String) : GlassesLink
+
+    /** The glasses' socket on a Wi-Fi Direct group this phone owns. */
+    data class Wifi(val host: String, val port: Int) : GlassesLink
+}
+
+/** Which glasses, and how to reach them. */
+data class GlassesTarget(val link: GlassesLink, val serial: String)
+
+/** Everything the app knows about the connection, in one value. */
+data class GlassesState(
+    /** Null when no glasses are claimed on this phone. Not a failure, and [reason] says so. */
+    val target: GlassesTarget? = null,
+    val link: LinkState = LinkState.DISCONNECTED,
+    /** Plain words about why, for a person to read. */
+    val reason: String = "",
+    /** What a person could do about a connect that failed. Null when none has. */
+    val failure: ConnectFailure? = null,
+    /** The verdict, once one has been reached on this attempt. Null before that. */
+    val diagnosis: Diagnosis? = null,
+    /** svc28's device state on this attempt: the 2005 snapshot with every later push merged in. */
+    val device: DeviceState? = null,
+    /** svc100's answer on this attempt, the canary's reply decoded. Null until it arrives. */
+    val info: DeviceInfo? = null,
+)

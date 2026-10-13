@@ -1,0 +1,1043 @@
+package com.macedonga.visor.core.assistant
+
+import android.content.Context
+import com.macedonga.visor.core.connection.GlassesConnection
+import com.macedonga.visor.core.media.AirshipReceiver
+import com.macedonga.visor.core.media.ExtraFiles
+import com.macedonga.visor.core.media.Received
+import com.macedonga.visor.core.protocol.Thrift
+import com.macedonga.visor.core.protocol.ThriftWriter
+import com.macedonga.visor.core.protocol.Wire
+import com.macedonga.visor.core.session.DataXConnection
+import com.macedonga.visor.core.session.DataXMessage
+import com.macedonga.visor.core.session.LinkState
+import com.macedonga.visor.core.session.Responder
+import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.Collections
+import java.time.LocalDate
+import java.util.Locale
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+
+enum class AssistantPhase { OFF, WAITING, REGISTERING, LISTENING, THINKING, SPEAKING }
+
+/** One "Hey Meta" turn, for the screen. */
+data class TurnRecord(
+    val interactionId: String,
+    val at: Long,
+    val question: String,
+    val answer: String = "",
+    val problem: String = "",
+    val modelMs: Long = 0,
+    val sentMs: Long = 0,
+    // What the glasses report having played, from their 5005; -1 until it arrives.
+    val playedMs: Long = -1,
+    // The photo the answer was given, as sent to the model.
+    val image: String = "",
+    // The conversation it belongs to: questions within the memory window of each other, or a Live AI session.
+    val conversation: String = "",
+    val source: TurnSource = TurnSource.GLASSES,
+    // The Live AI session it was asked in.
+    val session: String = "",
+    // What the model chose to remember while answering.
+    val remembered: List<String> = emptyList(),
+)
+
+/**
+ * "Hey Meta", answered by this phone: svc15 bring-up on every Bluetooth link, the envelope acks and
+ * state mirrors, and each fulfilment request answered with a model's reply spoken by the phone's
+ * TTS. Port of lensbreak's services/assistant.py; sends are serialised by the link's own lock, so
+ * the mid-burst ev339 mirror goes out from the reader while the audio streams from here.
+ */
+class Assistant(
+    private val context: Context,
+    private val connection: GlassesConnection,
+    private val voice: Voice,
+    val brain: Brain,
+    private val store: AssistantConfigStore,
+    airship: AirshipReceiver,
+    /** Every turn, kept by day, with the photos the answers were given. */
+    val diary: Diary,
+    /** The Live view's Wi-Fi session while there is one: "Hey Meta" keeps working on it. */
+    liveSession: Flow<DataXConnection?> = emptyFlow(),
+    /** The Live view's picture now, when one runs: the image for every question asked meanwhile. */
+    private val liveFrame: suspend () -> ByteArray? = { null },
+    /** The camera stream for Live AI: on, off, and whether frames are coming. */
+    private val camera: LiveAiCamera? = null,
+    /** The photos the glasses take for questions, on svc53. */
+    private val glassesPhotos: GlassesPhotos? = null,
+    /** The voice the glasses speak in (assistant_voice_id), for answers in their own voice. */
+    private val glassesVoice: () -> String? = { null },
+) : Responder {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private val _phase = MutableStateFlow(AssistantPhase.WAITING)
+    val phase: StateFlow<AssistantPhase> = _phase.asStateFlow()
+
+    /** Every turn, oldest first. */
+    val turns: StateFlow<List<TurnRecord>> = diary.turns
+    private val photos: File get() = diary.photos
+
+    // Days whose lines are being written, and the last turn each failed for, so a failure is not retried until there is more.
+    private val writing: MutableSet<LocalDate> = Collections.newSetFromMap(ConcurrentHashMap())
+    private val linesFailed = ConcurrentHashMap<LocalDate, Long>()
+
+    private val _notes = MutableSharedFlow<String>(extraBufferCapacity = 64, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val notes: SharedFlow<String> = _notes.asSharedFlow()
+
+    private val liveAi = LiveAi(context, scope, object : LiveAiHost {
+        override suspend fun event(id: Int, body: ByteArray) {
+            val l = link ?: return
+            val m0 = l.m0 ?: return
+            l.mux.send(m0, netEvent(id, body), messageType = MT_NET_EVENT)
+        }
+
+        override suspend fun answer(subInteraction: String, question: String) {
+            link?.let { liveAnswer(it, subInteraction, question) }
+        }
+
+        override fun cameraOn() {
+            camera?.on()
+        }
+
+        override fun cameraOff() {
+            camera?.off()
+        }
+
+        override fun note(text: String) = say(text)
+    })
+
+    // The glasses' last language, kept so the speech model can be fetched at launch, before they connect.
+    private val speechPrefs = context.getSharedPreferences("speech", Context.MODE_PRIVATE)
+    private var lastSpeech = ""
+
+    // When the current microphone stream ended.
+    @Volatile
+    private var micEnded: CompletableDeferred<Unit>? = null
+
+    // The ears for one turn's microphone, and the interaction they listen for.
+    @Volatile
+    private var ears: GlassesEars? = null
+
+    /**
+     * The glasses opened their microphone for [interaction]. They recognise a "Hey Meta" question themselves and
+     * send it as ev57; a follow-up after an answer they leave to the server. Both are heard here, and an utterance
+     * is answered only if no ev57 for it has come a moment after it ended.
+     */
+    private fun listen(l: Link, interaction: String) {
+        ears?.stop()
+        val ended = CompletableDeferred<Unit>().also { micEnded = it }
+        l.listening = interaction
+        if (interaction.isEmpty() || !store.config.value.enabled) return
+        say("Listening to the microphone for $interaction")
+        ears = GlassesEars(
+            context, l.locale, continuous = true,
+            onUtterance = { text, startMs, _ ->
+                scope.launch {
+                    delay(OWN_RECOGNITION_GRACE_MS)
+                    if (interaction in l.closed) return@launch
+                    when {
+                        // The question itself, which the glasses recognised and sent as ev57.
+                        interaction in l.taken && !l.answered.contains(interaction) -> Unit
+                        // After an answer: a follow-up, a sub-interaction of its own as the server opens one.
+                        interaction in l.answered -> {
+                            val sub = java.util.UUID.randomUUID().toString()
+                            say("Heard \"$text\" myself: a follow-up, answered as $sub")
+                            l.mux.send(checkNotNull(l.m0), netEvent(EV_START_OF_USER_SPEECH, ThriftWriter().str(1, sub).i64(2, startMs).done()), messageType = MT_NET_EVENT)
+                            l.taken.add(sub)
+                            answer(l, sub, text, Visual(null, "", "", false, ""))
+                        }
+                        // Nothing came from the glasses: the whole question was left to the server. Their own
+                        // transcript comes only after their stream ends, so wait for that, and never answer the wake word.
+                        else -> {
+                            if (WAKE_WORD_ONLY.matches(text.trim())) return@launch
+                            withTimeoutOrNull(MIC_END_WAIT_MS) { ended.await() }
+                            delay(QUESTION_GRACE_MS)
+                            if (interaction in l.taken || interaction in l.closed) return@launch
+                            l.taken.add(interaction)
+                            say("Heard \"$text\" myself: the glasses left this question to the server")
+                            answer(l, interaction, text, Visual(null, "", "", false, ""))
+                        }
+                    }
+                }
+            },
+            onProblem = { say("Assistant: $it") },
+        ).also { it.start() }
+    }
+
+    /** Live AI, while the glasses run a session with this phone as its server. */
+    val liveAiPhase: StateFlow<LiveAiPhase> = liveAi.phase
+
+    /** The glasses' assistant language, from their 1026. */
+    val locale: Locale get() = link?.locale ?: Locale.US
+
+    @Volatile
+    private var link: Link? = null
+
+    /** svc15 state for one Bluetooth session. */
+    private class Link(val mux: DataXConnection) {
+        // Whether the current turn is a session (SCI) one, which only plays streamed answers.
+        @Volatile var sessionTurn = false
+        // The interaction the microphone is open for, and each request's session when the two differ.
+        @Volatile var listening: String? = null
+        val sessionOf = java.util.concurrent.ConcurrentHashMap<String, String>()
+        @Volatile var m0: Int? = null
+        @Volatile var s0: Int? = null
+        val m0Answered = CompletableDeferred<Unit>()
+        val s0Answered = CompletableDeferred<Unit>()
+        // The stream id the glasses allocate per interaction, from their own 5002.
+        val streamIds = ConcurrentHashMap<String, String>()
+        @Volatile var latestStream = ""
+        val confirmed: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
+        // Interactions whose answer has been spoken: what is said after is a follow-up.
+        val answered: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
+        // Interactions the glasses have closed: an answer that comes later would talk over the next one.
+        val closed: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
+        val taken: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
+        @Volatile var locale: Locale = Locale.US
+    }
+
+    /** A photo this side is waiting for, for one interaction. */
+    private class PendingImage(val interaction: String) {
+        val image = CompletableDeferred<ByteArray>()
+        @Volatile var answered = false
+    }
+
+    @Volatile
+    private var pending: PendingImage? = null
+
+    /** The phone's messaging, for replies by voice; set by the notification listener. */
+    @Volatile
+    var messaging: Messaging? = null
+
+    // A reply asked for and not yet dictated: the next request's words are its text.
+    private class AwaitingReply(val conversation: Conversation, val until: Long)
+
+    @Volatile
+    private var awaitingReply: AwaitingReply? = null
+
+    init {
+        // The assistant's photo comes over airship, in a namespace the media import refuses.
+        airship.extra = object : ExtraFiles {
+            override fun wants(namespace: String, size: Long): Boolean {
+                val waiting = pending != null && size < 20_000_000
+                if (waiting) say("Taking ${size / 1000} KB in namespace \"$namespace\" for the photo")
+                return waiting
+            }
+
+            // Read here, because the receiver deletes the file; decoded off the reader.
+            override fun take(received: Received) {
+                val bytes = received.file.readBytes()
+                scope.launch { offerImage(bytes, "airship \"${received.offer.namespace}\"") }
+            }
+
+            override fun peek(received: Received) {
+                if (pending == null || received.offer.size >= 20_000_000) return
+                val bytes = received.file.readBytes()
+                scope.launch { offerImage(bytes, "the media namespace") }
+            }
+        }
+        scope.launch {
+            combine(
+                connection.state.map { it.link == LinkState.READY }.distinctUntilChanged(),
+                store.config.map { it.enabled }.distinctUntilChanged(),
+            ) { ready, enabled -> ready to enabled }.collectLatest { (ready, enabled) ->
+                link = null
+                _phase.value = when {
+                    !enabled -> AssistantPhase.OFF
+                    !ready -> AssistantPhase.WAITING
+                    else -> AssistantPhase.REGISTERING
+                }
+                if (ready && enabled) connection.submit { mux -> scope.launch { bringUp(mux) } }
+            }
+        }
+        scope.launch { camera?.frames?.collect { if (it) liveAi.onFirstFrame() } }
+        // A language switch restarts the glasses' assistant, which closes our channels: register again once it settles.
+        scope.launch {
+            var again: Job? = null
+            connection.warnings.collect { warning ->
+                val channel = CHANNEL_CLOSED.find(warning)?.groupValues?.get(1)?.toIntOrNull(16) ?: return@collect
+                val l = link ?: return@collect
+                if (channel != (l.m0 ?: -1) and 0x7FFF && channel != (l.s0 ?: -1) and 0x7FFF) return@collect
+                again?.cancel()
+                again = scope.launch {
+                    delay(REGISTER_AGAIN_MS)
+                    if (link !== l || connection.state.value.link != LinkState.READY) return@launch
+                    say("The glasses' assistant closed our channels; registering again")
+                    connection.submit { mux -> scope.launch { bringUp(mux) } }
+                }
+            }
+        }
+        // At launch: the speech model for the glasses' language, as last heard.
+        Locale.forLanguageTag(speechPrefs.getString("language", null) ?: "en-US").let {
+            lastSpeech = speechTag(it)
+            SpeechModels.prepare(context, it, ::say)
+        }
+        scope.launch { glassesPhotos?.arrived?.collect { (id, bytes) -> if (pending != null) offerImage(bytes, "svc53 photo $id") } }
+        // A day's lines are written again once its latest conversation has closed.
+        scope.launch {
+            diary.turns.map { list -> list.lastOrNull()?.let { it.date to it.at } }.distinctUntilChanged().collectLatest { last ->
+                val (date, at) = last ?: return@collectLatest
+                val closes = at + windowMs() - System.currentTimeMillis()
+                if (closes > 0) delay(closes + LINES_GRACE_MS)
+                writeLines(date)
+            }
+        }
+        // While the Live runs over Wi-Fi the Bluetooth session is paused; the assistant registers on the Wi-Fi one.
+        scope.launch {
+            liveSession.collectLatest { mux ->
+                if (mux != null && store.config.value.enabled) {
+                    say("Moving the assistant onto the Live view's Wi-Fi session")
+                    bringUp(mux)
+                }
+            }
+        }
+    }
+
+    private fun say(text: String) {
+        _notes.tryEmit(text)
+    }
+
+    // --- bring-up ------------------------------------------------------------
+
+    /** Register m0 and s0, declare the companion's resources, announce a session. */
+    private suspend fun bringUp(mux: DataXConnection) {
+        val l = Link(mux)
+        link = l
+        try {
+            val client = UUID.randomUUID().toString()
+            val session = "${System.currentTimeMillis()}-${UUID.randomUUID()}"
+            fun registration(endpoint: String) = Wire.fieldBytes(1, session.toByteArray()) +
+                Wire.fieldBytes(2, client.toByteArray()) + Wire.fieldBytes(3, endpoint.toByteArray()) + Wire.fieldVarint(4, 2)
+
+            val m0 = mux.openChannel(SVC_ASSISTANT).also { l.m0 = it }
+            mux.send(m0, registration("$client-m0"), messageType = MT_INIT_MESSAGE_REQUEST, serviceId = SVC_ASSISTANT)
+            withTimeoutOrNull(4_000) { l.m0Answered.await() } ?: say("The glasses did not answer the assistant's message registration")
+            val s0 = mux.openChannel(SVC_ASSISTANT).also { l.s0 = it }
+            mux.send(s0, registration("$client-s0"), messageType = MT_INIT_STREAM_REQUEST, serviceId = SVC_ASSISTANT)
+            withTimeoutOrNull(4_000) { l.s0Answered.await() } ?: say("The glasses did not answer the assistant's stream registration")
+
+            // In this order, as the app declares them. Without them the glasses take the audio and play nothing.
+            fun id() = Wire.fieldBytes(1, UUID.randomUUID().toString().toByteArray())
+            val resources = listOf(
+                MT_PAIRED_DEVICE_ANDROID to Wire.fieldBytes(1, "${System.currentTimeMillis()}-${UUID.randomUUID()}".toByteArray()),
+                MT_AIR_RESOURCES_UNAVAILABLE to id(),
+                MT_LIVE_MODE_AIR_RESOURCES_UNAVAILABLE to id(),
+                MT_DEVICE_ACTIVE to ByteArray(0),
+                MT_NUM_OF_DEVICES_PAIRED to "1".toByteArray(),
+                MT_LIVE_MODE_AIR_RESOURCES_AVAILABLE to id(),
+                MT_AIR_RESOURCES_AVAILABLE to id(),
+            )
+            for ((type, payload) in resources) {
+                mux.send(m0, payload, messageType = type)
+                delay(30)
+            }
+            announceSession(mux, m0)
+            if (link === l) _phase.value = AssistantPhase.LISTENING
+            say("Registered as the glasses' assistant: \"Hey Meta\" now comes to Visor")
+        } catch (error: Exception) {
+            if (link === l) say("Could not register as the assistant: ${error.message}")
+        }
+    }
+
+    /** Four events that tell the glasses a working assistant backend is behind this client. */
+    private suspend fun announceSession(mux: DataXConnection, m0: Int) {
+        val sid = UUID.randomUUID().toString()
+        val sessionString = "${System.currentTimeMillis()}-${UUID.randomUUID()}"
+        val open = ThriftWriter().str(1, sid).bool(2, true).bool(3, false)
+            .str(4, UUID.randomUUID().toString().uppercase()).str(5, "prod.facebookvirtualassistant.com")
+            .str(6, "ble").str(10, sessionString).bool(11, false).bool(13, true).bool(14, false).done()
+        val stepA = ThriftWriter().str(1, sid).bool(2, false).bool(3, false).i32(4, 1).bool(7, false).done()
+        val stepB = ThriftWriter().str(1, sid).bool(2, true).bool(3, false).i32(4, 2).done()
+        val close = ThriftWriter().str(1, sid).i32(2, 1).i32(3, 0).done()
+        for ((event, body) in listOf(EV_MWA_INTERACTION_CREATION_SUCCESS to open, EV_SERVER_CONNECTION_STATUS to stepA, EV_SERVER_CONNECTION_STATUS to stepB, EV_LIVE_AI_CLIENT_RECEIVED_FIRST_FRAME to close)) {
+            mux.send(m0, netEvent(event, body), messageType = MT_NET_EVENT)
+            delay(20)
+        }
+    }
+
+    // --- the responder ---------------------------------------------------------
+
+    override suspend fun respond(message: DataXMessage, connection: DataXConnection) {
+        val l = link ?: return
+        // The Wi-Fi session gets this responder too; only the link we registered on is ours.
+        if (connection !== l.mux) return
+        val payload = message.payload
+        when (val type = message.info.messageType) {
+            MT_INIT_MESSAGE_RESPONSE -> l.m0Answered.complete(Unit)
+            MT_INIT_STREAM_RESPONSE -> l.s0Answered.complete(Unit)
+            MT_RUNNING_LOCALE -> {
+                l.locale = parseLocale(payload)
+                say("The glasses' assistant speaks ${l.locale.getDisplayName(Locale.ENGLISH)}")
+                if (speechTag(l.locale) != lastSpeech) {
+                    lastSpeech = speechTag(l.locale)
+                    speechPrefs.edit().putString("language", l.locale.toLanguageTag()).apply()
+                    SpeechModels.prepare(context, l.locale, ::say)
+                }
+            }
+            MT_STREAM_HEADER -> {
+                val header = Wire.parse(payload)
+                val stream = header.bytes(1).decodeToString()
+                val interaction = header.bytes(2).decodeToString()
+                if (stream.length > 8) {
+                    l.streamIds[interaction] = stream
+                    l.latestStream = stream
+                }
+                if (liveAi.active) liveAi.onMicHeader(hex(payload)) else listen(l, interaction)
+            }
+            // The microphone: Live AI's, or one turn's, which the server may have to recognise itself.
+            MT_STREAM_AUDIO, 0 -> if (liveAi.active) liveAi.onMic(payload) else ears?.hear(payload)
+            MT_STREAM_END -> {
+                micEnded?.complete(Unit)
+                ears?.finish()
+            }
+            MT_STREAM_STATUS -> streamStatus(payload.decodeToString())
+            MT_ENVELOPE -> envelope(l, payload)
+            // Init answers, time stretch, TTS buffer config, MMAI enabled, assistant ready, stream consumed.
+            1028, 1033, 1036, 1037, 6001 -> Unit
+            else -> say("Assistant: message type $type, ${payload.size} bytes ${hex(payload)}")
+        }
+    }
+
+    private suspend fun envelope(l: Link, payload: ByteArray) {
+        val m0 = l.m0 ?: return
+        val env = Wire.parse(payload)
+        // Unacked, the glasses resend the same envelope for minutes.
+        if (env.has(1)) l.mux.send(m0, Wire.fieldVarint(1, env.varint(1)), messageType = MT_ENVELOPE_ACK)
+        val inner = env.varint(2).toInt()
+        val blob = env.bytes(3)
+        if (inner == MT_START_INTERACTION) {
+            val fields = runCatching { Thrift.loads(blob) }.getOrDefault(emptyMap())
+            // Use case 3 is LIVE_AI_INTERACTION; after a switch to LIVE_AI the next interaction is the session's.
+            if (fields[5] == 3L || liveAi.phase.value == LiveAiPhase.STARTING) liveAi.onStartInteraction(fields, l.locale)
+            else {
+                // Use case 7 opens a session ("SCI", English): there the glasses never speak text from the phone.
+                l.sessionTurn = fields[5] == SESSION_USE_CASE
+                say("Assistant: start interaction ${deep(fields)}")
+            }
+            return
+        }
+        if (inner != MT_NET_EVENT) {
+            say("Assistant: an envelope carrying type $inner, ${blob.size} bytes ${hex(blob)}")
+            return
+        }
+        val event = try {
+            parseNetEvent(blob)
+        } catch (error: Exception) {
+            say("Assistant: an unreadable event (${error.message})")
+            return
+        }
+        when (event.id) {
+            EV_SESSION_MODE_UPDATE_RESPONSE -> {
+                val fields = runCatching { Thrift.loads(event.body) }.getOrDefault(emptyMap())
+                val id = fields[1].asText()
+                // Mode 2 is LIVE_AI: no speech confirmation, the session is the server's to serve.
+                if (fields[2] == MODE_LIVE_AI) {
+                    liveAi.onModeLiveAi(id, fields)
+                    return
+                }
+                if (liveAi.active) liveAi.end("the session went back to mode ${fields[2]}")
+                // The glasses wait for this confirmation before they hand over the transcript.
+                if (id.isNotEmpty() && l.confirmed.add(id)) {
+                    l.mux.send(m0, netEvent(EV_START_OF_USER_SPEECH, ThriftWriter().str(1, id).done()), messageType = MT_NET_EVENT)
+                }
+            }
+            EV_SESSION_STATE_UPDATE -> {
+                mirrorState(l, m0, event.body)
+                // Mode 0: the session is over, Live AI with it.
+                if (liveAi.active && runCatching { Thrift.loads(event.body)[2] }.getOrNull() == 0L) liveAi.end("the session closed")
+            }
+            EV_REMOTE_INTERACTION_COMPLETE -> {
+                runCatching { Thrift.loads(event.body)[1].asText() }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { l.closed.add(it) }
+                say("Assistant: remote interaction complete ${describe(event.body)}")
+                liveAi.end("the glasses completed the interaction")
+            }
+            EV_FRAME_KEEP_ALIVE_RESPONSE -> Unit
+            EV_FULFILLMENT_REQUEST -> fulfillmentRequest(l, event.body)
+            EV_DEVICE_VOICE_STATE -> voiceState(event.body)
+            EV_REMOTE_IMAGE_CAPTURE_RESPONSE -> {
+                pending?.answered = true
+                say("The glasses took the photo: ${describe(event.body)}")
+            }
+            else -> say("Assistant: ${eventName(event.id)} (${event.id}), ${event.body.size} bytes ${describe(event.body)}")
+        }
+    }
+
+    /** ev339 echoed straight back as ev333, field for field. */
+    private suspend fun mirrorState(l: Link, m0: Int, body: ByteArray) {
+        val state = runCatching { Thrift.loads(body) }.getOrNull() ?: return
+        val w = ThriftWriter()
+        for (f in state.keys.sorted()) {
+            val v = state[f]
+            if (v is Long) w.i32(f, v.toInt())
+        }
+        l.mux.send(m0, netEvent(EV_SESSION_STATE_BROADCAST, w.done()), messageType = MT_NET_EVENT)
+    }
+
+    /** ev307: the live transcript, or what the glasses are about to say themselves. */
+    private fun voiceState(body: ByteArray) {
+        val f = runCatching { Thrift.loads(body) }.getOrNull() ?: return
+        val words = f.values.filterIsInstance<String>().firstOrNull { it.isNotBlank() && !isUuid(it) } ?: return
+        say("Glasses: \"$words\"")
+    }
+
+    private fun fulfillmentRequest(l: Link, body: ByteArray) {
+        if (l.m0 == null || l.s0 == null) return say("A question came before the assistant channels were up; dropped")
+        val m = runCatching { Thrift.loads(body) }.getOrNull() ?: return say("An unreadable question, ${body.size} bytes ${hex(body)}")
+        val interaction = m[1].asText()
+        val transcript = m[2].asStruct()[1].asStruct()[1].asText()
+        if (interaction.isEmpty() || !l.taken.add(interaction)) return
+        // In a session the request has its own id; the microphone's is the session's, and it is the same turn.
+        l.listening?.takeIf { it != interaction }?.let {
+            l.sessionOf[interaction] = it
+            l.taken.add(it)
+        }
+        m[8].asText().takeIf { it.length > 8 && !l.streamIds.containsKey(interaction) }?.let { l.streamIds[interaction] = it }
+        val visual = Visual.from(m)
+        say("Heard \"$transcript\" (request ${describe(body)}, understanding ${describeRead(m[2])})")
+        // The glasses' own understanding of the request, e.g. IN:REPLY_MESSAGE, and its slots.
+        val intent = m[23].asText()
+        say("Understood $intent, slots ${deep(m[26])}")
+        val waiting = awaitingReply?.takeIf { System.currentTimeMillis() < it.until }
+        // The glasses fulfil this one themselves, by switching the session to Live AI; an answer would talk over it.
+        if (intent == "IN:START_LIVE_AI") {
+            say("Live AI asked for; the glasses start it themselves")
+            return
+        }
+        // "Hey Meta" and nothing after it: the glasses close the turn at once.
+        if (intent == "IN:WAKE_WORD") return
+        when {
+            // The glasses' own words for giving up.
+            waiting != null && intent in CANCEL_INTENTS -> {
+                awaitingReply = null
+                say("Reply to ${waiting.conversation.sender} cancelled ($intent)")
+            }
+            // The message itself, as the glasses heard it: their content slot, else the whole utterance.
+            waiting != null -> scope.launch {
+                sendReply(l, interaction, transcript, waiting.conversation, slot(m[26], "SL:CONTENT_EXACT").ifEmpty { transcript })
+            }
+            intent == "IN:REPLY_MESSAGE" -> scope.launch { replyRequested(l, interaction, transcript, slot(m[26], "SL:CONTENT_EXACT")) }
+            else -> scope.launch { answer(l, interaction, transcript, visual) }
+        }
+    }
+
+    // --- replying ------------------------------------------------------------
+
+    private suspend fun replyRequested(l: Link, interaction: String, transcript: String, content: String) {
+        record(TurnRecord(interaction, System.currentTimeMillis(), transcript))
+        val conversation = messaging?.lastAnnounced()
+        if (conversation == null) {
+            return speakTurn(l, interaction, transcript, "Tell the wearer there is no message to reply to.")
+        }
+        val text = content
+        if (text.isEmpty()) {
+            awaitingReply = AwaitingReply(conversation, System.currentTimeMillis() + REPLY_WAIT_MS)
+            say("Asking what to reply to ${conversation.sender} on ${conversation.app}")
+            return speakTurn(l, interaction, transcript, "Ask the wearer what they want to reply to ${conversation.sender}.")
+        }
+        sendReply(l, interaction, transcript, conversation, text)
+    }
+
+    private suspend fun sendReply(l: Link, interaction: String, transcript: String, conversation: Conversation, text: String) {
+        awaitingReply = null
+        record(TurnRecord(interaction, System.currentTimeMillis(), transcript))
+        val phone = messaging
+        val why = if (phone == null) "the notification listener is not running" else phone.reply(conversation, text)
+        say(if (why == null) "Replied to ${conversation.sender} on ${conversation.app}: \"$text\"" else "Could not reply to ${conversation.sender}: $why")
+        speakTurn(
+            l, interaction, transcript,
+            if (why == null) "Tell the wearer the reply to ${conversation.sender} was sent." else "Tell the wearer the reply to ${conversation.sender} could not be sent.",
+        )
+    }
+
+    /** Speak, as this interaction's answer, a sentence the model writes from [what] in the glasses' language. */
+    private suspend fun speakTurn(l: Link, interaction: String, transcript: String, what: String) {
+        _phase.value = AssistantPhase.THINKING
+        try {
+            val text = brain.phrase(what, l.locale)
+            update(interaction) { it.copy(answer = text) }
+            deliver(l, interaction, transcript, text)
+        } catch (error: Exception) {
+            say("The reply prompt did not reach the glasses: ${error.message}")
+        } finally {
+            if (link === l) _phase.value = AssistantPhase.LISTENING
+        }
+    }
+
+    // --- answering -----------------------------------------------------------
+
+    private suspend fun answer(l: Link, interaction: String, transcript: String, visual: Visual) {
+        val started = System.currentTimeMillis()
+        record(TurnRecord(interaction, started, transcript))
+        _phase.value = AssistantPhase.THINKING
+        var problem = ""
+        // During the Live every question comes with the picture: the wearer is showing it.
+        val live = if (store.config.value.vision) runCatching { liveFrame() }.getOrNull()?.let { toModelJpeg(it) } else null
+        if (live != null) say("Answering with the Live view's picture")
+        val visualQuestion = live != null || (store.config.value.vision && (visual.glassesCaptured || visual.glassesWantImage || soundsVisual(transcript)))
+        val image = live ?: if (visualQuestion) photo(l, interaction, visual) else null
+        if (image != null) {
+            val file = File(photos, "$interaction.jpg")
+            runCatching {
+                photos.mkdirs()
+                file.writeBytes(image)
+            }
+            update(interaction) { it.copy(image = file.path) }
+        }
+        val note = if (visualQuestion && image == null) {
+            "The wearer seems to ask about what they see, but the photo from the glasses did not arrive; say so briefly."
+        } else {
+            ""
+        }
+        val waiting = scope.launch { holdOn(l) }
+        val reply = try {
+            val left = (TURN_BUDGET_MS - (System.currentTimeMillis() - started)).coerceAtLeast(MIN_MODEL_MS)
+            withTimeout(left) { brain.answer(transcript, l.locale, pastOf(interaction), image, note) }
+        } catch (error: Exception) {
+            problem = error.message ?: error::class.simpleName.orEmpty()
+            Reply(fallback(l.locale, store.config.value.apiKey.isBlank() && store.config.value.provider == Provider.CLAUDE))
+        }
+        val text = reply.text
+        waiting.cancel()
+        val modelMs = System.currentTimeMillis() - started
+        if (problem.isNotEmpty()) say("The model did not answer: $problem")
+        if (interaction in l.closed) {
+            say("The glasses closed this turn before the answer was ready (${modelMs / 1000} s); not sending it")
+            update(interaction) { it.copy(answer = text, problem = ANSWER_TOO_LATE, modelMs = modelMs, remembered = reply.remembered) }
+            if (link === l) _phase.value = AssistantPhase.LISTENING
+            return
+        }
+        update(interaction) { it.copy(answer = text, problem = problem, modelMs = modelMs, remembered = reply.remembered) }
+        try {
+            val sentMs = deliver(l, interaction, transcript, text)
+            l.answered.add(interaction)
+            l.sessionOf[interaction]?.let { l.answered.add(it) }
+            update(interaction) { it.copy(sentMs = sentMs) }
+        } catch (error: Exception) {
+            say("The answer did not reach the glasses: ${error.message}")
+            update(interaction) { it.copy(problem = error.message.orEmpty()) }
+        } finally {
+            if (link === l) _phase.value = AssistantPhase.LISTENING
+        }
+    }
+
+    /**
+     * While the model thinks: KeepWearableAirSessionAlive every few seconds, which the server sends to keep the
+     * glasses waiting for an answer that is on its way.
+     */
+    private suspend fun holdOn(l: Link) {
+        var seq = 1
+        while (true) {
+            delay(HOLD_ON_MS)
+            val m0 = l.m0 ?: return
+            l.mux.send(m0, netEvent(EV_KEEP_AIR_SESSION_ALIVE, ThriftWriter().str(1, "AwaitingResponse").i32(2, 20_000).i32(3, seq++).done()), messageType = MT_NET_EVENT)
+        }
+    }
+
+    /** One Live AI turn: the camera's picture now, the model, and the answer spoken as [sub]. */
+    private suspend fun liveAnswer(l: Link, sub: String, question: String) {
+        val started = System.currentTimeMillis()
+        val session = liveAi.sessionId.ifEmpty { liveAi.interaction }
+        record(TurnRecord(sub, started, question, source = TurnSource.LIVE_AI, session = session, conversation = "live-$session"))
+        val image = runCatching { liveFrame() }.getOrNull()?.let { toModelJpeg(it) }
+        if (image != null) {
+            val file = File(photos, "$sub.jpg")
+            runCatching {
+                photos.mkdirs()
+                file.writeBytes(image)
+            }
+            update(sub) { it.copy(image = file.path) }
+        }
+        var problem = ""
+        val reply = try {
+            brain.answer(question, l.locale, pastOf(sub), image, LIVE_AI_NOTE)
+        } catch (error: Exception) {
+            problem = error.message ?: error::class.simpleName.orEmpty()
+            Reply(fallback(l.locale, store.config.value.apiKey.isBlank() && store.config.value.provider == Provider.CLAUDE))
+        }
+        val text = reply.text
+        update(sub) { it.copy(answer = text, problem = problem, modelMs = System.currentTimeMillis() - started, remembered = reply.remembered) }
+        try {
+            deliver(l, sub, question, text)
+        } catch (error: Exception) {
+            say("Live AI: the answer did not reach the glasses: ${error.message}")
+        }
+    }
+
+    /**
+     * The photo for a visual question: inline in the request, or the file the glasses send over
+     * airship. If they did not take one, ask with RemoteImageCaptureRequest (73); they answer 74
+     * with the image's id and then send the file.
+     */
+    private suspend fun photo(l: Link, interaction: String, visual: Visual): ByteArray? {
+        glassesPhotos?.take(visual.imageUuid)?.let { bytes ->
+            toModelJpeg(bytes)?.let {
+                say("The photo had come already on svc53, ${bytes.size / 1000} KB")
+                return it
+            }
+        }
+        visual.inline?.let { bytes ->
+            toModelJpeg(bytes)?.let {
+                say("The photo came inside the request, ${bytes.size / 1000} KB")
+                return it
+            }
+        }
+        val waiting = PendingImage(interaction)
+        pending = waiting
+        try {
+            if (!visual.glassesCaptured) {
+                val m0 = l.m0 ?: return null
+                val request = ThriftWriter().bool(1, false).bool(2, true).bool(3, false).str(4, interaction).done()
+                l.mux.send(m0, netEvent(EV_REMOTE_IMAGE_CAPTURE_REQUEST, request), messageType = MT_NET_EVENT)
+                say("Asked the glasses for a photo")
+            } else {
+                say("The glasses took a photo (${visual.imageUuid.ifEmpty { visual.captureHandle }}); waiting for it")
+            }
+            val image = withTimeoutOrNull(PHOTO_WAIT_MS) { waiting.image.await() }
+            if (image == null) say("No photo arrived in ${PHOTO_WAIT_MS / 1000} s" + if (waiting.answered) " (the glasses said they took it)" else "")
+            return image
+        } finally {
+            if (pending === waiting) pending = null
+        }
+    }
+
+    private fun offerImage(bytes: ByteArray, from: String) {
+        val waiting = pending ?: return
+        val jpeg = toModelJpeg(bytes)
+        if (jpeg == null) {
+            say("A file of ${bytes.size / 1000} KB from $from is not an image I can read: ${hex(bytes)}")
+            return
+        }
+        say("Got the photo from $from, ${bytes.size / 1000} KB")
+        waiting.image.complete(jpeg)
+    }
+
+    /** Speak [text] as [interaction]'s answer in the voice chosen. The milliseconds of audio sent, 0 in the glasses' voice. */
+    private suspend fun deliver(l: Link, interaction: String, transcript: String, text: String): Long {
+        if (store.config.value.glassesVoice && !l.sessionTurn) {
+            speakOnGlasses(l, interaction, transcript, text)
+            return 0
+        }
+        val packets = voice.speak(text, l.locale)
+        stream(l, interaction, transcript, text, packets)
+        return packets.sumOf { it.durationUs } / 1000
+    }
+
+    /** ev71, ev52 and ev342, which open every answer. ev52 and ev342 go at a tagged type 0, as the app sends them. */
+    private suspend fun preamble(l: Link, interaction: String, transcript: String, text: String) {
+        val m0 = checkNotNull(l.m0)
+        val e71 = ThriftWriter().str(1, interaction).done()
+        val e52 = ThriftWriter().str(1, transcript.ifEmpty { text }).i32(2, 0).str(4, "").bool(7, false).str(8, interaction).done()
+        val e342 = ThriftWriter().str(1, interaction).bool(2, false).str(3, REPLY_INTENT).bool(4, false).done()
+        for ((type, event, body) in listOf(
+            Triple(MT_NET_EVENT, EV_START_OF_USER_SPEECH, e71),
+            Triple(0, EV_FINAL_TRANSCRIPTION, e52),
+            Triple(0, EV_ON_PHONE_UNDERSTANDING, e342),
+        )) {
+            l.mux.send(m0, netEvent(event, body), messageType = type)
+            delay(20)
+        }
+    }
+
+    /**
+     * The answer in the glasses' own voice: a VARM that streams nothing, then ev60 with the text, which is what makes
+     * them speak it with their own TTS.
+     */
+    private suspend fun speakOnGlasses(l: Link, interaction: String, transcript: String, text: String) {
+        val m0 = checkNotNull(l.m0)
+        preamble(l, interaction, transcript, text)
+        _phase.value = AssistantPhase.SPEAKING
+        val voiceId = glassesVoice()
+        l.mux.send(m0, netEvent(EV_VOICE_ACTION_RESPONSE, varm(interaction, transcript, text, onGlasses = true, voiceId = voiceId)), messageType = MT_NET_EVENT)
+        delay(20)
+        l.mux.send(m0, netEvent(EV_MWA_VOICE_INTERACTION_COMPLETE, interactionComplete(interaction, text)), messageType = MT_NET_EVENT)
+        delay(20)
+        val mono = System.nanoTime() / 1_000_000
+        val e392 = ThriftWriter().str(1, "VoiceActionResponseMessage").i32(2, (mono and 0xFFFF).toInt()).i32(3, 1).done()
+        l.mux.send(m0, netEvent(EV_KEEP_AIR_SESSION_ALIVE, e392), messageType = MT_NET_EVENT)
+        say("Answered in the glasses' voice${voiceId?.let { " ($it)" }.orEmpty()}: \"$text\"")
+    }
+
+    /**
+     * The answer, in the app's order: ev71, ev52, ev342, ev388; the stream header and the first
+     * audio message; the VARM; the rest of the audio as bare frames in real time; 6000; ev389, ev392.
+     */
+    private suspend fun stream(l: Link, interaction: String, transcript: String, text: String, packets: List<OpusPacket>) {
+        val mux = l.mux
+        val m0 = checkNotNull(l.m0)
+        val s0 = checkNotNull(l.s0)
+        preamble(l, interaction, transcript, text)
+        val mono = System.nanoTime() / 1_000_000
+        val e388 = ThriftWriter().i64(1, System.currentTimeMillis()).i64(2, mono).str(3, interaction).done()
+        mux.send(m0, netEvent(EV_TTS_START_INFO, e388), messageType = MT_NET_EVENT)
+        delay(20)
+
+        // Field 1 is the stream the glasses allocated. Without it they drop the stream silently.
+        val streamId = l.streamIds[interaction] ?: l.latestStream
+        val header = (if (streamId.isNotEmpty()) Wire.fieldBytes(1, streamId.toByteArray()) else ByteArray(0)) +
+            Wire.fieldBytes(2, interaction.toByteArray()) + Wire.fieldVarint(4, 1) + Wire.fieldVarint(7, 1) + Wire.fieldVarint(19, 1)
+        if (streamId.isEmpty()) say("No stream id from the glasses for this answer; it may not play")
+        mux.send(s0, header, messageType = MT_STREAM_HEADER)
+
+        _phase.value = AssistantPhase.SPEAKING
+        val answer = netEvent(EV_VOICE_ACTION_RESPONSE, varm(interaction, transcript, text))
+        val start = System.nanoTime()
+        var dueUs = 0L
+        for ((i, chunk) in packets.chunked(2).withIndex()) {
+            val frame = chunk.fold(ByteArray(0)) { acc, p ->
+                acc + ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(p.data.size).array() + p.data
+            }
+            if (i == 0) {
+                mux.send(s0, frame, messageType = MT_STREAM_AUDIO)
+                // The VARM goes after the first audio message, never before.
+                mux.send(m0, answer, messageType = MT_NET_EVENT)
+            } else {
+                // A bare header: tagged with type 0, only the first 40 ms would ever play.
+                mux.send(s0, frame)
+            }
+            dueUs += chunk.sumOf { it.durationUs }
+            val wait = dueUs / 1000 - (System.nanoTime() - start) / 1_000_000
+            if (wait > 0) delay(wait)
+        }
+        mux.send(s0, ByteArray(0), messageType = MT_STREAM_END)
+
+        val e389 = ThriftWriter().i64(1, System.currentTimeMillis()).i64(2, mono).i64(3, 7000).str(4, interaction).done()
+        val e392 = ThriftWriter().str(1, "VoiceActionResponseMessage").i32(2, (mono and 0xFFFF).toInt()).i32(3, 1).done()
+        for ((event, body) in listOf(EV_TTS_END_INFO to e389, EV_KEEP_AIR_SESSION_ALIVE to e392)) {
+            mux.send(m0, netEvent(event, body), messageType = MT_NET_EVENT)
+            delay(20)
+        }
+        say("Answered: \"$text\"")
+    }
+
+    /** 5005: `<streamId>_<interactionId>_<pcmBytes>_<ms>`, 96 bytes of PCM per millisecond played. */
+    private fun streamStatus(text: String) {
+        val parts = text.split("_")
+        if (parts.size < 4) return say("Assistant: stream status $text")
+        val ms = parts.last().toLongOrNull() ?: return
+        val pcm = parts[parts.size - 2].toLongOrNull() ?: return
+        val interaction = parts.subList(1, parts.size - 2).joinToString("_")
+        update(interaction) { it.copy(playedMs = pcm / 96) }
+        if (pcm < ms * 96 - 960) say("The glasses played only ${pcm / 96} ms of $ms ms")
+    }
+
+    private fun fallback(locale: Locale, noKey: Boolean): String = when {
+        locale.language == "it" && noKey -> "Visor è collegato, ma non c'è ancora un modello. Aggiungi una chiave API nell'app."
+        locale.language == "it" -> "Scusa, non sono riuscito a ottenere una risposta."
+        noKey -> "Visor is connected, but no AI model is set up yet. Add an API key in the app."
+        else -> "Sorry, I couldn't get an answer."
+    }
+
+    /** Ask the model from the phone, without the glasses or the diary. */
+    suspend fun ask(question: String): String = brain.answer(question, locale).text
+
+    /**
+     * A question typed or dictated in the app, answered there as text. It continues [conversation] if given, else
+     * the open one. The id of its turn.
+     */
+    fun askFromPhone(question: String, conversation: String? = null): String {
+        val id = UUID.randomUUID().toString()
+        record(TurnRecord(id, System.currentTimeMillis(), question.trim(), source = TurnSource.PHONE, conversation = conversation.orEmpty()))
+        scope.launch { answerHere(id) }
+        return id
+    }
+
+    /** [id]'s question again, with the model and settings as they are now; the new answer replaces the old one. */
+    fun askAgain(id: String) {
+        if (diary.turn(id) == null) return
+        diary.update(id) { it.copy(answer = "", problem = "", remembered = emptyList(), modelMs = 0) }
+        scope.launch { answerHere(id) }
+    }
+
+    /** The conversation a question asked now from the app would continue, or null when it would start a new one. */
+    fun openConversation(): String? {
+        val last = diary.turns.value.lastOrNull { it.source != TurnSource.LIVE_AI } ?: return null
+        return last.conversation.takeIf { System.currentTimeMillis() - last.at <= windowMs() }
+    }
+
+    private suspend fun answerHere(id: String) {
+        val turn = diary.turn(id) ?: return
+        val started = System.currentTimeMillis()
+        val image = turn.image.takeIf { it.isNotEmpty() }?.let { runCatching { File(it).readBytes() }.getOrNull() }
+        val phone = turn.source == TurnSource.PHONE
+        try {
+            val reply = withTimeout(PHONE_BUDGET_MS) {
+                brain.answer(
+                    turn.question, if (phone) phoneLocale() else locale, pastOf(id), image,
+                    if (turn.source == TurnSource.LIVE_AI) LIVE_AI_NOTE else "", if (phone) Audience.PHONE else Audience.GLASSES,
+                )
+            }
+            diary.update(id) { it.copy(answer = reply.text, problem = "", remembered = reply.remembered, modelMs = System.currentTimeMillis() - started) }
+        } catch (error: Exception) {
+            val why = if (error is kotlinx.coroutines.TimeoutCancellationException) "no answer in ${PHONE_BUDGET_MS / 1000} s" else error.message ?: error::class.simpleName.orEmpty()
+            say("The model did not answer in the app: $why")
+            diary.update(id) { it.copy(problem = why, modelMs = System.currentTimeMillis() - started) }
+        }
+    }
+
+    /** [date]'s lines, written again if the day has exchanges they do not cover yet and its last conversation has closed. */
+    fun writeLines(date: LocalDate) {
+        val turns = diary.turns.value.filter { it.date == date && it.answer.isNotBlank() && (it.problem.isEmpty() || it.problem == ANSWER_TOO_LATE) }
+        if (turns.isEmpty()) return
+        val lastAt = turns.maxOf { it.at }
+        val written = diary.lines.value[date]
+        if (written != null && written.writtenAt > lastAt) return
+        if (System.currentTimeMillis() - lastAt < windowMs() || linesFailed[date] == lastAt) return
+        val c = store.config.value
+        if (c.apiKey.isBlank() && c.provider == Provider.CLAUDE) return
+        if (!writing.add(date)) return
+        scope.launch {
+            try {
+                val text = turns.joinToString("\n\n") { t ->
+                    val how = when (t.source) {
+                        TurnSource.PHONE -> " (written in the app)"
+                        TurnSource.LIVE_AI -> " (during Live AI, showing the camera)"
+                        TurnSource.GLASSES -> if (t.image.isNotEmpty()) " (with a photo of what they were looking at)" else ""
+                    }
+                    "Q$how: ${t.question}\nA: ${t.answer}"
+                }
+                diary.setLines(date, brain.dayLines(text, phoneLocale()))
+                linesFailed.remove(date)
+            } catch (error: Exception) {
+                linesFailed[date] = lastAt
+                say("The day's lines for $date were not written: ${error.message}")
+            } finally {
+                writing.remove(date)
+            }
+        }
+    }
+
+    private fun windowMs(): Long = store.config.value.memoryMinutes * 60_000L
+
+    /** The app's language: what the phone's own words are in. */
+    private fun phoneLocale(): Locale = context.resources.configuration.locales[0]
+
+    /** What the model has heard of [id]'s conversation before it. */
+    private fun pastOf(id: String): List<Exchange> {
+        val conversation = diary.turn(id)?.conversation ?: return emptyList()
+        return diary.past(conversation, before = id).map { Exchange(it.question, it.answer) }
+    }
+
+    /** Into the diary, in the open conversation unless it names its own. */
+    private fun record(turn: TurnRecord) {
+        diary.record(if (turn.conversation.isNotEmpty()) turn else turn.copy(conversation = diary.conversationAt(turn.at, windowMs())))
+    }
+
+    private fun update(interaction: String, change: (TurnRecord) -> TurnRecord) = diary.update(interaction, change)
+
+    private companion object {
+        // The glasses give the whole turn 20 s; speech and streaming need some of it.
+        const val TURN_BUDGET_MS = 16_000L
+        const val HOLD_ON_MS = 3_000L
+        /** How long the glasses' own recognition gets to send its ev57 before the server's answer goes instead. */
+        const val OWN_RECOGNITION_GRACE_MS = 1_200L
+        const val MIC_END_WAIT_MS = 10_000L
+        const val SESSION_USE_CASE = 7L
+        const val REGISTER_AGAIN_MS = 2_500L
+        val CHANNEL_CLOSED = Regex("service 15 answered status 0xc0(?:02|10) on channel 0x([0-9a-f]{4})")
+        const val QUESTION_GRACE_MS = 3_000L
+        val WAKE_WORD_ONLY = Regex("^(hey|hi|ehi|ei|ok|okay)?[ ,]*(meta|mata|metta|matta|meda)[.!?]*$", RegexOption.IGNORE_CASE)
+        const val MIN_MODEL_MS = 6_000L
+        const val PHOTO_WAIT_MS = 8_000L
+
+        // How long a reply asked for waits for its words.
+        const val REPLY_WAIT_MS = 30_000L
+        const val PHONE_BUDGET_MS = 60_000L
+        // After a conversation closes, a moment before its day's lines are written.
+        const val LINES_GRACE_MS = 2_000L
+    }
+}
+
+/** 1026 is either the bare locale string or `{1: locale}`. */
+private val CANCEL_INTENTS = setOf("IN:CANCEL", "IN:NEVER_MIND", "IN:STOP", "IN:NEGATE_INTENT", "IN:CANCEL_MESSAGE")
+
+/** The text of [name] in the glasses' slot map (field 26): each slot is a list of {1 name, 4 text, 5 start, 6 end}. */
+internal fun slot(slots: Any?, name: String): String =
+    ((slots as? Map<*, *>)?.get(name) as? List<*>)?.firstOrNull().asStruct()[4].asText().trim()
+
+private fun parseLocale(payload: ByteArray): Locale {
+    val text = if (payload.size > 2 && payload[0] == 0x0a.toByte() && payload[1].toInt() == payload.size - 2) {
+        payload.copyOfRange(2, payload.size).decodeToString()
+    } else {
+        payload.decodeToString()
+    }
+    return Locale.forLanguageTag(text.trim().replace('_', '-')).takeIf { it.language.isNotEmpty() } ?: Locale.US
+}
+
+private fun isUuid(s: String) = s.length == 36 && s.count { it == '-' } == 4
+
+private fun hex(b: ByteArray): String = b.take(24).joinToString("") { "%02x".format(it) }
+
+/** A Thrift struct in one line: scalars and short strings shown, structs by their field ids. */
+internal fun describe(body: ByteArray): String {
+    val f = runCatching { Thrift.loads(body) }.getOrNull() ?: return hex(body)
+    return describeRead(f)
+}
+
+/** Every value, nested, for reading what the glasses' understanding carries. */
+internal fun deep(value: Any?, depth: Int = 0): String = when {
+    depth > 6 -> "…"
+    value is Map<*, *> -> value.entries.joinToString(", ", "{", "}") { (k, v) -> "$k=${deep(v, depth + 1)}" }
+    value is List<*> -> value.joinToString(", ", "[", "]") { deep(it, depth + 1) }
+    value is String -> "\"" + value.take(120) + "\""
+    value is ByteArray -> runCatching { deep(Thrift.loads(value), depth + 1) }.getOrElse { "${value.size}B" }
+    else -> value.toString()
+}
+
+private fun describeRead(value: Any?): String {
+    val f = value.asStruct()
+    return f.entries.joinToString(" ", "{", "}") { (k, v) ->
+        k.toString() + "=" + when (v) {
+            is String -> if (isUuid(v)) "uuid" else "\"" + v.take(40) + "\""
+            is Map<*, *> -> "{" + v.keys.joinToString(",") + "}"
+            is List<*> -> "[${v.size}]"
+            is ByteArray -> "${v.size}B"
+            else -> v.toString()
+        }
+    }
+}
+
+/** The problem of an answer that came after the glasses had closed its turn: kept, never spoken. */
+const val ANSWER_TOO_LATE = "too late for the glasses"
+
+/** ev289's mode for a Live AI session. */
+private const val MODE_LIVE_AI = 2L
+
+private const val LIVE_AI_NOTE =
+    "This is Live AI: a continuous conversation while the wearer shows you what they see. The image is the camera's " +
+        "view right now. Answer briefly and naturally; speak only about what matters to the question."
+
+/** The camera stream Live AI sees through. */
+interface LiveAiCamera {
+    fun on()
+    fun off()
+
+    /** True once frames come. */
+    val frames: kotlinx.coroutines.flow.Flow<Boolean>
+}

@@ -1,0 +1,119 @@
+# Builds the signed release APK for a version tag (v1.2.3) and publishes it as a GitHub release.
+# Run it by hand to get a draft release of the current main instead.
+#
+# Secrets: VISOR_KEYSTORE_BASE64 (the PKCS12 keystore, base64), VISOR_KEYSTORE_PASSWORD, VISOR_KEY_ALIAS,
+# and Meta's app tokens VISOR_META_HW_TOKEN and VISOR_META_AR_TOKEN (README, Build from source).
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version for the draft release, without the v (for example 0.2.0)"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Work out the version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            name="${GITHUB_REF_NAME#v}"
+            draft=false
+          else
+            name="$INPUT_VERSION"
+            draft=true
+          fi
+          if ! [[ "$name" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "error: '$name' is not a version like 1.2.3 or 1.2.3-beta.1" >&2
+            exit 1
+          fi
+          # 1.2.3 -> 10203, so every later version installs over the one before.
+          code=$(( BASH_REMATCH[1] * 10000 + BASH_REMATCH[2] * 100 + BASH_REMATCH[3] ))
+          {
+            echo "name=$name"
+            echo "code=$code"
+            echo "draft=$draft"
+            echo "prerelease=$([ -n "${BASH_REMATCH[4]}" ] && echo true || echo false)"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools platforms;android-37.0 build-tools;37.0.0
+          log-accepted-android-sdk-licenses: false
+
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-read-only: true
+
+      - name: Check the secrets and restore the release key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.VISOR_KEYSTORE_BASE64 }}
+          META_HW_TOKEN: ${{ secrets.VISOR_META_HW_TOKEN }}
+          META_AR_TOKEN: ${{ secrets.VISOR_META_AR_TOKEN }}
+        run: |
+          for secret in KEYSTORE_BASE64 META_HW_TOKEN META_AR_TOKEN; do
+            if [ -z "${!secret}" ]; then
+              echo "error: the VISOR_$secret secret is not set" >&2
+              exit 1
+            fi
+          done
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/visor-release.p12"
+
+      - name: Build the release APK
+        env:
+          VISOR_KEYSTORE: ${{ runner.temp }}/visor-release.p12
+          VISOR_KEYSTORE_PASSWORD: ${{ secrets.VISOR_KEYSTORE_PASSWORD }}
+          VISOR_KEY_ALIAS: ${{ secrets.VISOR_KEY_ALIAS }}
+          VISOR_VERSION_NAME: ${{ steps.version.outputs.name }}
+          VISOR_VERSION_CODE: ${{ steps.version.outputs.code }}
+          VISOR_META_HW_TOKEN: ${{ secrets.VISOR_META_HW_TOKEN }}
+          VISOR_META_AR_TOKEN: ${{ secrets.VISOR_META_AR_TOKEN }}
+        run: ./gradlew :app:assembleRelease
+
+      - name: Check the signature and name the APK
+        env:
+          NAME: ${{ steps.version.outputs.name }}
+        run: |
+          apk=app/build/outputs/apk/release/app-release.apk
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "$apk" | grep "certificate SHA-256"
+          mkdir -p dist
+          cp "$apk" "dist/visor-$NAME.apk"
+          (cd dist && sha256sum "visor-$NAME.apk" > "visor-$NAME.apk.sha256")
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.version.outputs.name }}
+          DRAFT: ${{ steps.version.outputs.draft }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          flags=(--title "Visor $NAME" --generate-notes)
+          if [ "$DRAFT" = "true" ]; then flags+=(--draft --target "$GITHUB_SHA"); fi
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+          gh release create "v$NAME" "dist/visor-$NAME.apk" "dist/visor-$NAME.apk.sha256" "${flags[@]}"
+
+      - name: Remove the release key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/visor-release.p12"

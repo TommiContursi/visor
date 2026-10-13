@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img"><title>Visor app icon</title>
+<defs><linearGradient id="light" x1="0" y1="44" x2="0" y2="214" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFD2A1"/></linearGradient></defs>
+<rect width="512" height="512" rx="116" fill="#000000"/>
+<g transform="translate(42.67 42.67) scale(1.6667)"><path fill="url(#light)" d="M30 44 L89 44 L123 214 L115 214 Z M226 44 L167 44 L133 214 L141 214 Z"/></g>
+</svg>
