@@ -167,6 +167,7 @@ class SettingsViewModel @Inject constructor(
     val pins: Pins,
     val toggles: VisorToggles,
     val backups: Backups,
+    val updates: com.macedonga.visor.update.Updates,
 ) : ViewModel()
 
 /**
@@ -251,7 +252,13 @@ fun SettingsScreen(open: (NavKey) -> Unit, model: SettingsViewModel = hiltViewMo
                             last?.let { stringResource(R.string.backup_sum_last, dateWords(it)) } ?: stringResource(R.string.backup_sum_never),
                             onClick = { open(BackupKey) },
                         )
-                        NavRow(VisorIcons.Info, stringResource(R.string.about_title), stringResource(R.string.about_sum, com.macedonga.visor.BuildConfig.VERSION_NAME), onClick = { open(AboutKey) })
+                        val newer by model.updates.newer.collectAsStateWithLifecycle()
+                        val version = com.macedonga.visor.BuildConfig.VERSION_NAME
+                        NavRow(
+                            VisorIcons.Info, stringResource(R.string.about_title),
+                            newer?.let { stringResource(R.string.about_sum_update, version, it.version) } ?: stringResource(R.string.about_sum, version),
+                            onClick = { open(AboutKey) },
+                        )
                     }
                 }
             } else {

@@ -572,10 +572,16 @@
 
     <string name="about_title">About</string>
     <string name="about_sum">Visor %1$s</string>
-    <string name="about_lede">Visor talks to the glasses itself. Meta is reached only to log in, set glasses up and fetch language packs.</string>
+    <string name="about_lede">Visor talks to the glasses itself. Meta is reached only to log in, set glasses up and fetch language packs, and GitHub to look for updates.</string>
     <string name="about_debug">Debug build</string>
     <string name="about_credits">Made with</string>
     <string name="about_foot">Each under its own licence.</string>
+    <string name="about_sum_update">Visor %1$s, %2$s is out</string>
+    <string name="update_channel">Updates</string>
+    <string name="update_ready">Visor %1$s is out</string>
+    <string name="update_ready_text">Download it from GitHub</string>
+    <string name="update_look">Look for updates</string>
+    <string name="update_look_sub">Asks GitHub for the latest release twice a day</string>
 
     <string name="language_speech">Speech</string>
     <string name="live_settings_foot">Visor keeps all of this on the phone.</string>

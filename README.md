@@ -28,6 +28,7 @@ Visor has no server of its own, no analytics and no crash reporting. It connects
 - Meta, when it needs to: the frame style and lens colour of your pair, and assistant language packs (`ar-genai.graph.meta.com`).
 - The model provider you set for the assistant, with your own API key.
 - The RTMP server you enter, when you broadcast from the Live view.
+- GitHub, twice a day: the latest release, to tell you when there is a new version (`api.github.com`). Turn it off in Settings, About.
 
 Everything else stays between the phone and the glasses.
 

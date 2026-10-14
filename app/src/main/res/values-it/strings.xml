@@ -571,10 +571,16 @@
 
     <string name="about_title">Informazioni</string>
     <string name="about_sum">Visor %1$s</string>
-    <string name="about_lede">Visor parla da sé con gli occhiali. Meta serve solo per accedere, configurare gli occhiali e scaricare i pacchetti lingua.</string>
+    <string name="about_lede">Visor parla da sé con gli occhiali. Meta serve solo per accedere, configurare gli occhiali e scaricare i pacchetti lingua, e GitHub per cercare aggiornamenti.</string>
     <string name="about_debug">Build di debug</string>
     <string name="about_credits">Fatto con</string>
     <string name="about_foot">Ognuno con la sua licenza.</string>
+    <string name="about_sum_update">Visor %1$s, disponibile la %2$s</string>
+    <string name="update_channel">Aggiornamenti</string>
+    <string name="update_ready">Visor %1$s è disponibile</string>
+    <string name="update_ready_text">Scaricalo da GitHub</string>
+    <string name="update_look">Cerca aggiornamenti</string>
+    <string name="update_look_sub">Chiede a GitHub l\'ultima versione due volte al giorno</string>
 
     <string name="language_speech">Parlato</string>
     <string name="live_settings_foot">Visor tiene tutto questo sul telefono.</string>

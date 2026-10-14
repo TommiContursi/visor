@@ -2,6 +2,7 @@ package com.macedonga.visor
 
 import android.app.Application
 import com.macedonga.visor.log.EventLog
+import com.macedonga.visor.update.Updates
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -14,4 +15,12 @@ class VisorApp : Application() {
 
     @Inject
     lateinit var eventLog: EventLog
+
+    @Inject
+    lateinit var updates: Updates
+
+    override fun onCreate() {
+        super.onCreate()
+        updates.start()
+    }
 }
