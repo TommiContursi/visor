@@ -556,8 +556,9 @@ private fun cropShape(visible: Size, radius: Float): Shape = object : Shape {
 
 /** Pan, kept so the zoomed picture never leaves an edge of the screen bare. */
 private fun clampPan(pan: Offset, zoom: Float, w: Float, h: Float): Offset {
-    val x = (w * (zoom - 1f)) / 2f
-    val y = (h * (zoom - 1f)) / 2f
+    // The double-tap spring overshoots below 1x on the way out; an empty range would throw.
+    val x = (w * (zoom - 1f).coerceAtLeast(0f)) / 2f
+    val y = (h * (zoom - 1f).coerceAtLeast(0f)) / 2f
     return Offset(pan.x.coerceIn(-x, x), pan.y.coerceIn(-y, y))
 }
 
