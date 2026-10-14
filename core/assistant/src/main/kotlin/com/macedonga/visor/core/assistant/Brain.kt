@@ -221,11 +221,20 @@ class Brain(private val config: () -> AssistantConfig, private val book: MemoryB
     }
 
     /** A local reasoning model (LM Studio, llama.cpp) otherwise spends the whole answer thinking; OpenAI's own and some others refuse the field. */
-    private fun send(url: String, headers: Map<String, String>, body: JSONObject): JSONObject =
-        if ("api.openai.com" in url) post(url, headers, body) else {
+    private fun send(url: String, headers: Map<String, String>, body: JSONObject): JSONObject {
+        // OpenAI's newer models refuse max_tokens, and every one of its models takes max_completion_tokens.
+        if ("api.openai.com" in url) return post(url, headers, completionTokens(body))
+        return try {
             runCatching { post(url, headers, JSONObject(body.toString()).put("reasoning_effort", "none")) }
                 .getOrElse { if ("reasoning" in it.message.orEmpty()) post(url, headers, body) else throw it }
+        } catch (error: IllegalStateException) {
+            // A server that relays those models (Azure, a proxy) says which field it wants.
+            if ("max_completion_tokens" !in error.message.orEmpty()) throw error
+            post(url, headers, completionTokens(body))
         }
+    }
+
+    private fun completionTokens(body: JSONObject) = JSONObject(body.toString()).apply { put("max_completion_tokens", remove("max_tokens")) }
 
     private fun post(url: String, headers: Map<String, String>, body: JSONObject): JSONObject {
         val http = URL(url).openConnection() as HttpURLConnection
