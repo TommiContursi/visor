@@ -5,6 +5,7 @@
          plain-HTTP server on the local network (hence cleartext allowed). -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" android:usesPermissionFlags="neverForLocation" />
@@ -59,7 +60,7 @@
 
         <activity
             android:name=".MainActivity"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|uiMode|locale|layoutDirection|density|fontScale|keyboard|keyboardHidden|navigation"
             android:exported="true"
             android:resizeableActivity="true"
             android:supportsPictureInPicture="true"

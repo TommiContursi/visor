@@ -12,6 +12,7 @@ hiltNavigationCompose = "1.4.0"
 androidxCore = "1.19.0"
 androidxActivity = "1.13.0"
 androidxLifecycle = "2.11.0"
+androidxWebkit = "1.17.1"
 androidxComposeBom = "2026.09.00"
 nav3Core = "1.1.7"
 lifecycleViewmodelNav3 = "2.11.0"
@@ -44,6 +45,7 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
+androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "androidxWebkit" }
 
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "androidxComposeBom" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }

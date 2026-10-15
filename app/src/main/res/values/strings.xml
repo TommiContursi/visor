@@ -608,6 +608,12 @@
     <string name="onboard_login_failed">The login did not work: %1$s</string>
     <string name="onboard_login_other">Use another account</string>
     <string name="onboard_login_foot">Passkeys do not work on a login page inside an app: use your password or an email code.</string>
+    <string name="onboard_login_log">Something wrong? See what happened</string>
+    <string name="event_log_lede">Everything the app did, oldest first. Nothing here carries passwords, codes or tokens.</string>
+    <string name="event_log_share">Share</string>
+    <string name="event_log_clear">Clear</string>
+    <string name="event_log_empty">Nothing has happened yet.</string>
+    <string name="event_log_bug_report">Get a bug report from the glasses</string>
     <string name="onboard_pair_title">Put them in pairing mode</string>
     <string name="onboard_pair_fold">Fold both arms.</string>
     <string name="onboard_pair_hold">Hold the capture button on the right arm for 5 seconds.</string>

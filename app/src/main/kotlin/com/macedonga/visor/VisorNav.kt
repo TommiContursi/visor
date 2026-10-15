@@ -197,6 +197,7 @@ fun VisorNav(opens: kotlinx.coroutines.flow.Flow<String>, markAtLaunch: Boolean)
                         welcome = key.welcome,
                         login = key.login,
                         onLogin = { backStack.add(MetaLoginPageKey) },
+                        onEventLog = { backStack.add(EventLogKey) },
                         onDone = { target ->
                             onboarded(context)
                             finishSetUp(context, backStack, target)

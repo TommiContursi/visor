@@ -78,8 +78,11 @@ fun exchangeCode(code: String, http: HttpPost = UrlConnectionPost): String {
     val userId = payload.text("user_id").orEmpty()
     // The Meta app's own guard: it refuses the response unless both are present.
     if (token.isEmpty() || userId.isEmpty()) {
+        // A refusal comes as a problem document: title, status, detail. Say what it said.
+        val problem = listOf("title", "status", "detail").mapNotNull { key -> payload.text(key)?.let { "$key=$it" } }
         throw TokenError(
-            "token-exchange returned no access_token/user_id pair; keys: ${payload.sortedKeys()}",
+            if (problem.isNotEmpty()) "token-exchange refused the code: ${problem.joinToString(", ")}"
+            else "token-exchange returned no access_token/user_id pair; keys: ${payload.sortedKeys()}",
         )
     }
     return token

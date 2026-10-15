@@ -74,6 +74,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.webkit)
     implementation(libs.kotlinx.coroutines.android)
 
     // Navigation 3, for the test client's screens.

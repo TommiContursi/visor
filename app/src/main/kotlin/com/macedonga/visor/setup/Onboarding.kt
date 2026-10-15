@@ -260,6 +260,7 @@ fun OnboardingScreen(
     welcome: Boolean,
     login: Boolean,
     onLogin: () -> Unit,
+    onEventLog: () -> Unit,
     onDone: (GlassesTarget) -> Unit,
     onLeave: () -> Unit,
     model: OnboardingViewModel = hiltViewModel(),
@@ -428,7 +429,7 @@ fun OnboardingScreen(
             when (shown) {
                 Page.WELCOME -> WelcomePage(welcome, frame, before = { if (withMark) stage.intro.awaitLetGo() }) { model.next() }
                 Page.ACCESS -> AccessPage(model, accessTick, { accessTick++ }, frame.padding(top = with(density) { (stagePx * 0.42f).toDp() }))
-                Page.LOGIN -> LoginPage(model, onLogin, frame.padding(top = with(density) { (stagePx * 0.7f).toDp() }))
+                Page.LOGIN -> LoginPage(model, onLogin, onEventLog, frame.padding(top = with(density) { (stagePx * 0.7f).toDp() }))
                 Page.PAIRING -> PairingPage(model, clock, frame.padding(top = with(density) { (stagePx * 0.8f).toDp() }))
                 Page.LINKING -> LinkingPage(model, status, onDone, frame)
             }
@@ -531,7 +532,7 @@ private fun AccessRow(need: Need, given: Boolean, current: Boolean, onClick: () 
 
 /** The Meta login, on Meta's own page; back here it goes on by itself. */
 @Composable
-private fun LoginPage(model: OnboardingViewModel, onLogin: () -> Unit, modifier: Modifier) {
+private fun LoginPage(model: OnboardingViewModel, onLogin: () -> Unit, onEventLog: () -> Unit, modifier: Modifier) {
     val status by model.login.status.collectAsStateWithLifecycle()
     LaunchedEffect(status, model.loginOpened) {
         if (model.loginOpened && status == MetaLogin.Status.LoggedIn) {
@@ -556,7 +557,14 @@ private fun LoginPage(model: OnboardingViewModel, onLogin: () -> Unit, modifier:
         }
         if (line != null) Text(line, style = Visor.type.body, color = Visor.colors.textPrimary, modifier = Modifier.padding(top = 20.dp))
         Spacer(Modifier.weight(1f))
-        Text(stringResource(R.string.onboard_login_foot), style = Visor.type.label, color = Visor.colors.textTertiary, modifier = Modifier.padding(bottom = 16.dp))
+        Text(stringResource(R.string.onboard_login_foot), style = Visor.type.label, color = Visor.colors.textTertiary)
+        // The log is reachable from here, so a login that goes round in circles can be read before any setup is done.
+        Text(
+            stringResource(R.string.onboard_login_log),
+            style = Visor.type.label,
+            color = Visor.colors.textSecondary,
+            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp).clip(RoundedCornerShape(50)).clickable(onClick = onEventLog).padding(vertical = 6.dp),
+        )
         if (status == MetaLogin.Status.LoggedIn) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 QuietButton(stringResource(R.string.onboard_login_other)) {

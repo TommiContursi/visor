@@ -607,6 +607,12 @@
     <string name="onboard_login_failed">L\'accesso non è riuscito: %1$s</string>
     <string name="onboard_login_other">Usa un altro account</string>
     <string name="onboard_login_foot">Le passkey non funzionano in una pagina di accesso dentro un\'app: usa la password o un codice via email.</string>
+    <string name="onboard_login_log">Qualcosa non va? Vedi cosa è successo</string>
+    <string name="event_log_lede">Tutto ciò che ha fatto l\'app, dal più vecchio. Niente qui contiene password, codici o token.</string>
+    <string name="event_log_share">Condividi</string>
+    <string name="event_log_clear">Svuota</string>
+    <string name="event_log_empty">Non è ancora successo niente.</string>
+    <string name="event_log_bug_report">Scarica un bug report dagli occhiali</string>
     <string name="onboard_pair_title">Mettili in modalità di accoppiamento</string>
     <string name="onboard_pair_fold">Chiudi entrambe le stanghette.</string>
     <string name="onboard_pair_hold">Tieni premuto il tasto di acquisizione sulla stanghetta destra per 5 secondi.</string>

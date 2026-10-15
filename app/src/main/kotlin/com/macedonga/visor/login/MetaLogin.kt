@@ -1,6 +1,7 @@
 package com.macedonga.visor.login
 
 import android.content.Context
+import android.net.Uri
 import android.webkit.CookieManager
 import com.macedonga.visor.core.identity.KeystoreSealer
 import com.macedonga.visor.core.identity.token.AuthorizeRequest
@@ -59,15 +60,24 @@ class MetaLogin @Inject constructor(
         log.add("Login: opening Meta's login page")
     }
 
+    /** What the login page saw: hosts, paths and statuses, never a query string. */
+    fun note(text: String) = log.add("Login page: $text")
+
     /** The WebView caught the redirect. Exchange its code and cache the FRLA. */
     fun finish(redirect: String) {
-        val request = pending ?: return
+        val request = pending
+        if (request == null) {
+            log.add("Login: a redirect arrived with no login under way; ignored")
+            return
+        }
         pending = null
         _status.value = Status.Working
-        log.add("Login: Meta redirected back, exchanging the code")
+        val carried = Uri.parse(redirect).queryParameterNames.sorted().joinToString(", ").ifEmpty { "nothing" }
+        log.add("Login: Meta redirected back carrying $carried; exchanging the code")
         scope.launch {
             _status.value = try {
                 source.finish(redirect, request)
+                log.add("Login: code exchanged, Meta login cached")
                 log.add("Login: logged in to Meta")
                 Status.LoggedIn
             } catch (error: Exception) {
