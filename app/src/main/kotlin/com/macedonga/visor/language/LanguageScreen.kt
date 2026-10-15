@@ -7,14 +7,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -26,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -43,6 +42,7 @@ import com.macedonga.visor.settings.Card
 import com.macedonga.visor.settings.VisorSheet
 import com.macedonga.visor.settings.Spinner
 import com.macedonga.visor.settings.SheetTitle
+import com.macedonga.visor.settings.ChoiceMark
 import com.macedonga.visor.settings.RowFrame
 import com.macedonga.visor.settings.ActionPill
 import com.macedonga.visor.settings.Footnote
@@ -243,47 +243,35 @@ private fun Done(text: String, color: Color, onDismiss: () -> Unit) {
 @Composable
 private fun VoiceRow(voice: GlassesVoice, selected: Boolean, waiting: Boolean, enabled: Boolean, onPick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(enabled = enabled && !selected, onClick = onPick).padding(horizontal = 16.dp, vertical = 14.dp),
+        Modifier.fillMaxWidth().clickable(enabled = enabled && !selected, onClick = onPick).padding(horizontal = 16.dp, vertical = 13.dp)
+            .alpha(if (enabled || selected || waiting) 1f else 0.4f),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(voice.label(), style = Visor.type.body, color = if (enabled || selected || waiting) Visor.colors.textPrimary else Visor.colors.textTertiary)
+            Text(voice.label(), style = Visor.type.body, color = Visor.colors.textPrimary)
             if (voice.name != null) Text(voice.tone(), style = Visor.type.label, color = Visor.colors.textSecondary)
         }
-        if (waiting) {
-            Spinner()
-        } else {
-            Box(
-                Modifier.size(20.dp).clip(CircleShape).background(if (selected) Color.White else Visor.colors.control),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (selected) Box(Modifier.size(8.dp).clip(CircleShape).background(Color.Black))
-            }
-        }
+        if (waiting) Spinner() else ChoiceMark(selected, Modifier.padding(start = 12.dp))
     }
 }
 
 @Composable
 private fun LanguageRow(language: GlassesLanguage, detail: String, action: String, enabled: Boolean, waiting: Boolean, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).padding(horizontal = 16.dp, vertical = 13.dp)
+            .alpha(if (enabled || waiting) 1f else 0.4f),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(language.nativeName(), style = Visor.type.body, color = if (enabled || waiting) Visor.colors.textPrimary else Visor.colors.textSecondary)
+            Text(language.nativeName(), style = Visor.type.body, color = Visor.colors.textPrimary)
             val sub = listOf(language.localName().takeIf { it != language.nativeName() }, detail.ifEmpty { null }).filterNotNull().joinToString(" · ")
             if (sub.isNotEmpty()) Text(sub, style = Visor.type.label, color = Visor.colors.textSecondary)
         }
         if (waiting) {
             Spinner()
         } else {
-            Text(
-                action,
-                style = Visor.type.label,
-                color = if (enabled) Visor.colors.textPrimary else Visor.colors.textTertiary,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(Visor.colors.control).padding(horizontal = 12.dp, vertical = 6.dp),
-            )
+            ActionPill(action, onClick, quiet = true, enabled = enabled)
         }
     }
 }

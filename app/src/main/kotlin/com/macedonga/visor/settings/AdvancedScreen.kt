@@ -43,25 +43,25 @@ fun AdvancedScreen(open: (NavKey) -> Unit, model: SettingsViewModel = hiltViewMo
         },
     ) {
         item(key = "groups") {
-            Column {
-                for (group in own) GroupRow(group, byGroup[group].orEmpty(), state, model, open)
-            }
+            Rows(*own.map { group -> @Composable { GroupRow(group, byGroup[group].orEmpty(), state, model, open) } }.toTypedArray())
         }
         if (others.isNotEmpty()) {
             item(key = "others") {
                 Column {
                     SectionLabel(stringResource(R.string.advanced_other_models))
-                    for (group in others) GroupRow(group, byGroup[group].orEmpty(), state, model, open, dim = true)
+                    Rows(*others.map { group -> @Composable { GroupRow(group, byGroup[group].orEmpty(), state, model, open, dim = true) } }.toTypedArray())
                     Footnote(stringResource(R.string.advanced_other_models_note))
                 }
             }
         }
         item(key = "tools") {
-            Column(Modifier.padding(top = 8.dp)) {
+            Column {
                 SectionLabel(stringResource(R.string.advanced_tools))
-                NavRow(VisorIcons.Flag, stringResource(R.string.settings_flags), stringResource(R.string.settings_flags_sub), onClick = { open(FlagsKey) })
-                NavRow(VisorIcons.Pulse, stringResource(R.string.settings_diagnostics), stringResource(R.string.settings_diagnostics_sub), onClick = { open(DeviceKey) })
-                NavRow(VisorIcons.Lines, stringResource(R.string.settings_event_log), stringResource(R.string.settings_event_log_sub), onClick = { open(EventLogKey) })
+                Rows(
+                    { NavRow(VisorIcons.Flag, stringResource(R.string.settings_flags), stringResource(R.string.settings_flags_sub), onClick = { open(FlagsKey) }, onCard = true) },
+                    { NavRow(VisorIcons.Pulse, stringResource(R.string.settings_diagnostics), stringResource(R.string.settings_diagnostics_sub), onClick = { open(DeviceKey) }, onCard = true) },
+                    { NavRow(VisorIcons.Lines, stringResource(R.string.settings_event_log), stringResource(R.string.settings_event_log_sub), onClick = { open(EventLogKey) }, onCard = true) },
+                )
             }
         }
     }
@@ -73,7 +73,7 @@ private fun GroupRow(group: String, keys: List<String>, state: com.macedonga.vis
     NavRow(
         null, group,
         if (changed > 0) stringResource(R.string.advanced_group_sum_changed, keys.size, changed) else stringResource(R.string.advanced_group_sum, keys.size),
-        onClick = { open(SettingsGroupKey(group)) }, dim = dim,
+        onClick = { open(SettingsGroupKey(group)) }, dim = dim, onCard = true,
     )
 }
 

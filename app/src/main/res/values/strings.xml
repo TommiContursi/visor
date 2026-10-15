@@ -230,7 +230,7 @@
     <string name="live_settings_replay_sub">How much of the live view Visor keeps in memory, ready to save.</string>
     <string name="live_settings_on_picture">On the picture</string>
     <string name="live_settings_log">What happened</string>
-    <string name="live_settings_nothing">Nothing yet.</string>
+    <string name="live_settings_nothing">Nothing yet</string>
     <string name="live_glasses_photo">Photo from the glasses</string>
     <string name="live_photo_failed">The glasses sent no photo</string>
     <string name="live_stopped_heat">The glasses stopped the camera: they are too hot</string>

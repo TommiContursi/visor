@@ -3,10 +3,6 @@ package com.macedonga.visor.settings
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,9 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -26,8 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -44,7 +35,6 @@ import com.macedonga.visor.gallery.allows
 import com.macedonga.visor.gallery.detail
 import com.macedonga.visor.gallery.placesAllowed
 import com.macedonga.visor.gallery.title
-import com.macedonga.visor.ui.VisorIcons
 
 /** How a topic's page breaks its settings up: a heading (or none) and the keys under it. */
 private fun sectionsOf(topic: Topic): List<Pair<Int?, List<String>>> = when (topic) {
@@ -160,7 +150,7 @@ private fun PhotosPart(model: SettingsViewModel) {
         Rows({
             RowFrame(stringResource(R.string.places_title), onClick = null, sub = stringResource(R.string.places_sub)) {
                 if (places) {
-                    Text(stringResource(R.string.access_allowed), style = Visor.type.label, color = Visor.colors.textSecondary, modifier = Modifier.padding(start = 12.dp))
+                    Text(stringResource(R.string.access_allowed), style = Visor.type.body, color = Visor.colors.textSecondary, modifier = Modifier.padding(start = 12.dp))
                 } else {
                     ActionPill(stringResource(R.string.access_allow), {
                         ask.launch(
@@ -174,43 +164,32 @@ private fun PhotosPart(model: SettingsViewModel) {
     }
 }
 
-/** A choice where each option needs a line of its own: one card each, the chosen one raised and checked. */
+/** A choice where each option needs a line of its own: one row each on a card, the chosen one checked. */
 @Composable
 fun <T> OptionCards(options: List<Triple<T, String, String>>, selected: T, onPick: (T) -> Unit) {
     val host = LocalHost.current
-    Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        for ((value, title, detail) in options) {
+    Card {
+        for ((i, option) in options.withIndex()) {
+            val (value, title, detail) = option
             val on = value == selected
-            val back by animateColorAsState(if (on) Visor.colors.control else Visor.colors.raised, tween(200), label = "option")
+            if (i > 0) Hairline()
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(back)
                     .clickable {
                         if (!on) {
                             host.haptics.toggle()
                             onPick(value)
                         }
                     }
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(horizontal = 16.dp, vertical = 13.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(title, style = Visor.type.body, color = Visor.colors.textPrimary)
                     Text(detail, style = Visor.type.label, color = Visor.colors.textSecondary)
                 }
-                Box(
-                    Modifier
-                        .padding(start = 12.dp)
-                        .size(22.dp)
-                        .clip(CircleShape)
-                        .background(if (on) Color.White else Color.Transparent)
-                        .border(1.5.dp, if (on) Color.White else Visor.colors.textTertiary, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (on) Icon(VisorIcons.Check, null, Modifier.size(16.dp), tint = Color.Black)
-                }
+                ChoiceMark(on, Modifier.padding(start = 12.dp))
             }
         }
     }

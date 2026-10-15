@@ -246,14 +246,14 @@ fun BackupScreen(model: BackupModel = hiltViewModel()) {
         item(key = "save") {
             Rows(
                 {
-                    RowFrame(
-                        stringResource(R.string.backup_save), onClick = if (saving) null else ({ create.launch("visor-settings-${LocalDate.now()}.json") }), busy = saving,
+                    ValueRow(
+                        stringResource(R.string.backup_save), null, onClick = if (saving) null else ({ create.launch("visor-settings-${LocalDate.now()}.json") }), busy = saving,
                         sub = last?.let { stringResource(R.string.backup_sum_last, dateWords(it)) } ?: stringResource(R.string.backup_sum_never),
                     )
                 },
                 {
-                    RowFrame(
-                        stringResource(R.string.backup_restore), onClick = if (restoring) null else ({ openFile.launch(arrayOf("application/json", "text/plain", "*/*")) }),
+                    ValueRow(
+                        stringResource(R.string.backup_restore), null, onClick = if (restoring) null else ({ openFile.launch(arrayOf("application/json", "text/plain", "*/*")) }),
                         sub = if (restoring) progress else stringResource(R.string.backup_restore_sub), busy = restoring,
                     )
                 },

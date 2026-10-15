@@ -71,8 +71,7 @@ fun LiveSettingsScreen(model: LiveViewModel = hiltViewModel()) {
             }
         }
         item(key = "replay") {
-            Column {
-                SectionLabel(stringResource(R.string.live_settings_replay))
+            Column(Modifier.padding(top = 28.dp)) {
                 Rows({
                     PillsRow(
                         stringResource(R.string.live_settings_replay), listOf(30, 60, 120, 180).map { it to spanWords(it.toLong()) }, settings.replaySeconds,

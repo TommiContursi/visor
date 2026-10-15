@@ -239,12 +239,14 @@ fun SettingsPage(
         }
 
         val barShown by animateFloatAsState(if (scrolled > 0.05f) 1f else 0f, tween(180), label = "bar")
+        // Solid behind the title, so rows passing under it never show through; it fades only below the bar.
+        val solid = (top + BAR) / (top + BAR + BAR_FADE)
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(top + BAR + 20.dp)
+                .height(top + BAR + BAR_FADE)
                 .graphicsLayer { alpha = barShown }
-                .background(Brush.verticalGradient(listOf(colors.canvas, colors.canvas.copy(alpha = 0.92f), Color.Transparent))),
+                .background(Brush.verticalGradient(0f to colors.canvas, solid to colors.canvas, 1f to Color.Transparent)),
         )
         TopBar(title, actions)
     }
@@ -329,6 +331,7 @@ private fun NoticePill(notice: PageNotice, modifier: Modifier) {
 }
 
 internal val BAR = 56.dp
+private val BAR_FADE = 28.dp
 internal val SIDE = 24.dp
 
 /** A run of rows on a raised card. */
@@ -340,10 +343,10 @@ fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> U
     )
 }
 
-/** Between two rows on a card. */
+/** Between two rows on a card, from edge to edge. */
 @Composable
 fun Hairline() {
-    Box(Modifier.fillMaxWidth().padding(start = 16.dp).height(1.dp).background(Visor.colors.hairline))
+    Box(Modifier.fillMaxWidth().height(1.dp).background(Visor.colors.hairline))
 }
 
 /** Rows on one card with hairlines between them. */
@@ -406,6 +409,7 @@ fun RowFrame(
     problem: String? = null,
     dense: Boolean = false,
     below: (@Composable ColumnScope.() -> Unit)? = null,
+    dim: Boolean = false,
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
     val host = LocalHost.current
@@ -424,13 +428,8 @@ fun RowFrame(
             .padding(horizontal = 16.dp, vertical = if (dense) 10.dp else 13.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Row(Modifier.alpha(if (locked) 0.4f else 1f), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                if (overline != null) Text(overline, style = Visor.type.label, color = Visor.colors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                TitleAndValue(title, changed, value)
-                if (sub != null) Text(sub, style = Visor.type.label, color = Visor.colors.textSecondary)
-                if (keyLine != null) KeyLine(keyLine)
-            }
+        Row(Modifier.alpha(if (locked || dim) 0.4f else 1f), verticalAlignment = Alignment.CenterVertically) {
+            RowText(overline, title, changed, value, sub, keyLine, Modifier.weight(1f))
             if (busy) Spinner(Modifier.padding(start = 12.dp))
             trailing()
         }
@@ -442,49 +441,88 @@ fun RowFrame(
 }
 
 /**
- * The name and the value on one line, the value against the right edge, when both fit whole; otherwise the name
- * takes the line and the value goes under it, so neither is squeezed into a column of its own.
+ * A row's words. When the name fits beside the value whole, the value sits against the right edge, centred on
+ * everything to its left, in line with the chevron or switch after it, and the lines under the name wrap short of it.
+ * Otherwise the value goes under the name, so neither is squeezed into a column of its own.
  */
 @Composable
-private fun TitleAndValue(title: String, changed: Boolean, value: String?) {
+private fun RowText(overline: String?, title: String, changed: Boolean, value: String?, sub: String?, keyLine: String?, modifier: Modifier) {
     val gap = 16.dp
-    val drop = 2.dp
+    val line = 2.dp
     Layout(
         contents = listOf(
             {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, style = Visor.type.body, color = Visor.colors.textPrimary, modifier = Modifier.weight(1f, fill = false))
-                    if (changed) ChangedDot()
+                Column(verticalArrangement = Arrangement.spacedBy(line)) {
+                    if (overline != null) Text(overline, style = Visor.type.label, color = Visor.colors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(title, style = Visor.type.body, color = Visor.colors.textPrimary, modifier = Modifier.weight(1f, fill = false))
+                        if (changed) ChangedDot()
+                    }
                 }
             },
             { if (value != null) Text(value, style = Visor.type.body, color = Visor.colors.textSecondary) },
+            {
+                if (sub != null || keyLine != null) {
+                    Column(verticalArrangement = Arrangement.spacedBy(line)) {
+                        if (sub != null) Text(sub, style = Visor.type.label, color = Visor.colors.textSecondary)
+                        if (keyLine != null) KeyLine(keyLine)
+                    }
+                }
+            },
         ),
-    ) { (titles, values), constraints ->
+        modifier = modifier,
+    ) { (heads, values, tails), constraints ->
         val width = constraints.maxWidth
-        val t = titles.first()
+        val space = line.roundToPx()
+        val h = heads.first()
         val v = values.firstOrNull()
-        if (v == null) {
-            val p = t.measure(Constraints(maxWidth = width))
-            return@Layout layout(width, p.height) { p.place(0, 0) }
-        }
-        val titleWidth = t.maxIntrinsicWidth(Constraints.Infinity)
-        val valueWidth = v.maxIntrinsicWidth(Constraints.Infinity)
-        if (titleWidth + gap.roundToPx() + valueWidth <= width) {
-            val tp = t.measure(Constraints(maxWidth = titleWidth))
-            val vp = v.measure(Constraints(maxWidth = valueWidth))
-            val h = maxOf(tp.height, vp.height)
-            layout(width, h) {
-                tp.place(0, (h - tp.height) / 2)
-                vp.place(width - vp.width, (h - vp.height) / 2)
+        val t = tails.firstOrNull()
+        val inline = v != null && h.maxIntrinsicWidth(Constraints.Infinity) + gap.roundToPx() + v.maxIntrinsicWidth(Constraints.Infinity) <= width
+        if (v != null && inline) {
+            val vp = v.measure(Constraints(maxWidth = width))
+            val textWidth = (width - gap.roundToPx() - vp.width).coerceAtLeast(0)
+            val hp = h.measure(Constraints(maxWidth = textWidth))
+            val tp = t?.measure(Constraints(maxWidth = textWidth))
+            val textHeight = hp.height + (tp?.let { space + it.height } ?: 0)
+            val height = maxOf(textHeight, vp.height)
+            layout(width, height) {
+                val top = (height - textHeight) / 2
+                hp.place(0, top)
+                tp?.place(0, top + hp.height + space)
+                vp.place(width - vp.width, (height - vp.height) / 2)
             }
         } else {
-            val tp = t.measure(Constraints(maxWidth = width))
-            val vp = v.measure(Constraints(maxWidth = width))
-            layout(width, tp.height + drop.roundToPx() + vp.height) {
-                tp.place(0, 0)
-                vp.place(0, tp.height + drop.roundToPx())
+            val hp = h.measure(Constraints(maxWidth = width))
+            val vp = v?.measure(Constraints(maxWidth = width))
+            val tp = t?.measure(Constraints(maxWidth = width))
+            val height = hp.height + listOfNotNull(vp, tp).sumOf { space + it.height }
+            layout(width, height) {
+                var y = 0
+                hp.place(0, y)
+                y += hp.height
+                vp?.let {
+                    y += space
+                    it.place(0, y)
+                    y += it.height
+                }
+                tp?.place(0, y + space)
             }
         }
+    }
+}
+
+/** The mark of a choice among several: a white disc with a check when chosen, an empty ring when not. */
+@Composable
+fun ChoiceMark(chosen: Boolean, modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .size(22.dp)
+            .clip(CircleShape)
+            .background(if (chosen) Color.White else Color.Transparent)
+            .border(1.5.dp, if (chosen) Color.White else Visor.colors.textTertiary, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (chosen) Icon(VisorIcons.Check, null, Modifier.size(16.dp), tint = Color.Black)
     }
 }
 
@@ -546,10 +584,11 @@ fun ValueRow(
     problem: String? = null,
     dense: Boolean = false,
     busy: Boolean = false,
+    dim: Boolean = false,
 ) {
     RowFrame(
         title, onClick = onClick, onLongClick = onLongClick, locked = locked, changed = changed, value = value, busy = busy,
-        overline = overline, sub = sub, keyLine = keyLine, problem = problem, dense = dense,
+        overline = overline, sub = sub, keyLine = keyLine, problem = problem, dense = dense, dim = dim,
     ) {
         if (onClick != null) Icon(VisorIcons.Chevron, null, Modifier.padding(start = 8.dp).size(16.dp), tint = Visor.colors.textTertiary)
     }

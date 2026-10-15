@@ -92,7 +92,7 @@ fun PhoneAccessScreen() {
                         val granted = remember(tick) { need.granted(context) }
                         RowFrame(stringResource(need.title), onClick = null, sub = stringResource(need.why)) {
                             if (granted) {
-                                Text(stringResource(R.string.access_allowed), style = Visor.type.label, color = Visor.colors.textSecondary, modifier = Modifier.padding(start = 12.dp))
+                                Text(stringResource(R.string.access_allowed), style = Visor.type.body, color = Visor.colors.textSecondary, modifier = Modifier.padding(start = 12.dp))
                             } else {
                                 ActionPill(stringResource(R.string.access_allow), {
                                     asked = need

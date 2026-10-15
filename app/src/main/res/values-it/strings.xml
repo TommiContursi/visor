@@ -229,7 +229,7 @@
     <string name="live_settings_replay_sub">Quanta parte della diretta Visor tiene in memoria, pronta da salvare.</string>
     <string name="live_settings_on_picture">Sull\'immagine</string>
     <string name="live_settings_log">Cosa è successo</string>
-    <string name="live_settings_nothing">Ancora niente.</string>
+    <string name="live_settings_nothing">Ancora niente</string>
     <string name="live_glasses_photo">Foto dagli occhiali</string>
     <string name="live_photo_failed">Gli occhiali non hanno mandato la foto</string>
     <string name="live_stopped_heat">Gli occhiali hanno fermato la fotocamera: sono troppo caldi</string>

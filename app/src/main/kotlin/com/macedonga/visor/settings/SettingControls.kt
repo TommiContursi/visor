@@ -127,6 +127,7 @@ fun GlassesRow(key: String, engineering: Boolean = false, overline: String? = nu
         ValueRow(
             spec.label, if (value == null) stringResource(R.string.settings_not_read) else spec.display(value), onClick = null, onLongClick = long,
             changed = changed, overline = overline, keyLine = keyLine, problem = problem, dense = dense, busy = busy,
+            dim = !host.ready,
         )
         return
     }
