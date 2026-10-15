@@ -659,6 +659,7 @@
     <string name="import_problem_wifi_off">Turn on Wi-Fi to import: photos and videos come over Wi-Fi Direct.</string>
     <string name="import_problem_not_allowed">Allow nearby devices to import over Wi-Fi Direct.</string>
     <string name="import_problem_failed">The import stopped: %1$s</string>
+    <string name="import_problem_cut_off">The glasses disconnected before everything came over. Import the rest once they are back.</string>
     <string name="import_retry">Try again</string>
     <string name="import_over_bluetooth">Coming over Bluetooth: the glasses can take about five minutes to start.</string>
 

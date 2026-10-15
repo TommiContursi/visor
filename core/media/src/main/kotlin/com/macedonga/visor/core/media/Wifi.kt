@@ -46,6 +46,9 @@ data class ImportProblem(val kind: Kind, val detail: String = "", val handles: S
         WIFI_OFF,
         NOT_ALLOWED,
         FAILED,
+
+        /** The glasses went quiet or away halfway: asleep in the closed case, or out of reach. */
+        CUT_OFF,
     }
 }
 

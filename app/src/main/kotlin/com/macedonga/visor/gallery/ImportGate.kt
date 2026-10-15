@@ -70,4 +70,5 @@ fun importProblemText(problem: ImportProblem): String = when (problem.kind) {
     ImportProblem.Kind.WIFI_OFF -> stringResource(R.string.import_problem_wifi_off)
     ImportProblem.Kind.NOT_ALLOWED -> stringResource(R.string.import_problem_not_allowed)
     ImportProblem.Kind.FAILED -> stringResource(R.string.import_problem_failed, problem.detail)
+    ImportProblem.Kind.CUT_OFF -> stringResource(R.string.import_problem_cut_off)
 }

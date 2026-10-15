@@ -36,8 +36,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -264,13 +267,23 @@ class MediaImport(
                     say("Allow Wi-Fi Direct first")
                     _problem.value = ImportProblem(ImportProblem.Kind.NOT_ALLOWED, handles = handles)
                 }
-                else -> overWifi(captures)
+                else -> if (!overWifi(captures)) {
+                    val missing = handles.filterTo(HashSet()) { it in _inFlight.value && !assembly.waiting(it) }
+                    if (missing.isNotEmpty()) {
+                        say("${missing.size} did not come: the glasses went quiet")
+                        _problem.value = ImportProblem(ImportProblem.Kind.CUT_OFF, handles = missing)
+                    }
+                }
             }
         } catch (unavailable: WifiUnavailable) {
             say("${unavailable.message}. Falling back to Bluetooth, which is slow")
             // Said only if Bluetooth does not bring them either: while it might, the import is still running.
             val why = ImportProblem(unavailable.kind, unavailable.message.orEmpty(), handles)
-            if (!overBluetooth(captures)) _problem.value = why.copy(handles = handles intersect _inFlight.value)
+            if (!overBluetooth(captures)) {
+                // Glasses that are gone are the thing to fix, whatever Wi-Fi did.
+                val gone = connection.state.value.link != LinkState.READY
+                _problem.value = (if (gone) ImportProblem(ImportProblem.Kind.CUT_OFF) else why).copy(handles = handles intersect _inFlight.value)
+            }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
@@ -278,7 +291,14 @@ class MediaImport(
             _problem.value = ImportProblem(ImportProblem.Kind.FAILED, error.message ?: error.javaClass.simpleName, handles)
         } finally {
             _overBluetooth.value = false
-            // A capture with pieces here stays in flight until it is put together.
+            // What came is put together as it lands; a capture that is still missing a piece a minute and a half
+            // after the transfer is saved with what it has.
+            scope.launch {
+                delay(STRAGGLER_MILLIS)
+                assembly.finish(olderThanMs = STRAGGLER_MILLIS / 2)
+            }
+            // A capture whose photo or video is here stays in flight until it is put together. One without it keeps
+            // its pieces for the next import, but is no longer coming.
             _inFlight.update { it - captures.map { c -> c.handle }.filterNot(assembly::waiting).toSet() }
             // One that gave way leaves the flag and the queue to the import that replaced it.
             if (running === self) {
@@ -295,7 +315,8 @@ class MediaImport(
         running?.cancelAndJoin()
     }
 
-    private suspend fun overWifi(captures: List<Capture>) {
+    /** True when everything asked for came. */
+    private suspend fun overWifi(captures: List<Capture>): Boolean {
         val target = connection.state.value.target ?: throw WifiUnavailable("no glasses connected")
         val bundle = withContext(Dispatchers.IO) { store.all().firstOrNull { it.serial == target.serial } }
             ?: throw WifiUnavailable("these glasses have no key on this phone")
@@ -321,16 +342,10 @@ class MediaImport(
                 ?: throw WifiUnavailable("the glasses did not answer the Wi-Fi join", ImportProblem.Kind.GLASSES_DID_NOT_JOIN)
             if (!result.ok) throw WifiUnavailable("the glasses could not join Wi-Fi Direct (${result.statusName})", ImportProblem.Kind.GLASSES_DID_NOT_JOIN)
             say("The glasses joined at ${result.address}")
-            receive(GlassesTarget(GlassesLink.Wifi(checkNotNull(result.address), result.port), target.serial), bundle)
+            return receive(GlassesTarget(GlassesLink.Wifi(checkNotNull(result.address), result.port), target.serial), bundle)
         } finally {
             joined = null
             awaited = emptySet()
-            // What came is put together as it lands; a capture that is still missing a piece a minute and a half
-            // after the transfer is saved with what it has.
-            scope.launch {
-                delay(STRAGGLER_MILLIS)
-                assembly.finish(olderThanMs = STRAGGLER_MILLIS / 2)
-            }
             // Even when cancelled: a group left up or a session left paused would block the next import.
             withContext(NonCancellable) {
                 group.remove()
@@ -343,8 +358,8 @@ class MediaImport(
         }
     }
 
-    /** One session over Wi-Fi, held until airship has been quiet for a while. */
-    private suspend fun receive(target: GlassesTarget, bundle: IdentityBundle) = coroutineScope {
+    /** One session over Wi-Fi, held until airship has been quiet for a while. True when everything asked for came. */
+    private suspend fun receive(target: GlassesTarget, bundle: IdentityBundle): Boolean = coroutineScope {
         val host = hosts.create(target, bundle)
         val ready = CompletableDeferred<Boolean>()
         var lost = false
@@ -383,23 +398,38 @@ class MediaImport(
                 if (quiet > IDLE_MILLIS || now() - readyAt > MAX_MILLIS) break
             }
             say(if (lost) "The Wi-Fi link dropped" else "Done over Wi-Fi")
+            !expecting || awaited.isEmpty()
         } finally {
             host.stop()
             watcher.cancel()
         }
     }
 
-    /** The rare case: ask on the link type Bluetooth carries, once Bluetooth is back. */
     /**
-     * Ask for [captures] over Bluetooth and stay on it until they are saved: the glasses stop a big file at once and
-     * offer it again about five minutes later. True when everything came.
+     * The rare case: ask for [captures] over Bluetooth and stay on it until they are saved: the glasses stop a big
+     * file at once and offer it again about five minutes later. Glasses gone for [GONE_MILLIS] (asleep in the closed
+     * case, out of reach) end the wait. True when everything came.
      */
     private suspend fun overBluetooth(captures: List<Capture>): Boolean {
         withTimeoutOrNull(BLUETOOTH_BACK_MILLIS) { connection.state.first { it.link == LinkState.READY } } ?: return false
         _overBluetooth.value = true
         val handles = captures.map { it.handle }.toSet()
         connection.submit { link -> for (capture in captures) requestCapture(link, capture.handle, LINK_BLUETOOTH) }
-        return withTimeoutOrNull(BLUETOOTH_DELIVERY_MILLIS) { _inFlight.first { (it intersect handles).isEmpty() } } != null
+        val came = _inFlight.filter { (it intersect handles).isEmpty() }.map { true }
+        val gone = flow {
+            awayFor(GONE_MILLIS)
+            say("The glasses are gone: stopped waiting for them over Bluetooth")
+            emit(false)
+        }
+        return withTimeoutOrNull(BLUETOOTH_DELIVERY_MILLIS) { merge(came, gone).first() } == true
+    }
+
+    /** Returns once Bluetooth has been down for [millis] in a row. */
+    private suspend fun awayFor(millis: Long) {
+        while (true) {
+            connection.state.first { it.link != LinkState.READY }
+            withTimeoutOrNull(millis) { connection.state.first { it.link == LinkState.READY } } ?: return
+        }
     }
 
     private fun onMedia(data: ServiceData) {
@@ -587,6 +617,7 @@ class MediaImport(
         const val IDLE_MILLIS = 12_000L
         const val MAX_MILLIS = 30 * 60_000L
         const val BLUETOOTH_BACK_MILLIS = 60_000L
+        const val GONE_MILLIS = 30_000L
         const val STRAGGLER_MILLIS = 90_000L
 
         fun now() = System.nanoTime() / 1_000_000

@@ -49,8 +49,8 @@ class Assembly(
         queue.trySend { safely(dir) }
     }
 
-    /** Whether some of [handle]'s files are here, waiting for the rest or for their turn. */
-    fun waiting(handle: String): Boolean = File(staging, handle).isDirectory
+    /** Whether [handle]'s photo or video is here: it is saved when the rest come, or by [finish] without them. */
+    fun waiting(handle: String): Boolean = File(File(staging, handle), MAIN).exists()
 
     /**
      * Whatever has its photo or video and has had nothing new for [olderThanMs] is saved with what came; a capture
