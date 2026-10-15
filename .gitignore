@@ -35,9 +35,12 @@ skills-lock.json
 # Git-ignored by design. The record that matters is the commit history.
 .superpowers/
 
-# Python bytecode from the tools, and the Playwright MCP plugin's scratch directory.
+# Python bytecode, and the Playwright MCP plugin's scratch directory.
 __pycache__/
 .playwright-mcp/
+
+# Local helper scripts.
+tools/
 
 # Local only: the desktop client snapshot and the agent memory. The repo is going public.
 reference/
