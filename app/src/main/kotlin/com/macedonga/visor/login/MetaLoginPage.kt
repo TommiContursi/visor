@@ -31,6 +31,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.webkit.UserAgentMetadata
 import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.macedonga.visor.BuildConfig
 import com.macedonga.visor.core.identity.token.META_REDIRECT_URI
@@ -68,7 +69,14 @@ fun MetaLoginPage(onDone: () -> Unit, model: LoginViewModel = hiltViewModel()) {
                 settings.lookLikeChrome(note)
                 describe(context, note)
                 addJavascriptInterface(PageBridge(note), "VisorLog")
+                if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                    WebViewCompat.addDocumentStartJavaScript(this, ANSWERS, setOf(ACCOUNTS))
+                } else {
+                    note("Bloks answers not visible on this WebView")
+                }
                 var caught = false
+                // Set once the page itself goes to /oidc/ after a login step: a bounce back to /login/ after that is the loop.
+                var loggedIn = false
                 fun take(url: String): Boolean {
                     if (!url.startsWith(prefix)) return false
                     if (!caught) {
@@ -82,7 +90,15 @@ fun MetaLoginPage(onDone: () -> Unit, model: LoginViewModel = hiltViewModel()) {
                     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                         val url = request.url.toString()
                         if (take(url)) return true
-                        note("navigating to ${request.url.place()}" + (if (request.isRedirect) " (redirect)" else "") + (if (request.hasGesture()) " (tap)" else ""))
+                        val path = request.url.path.orEmpty()
+                        note(
+                            "navigating to ${request.url.place()}" + (if (request.isRedirect) " (redirect)" else "") + (if (request.hasGesture()) " (tap)" else "") +
+                                ", params ${request.url.paramNames()}, cookies ${cookieNames(url)}",
+                        )
+                        if (path.startsWith("/oidc") && !request.isRedirect) loggedIn = true
+                        if (loggedIn && request.isRedirect && path.startsWith("/login")) {
+                            note("Meta answered /oidc/ with its login page: it did not take this as a logged-in session")
+                        }
                         return false
                     }
 
@@ -142,16 +158,29 @@ fun MetaLoginPage(onDone: () -> Unit, model: LoginViewModel = hiltViewModel()) {
     )
 }
 
-/** The page reports its own screens through this: the heading changes as the Bloks flow moves on. */
+/** The page reports its own screens and its Bloks answers through this. */
 private class PageBridge(private val sink: (String) -> Unit) {
     @JavascriptInterface
     fun note(text: String) {
         sink(text.take(200))
     }
+
+    /** A Bloks call came back: its status, and the cookies the login holds right after it. */
+    @JavascriptInterface
+    fun answer(appid: String, status: Int) {
+        // The code screen polls this every second; only a failure of it is worth a line.
+        if (appid.endsWith("notif_status.async") && status == 200) return
+        sink("bloks ${appid.take(120)} answered ${if (status < 0) "nothing (failed)" else status}, cookies ${cookieNames("$ACCOUNTS/")}")
+    }
 }
+
+private const val ACCOUNTS = "https://accounts.meta.com"
 
 /** Host and path only: the query carries the code, the state and the login's own tokens. */
 private fun Uri.place(): String = "${host.orEmpty()}${path.orEmpty()}"
+
+/** The names of the query parameters, never their values. */
+private fun Uri.paramNames(): String = queryParameterNames.sorted().joinToString(" ").ifEmpty { "none" }
 
 /** A request worth a line: Meta's own endpoints, with the Bloks screen a fetch is for. Static files are not. */
 private fun Uri.described(): String? {
@@ -211,6 +240,25 @@ private fun WebSettings.lookLikeChrome(note: (String) -> Unit) {
     }
     note("X-Requested-With ${if (header) "suppressed" else "not controllable on this WebView"}, client hints ${if (hints) "as Chrome" else "not controllable on this WebView"}")
 }
+
+/** Before the page's own scripts: every Bloks fetch reports its status when it comes back. */
+private val ANSWERS = """
+(function () {
+  if (window.__visorAnswers || !window.fetch) return;
+  window.__visorAnswers = true;
+  var original = window.fetch;
+  window.fetch = function (input) {
+    var reply = original.apply(window, arguments);
+    var m = /\/async\/wbloks\/fetch\/?\?[^#]*appid=([^&#]+)/.exec(String((input && input.url) || input));
+    if (m) {
+      var id = decodeURIComponent(m[1]);
+      reply.then(function (r) { if (window.VisorLog) VisorLog.answer(id, r.status); },
+                 function () { if (window.VisorLog) VisorLog.answer(id, -1); });
+    }
+    return reply;
+  };
+})();
+""".trimIndent()
 
 /** Installed once per page: reports the heading of the screen and of any dialog as the Bloks flow moves on. */
 private val WATCH = """
