@@ -172,12 +172,7 @@ fun StatusPill(
             Box(Modifier.size(7.dp).clip(RoundedCornerShape(50)).background(colors.signal))
             Spacer(Modifier.size(8.dp))
         }
-        if (importing) {
-            // Over Wi-Fi Direct the battery is not reported; the transfer is what is happening.
-            Text(stringResource(R.string.pill_importing, (importProgress * 100).toInt()), style = Visor.type.label, color = colors.textPrimary)
-            return@Row
-        }
-        if (!here) {
+        if (!here && !importing) {
             if (mood == Mood.IN_CASE) {
                 Icon(VisorIcons.Bolt, null, Modifier.padding(end = 6.dp).size(13.dp), tint = colors.textSecondary)
             }
@@ -195,7 +190,20 @@ fun StatusPill(
                 }
             }
         }
-        if (waiting > 0) {
+        // Over Wi-Fi Direct the battery is not reported: the last reading stays, and the import takes the place of
+        // the new-captures count.
+        if (importing) {
+            if (glasses != null) {
+                Spacer(Modifier.size(12.dp))
+                Box(Modifier.size(width = 1.dp, height = 14.dp).background(colors.control))
+            }
+            Text(
+                stringResource(R.string.pill_importing, (importProgress * 100).toInt()),
+                style = Visor.type.label,
+                color = colors.textPrimary,
+                modifier = Modifier.padding(start = if (glasses != null) 12.dp else 0.dp),
+            )
+        } else if (waiting > 0) {
             Spacer(Modifier.size(12.dp))
             Box(Modifier.size(width = 1.dp, height = 14.dp).background(colors.control))
             Text(
