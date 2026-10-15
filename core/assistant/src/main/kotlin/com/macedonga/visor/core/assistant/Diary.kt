@@ -1,5 +1,6 @@
 package com.macedonga.visor.core.assistant
 
+import com.macedonga.visor.core.assistant.mcp.ToolAction
 import java.io.File
 import java.time.Instant
 import java.time.LocalDate
@@ -251,6 +252,7 @@ private fun TurnRecord.toJson(): JSONObject = JSONObject()
     .put("problem", problem).put("modelMs", modelMs).put("sentMs", sentMs).put("playedMs", playedMs)
     .put("image", image).put("conversation", conversation).put("source", source.name).put("session", session)
     .put("remembered", JSONArray(remembered))
+    .put("actions", JSONArray(actions.map { JSONObject().put("server", it.server).put("what", it.what).put("ok", it.ok) }))
 
 private fun turnFrom(o: JSONObject): TurnRecord? = runCatching {
     TurnRecord(
@@ -260,5 +262,8 @@ private fun turnFrom(o: JSONObject): TurnRecord? = runCatching {
         source = runCatching { TurnSource.valueOf(o.optString("source")) }.getOrDefault(TurnSource.GLASSES),
         session = o.optString("session"),
         remembered = o.optJSONArray("remembered")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty(),
+        actions = o.optJSONArray("actions")?.let { a ->
+            (0 until a.length()).mapNotNull { a.optJSONObject(it) }.map { ToolAction(it.optString("server"), it.optString("what"), it.optBoolean("ok", true)) }
+        }.orEmpty(),
     )
 }.getOrNull()

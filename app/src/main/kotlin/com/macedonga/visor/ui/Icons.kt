@@ -164,6 +164,9 @@ object VisorIcons {
 
     val Lines = icon("M8 7h11", "M8 12h11", "M8 17h11", "M5 7h.01", "M5 12h.01", "M5 17h.01")
 
+    /** A plug: what the assistant is connected to. */
+    val Plug = icon("M9 3.5v4", "M15 3.5v4", "M6.5 7.5h11v3a5.5 5.5 0 0 1-11 0z", "M12 16v4.5")
+
     /** Short arcs around the centre of the grid, [count] of them, each half a step long. */
     private fun dashedRing(radius: Float, count: Int): Array<String> = Array(count) { k ->
         val step = 2 * Math.PI / count

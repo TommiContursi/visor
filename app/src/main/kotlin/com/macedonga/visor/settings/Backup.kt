@@ -24,6 +24,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.macedonga.visor.R
 import com.macedonga.visor.core.assistant.AssistantConfigStore
 import com.macedonga.visor.core.assistant.Provider
+import com.macedonga.visor.core.assistant.mcp.AuthKind
+import com.macedonga.visor.core.assistant.mcp.McpServer
+import com.macedonga.visor.core.assistant.mcp.McpStore
 import com.macedonga.visor.core.connection.GlassesConnection
 import com.macedonga.visor.core.media.BroadcastCodec
 import com.macedonga.visor.core.media.LiveOverlay
@@ -66,6 +69,7 @@ class Backups @Inject constructor(
     private val import: ImportChoice,
     private val live: LiveSettingsStore,
     private val pins: Pins,
+    private val mcp: McpStore,
 ) {
     private val prefs = context.getSharedPreferences("backup", Context.MODE_PRIVATE)
     private val _last = MutableStateFlow(prefs.getLong(LAST, 0L).takeIf { it > 0 })
@@ -105,6 +109,16 @@ class Backups @Inject constructor(
                     .put("listen", l.listen).put("rtmpUrl", l.rtmpUrl).put("rtmpCodec", l.rtmpCodec.name),
             )
             .put("pins", JSONArray(pins.ids.value))
+            // The servers without their keys and sign-ins, which stay on this phone.
+            .put(
+                "integrations",
+                JSONArray(
+                    mcp.servers.value.map {
+                        JSONObject().put("name", it.name).put("url", it.url).put("enabled", it.enabled).put("auth", it.auth.name)
+                            .put("header", it.header).put("off", JSONArray(it.off.sorted())).put("clientId", it.clientId).put("redirect", it.redirect)
+                    },
+                ),
+            )
     }
 
     suspend fun save(uri: Uri) = withContext(Dispatchers.IO) {
@@ -133,6 +147,22 @@ class Backups @Inject constructor(
                     glassesVoice = o.optBoolean("glassesVoice", it.glassesVoice),
                     instructions = o.optString("instructions", it.instructions),
                     memoryMinutes = o.optInt("memoryMinutes", it.memoryMinutes),
+                )
+            }
+        }
+        backup.optJSONArray("integrations")?.let { a ->
+            for (i in 0 until a.length()) {
+                val o = a.optJSONObject(i) ?: continue
+                val url = o.optString("url").takeIf { it.isNotBlank() } ?: continue
+                if (mcp.servers.value.any { it.url == url }) continue
+                mcp.add(
+                    McpServer(
+                        name = o.optString("name").ifBlank { url }, url = url, enabled = o.optBoolean("enabled", true),
+                        auth = runCatching { AuthKind.valueOf(o.optString("auth")) }.getOrDefault(AuthKind.NONE),
+                        header = o.optString("header"),
+                        off = o.optJSONArray("off")?.let { f -> (0 until f.length()).map { f.getString(it) }.toSet() }.orEmpty(),
+                        clientId = o.optString("clientId"), redirect = o.optString("redirect"),
+                    ),
                 )
             }
         }

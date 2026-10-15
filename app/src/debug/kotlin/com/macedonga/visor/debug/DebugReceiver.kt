@@ -21,6 +21,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -33,7 +34,9 @@ import kotlinx.coroutines.withTimeoutOrNull
  * Actions: STATUS, CONNECT, DISCONNECT, LOG (--ei n), LIVE_START (--ez wifi --ei band 2|5|0 --es quality
  * --ei bitrate --ei fps --ei band; --ez auto true for the Live view's own start), LIVE_STOP, LIVE_REC (starts or stops a
  * recording), LIVE_REPLAY, LIVE_FRAME, BUGREPORT, SETTINGS (--es key), SET (--es key --es value),
- * READ_SETTINGS, MEDIA, IMPORT (--es handle a,b: by handle prefix), ASK (--es q), ONBOARD (--es page --ef t).
+ * READ_SETTINGS, MEDIA, IMPORT (--es handle a,b: by handle prefix), ASK (--es q), ONBOARD (--es page --ef t),
+ * MCP_PROBE / MCP_ADD (--es url --es name --es auth NONE|TOKEN|HEADER --es secret --es header), MCP_STATUS,
+ * MCP_TOOLS (what the model would get), MCP_CALL (--es tool exposed-name --es args json), MCP_REMOVE (--es id).
  */
 @AndroidEntryPoint
 class DebugReceiver : BroadcastReceiver() {
@@ -49,6 +52,7 @@ class DebugReceiver : BroadcastReceiver() {
     @Inject lateinit var contacts: com.macedonga.visor.notify.PhoneContacts
     @Inject lateinit var config: com.macedonga.visor.core.media.GlassesConfig
     @Inject lateinit var liveSettings: com.macedonga.visor.core.media.LiveSettingsStore
+    @Inject lateinit var mcp: com.macedonga.visor.core.assistant.mcp.McpHub
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action?.substringAfterLast('.').orEmpty()
@@ -291,6 +295,54 @@ class DebugReceiver : BroadcastReceiver() {
                 }
             }
             "ASK" -> answerLater { withTimeoutOrNull(25_000) { assistant.ask(intent.getStringExtra("q") ?: "Say hello.") } ?: "no answer in 25 s" }
+            "MCP_PROBE" -> answerLater {
+                val auth = com.macedonga.visor.core.assistant.mcp.AuthKind.valueOf(intent.getStringExtra("auth") ?: "NONE")
+                mcp.probe(intent.getStringExtra("url").orEmpty(), auth, intent.getStringExtra("secret").orEmpty(), intent.getStringExtra("header").orEmpty()).toString()
+            }
+            "MCP_ADD" -> {
+                val server = com.macedonga.visor.core.assistant.mcp.McpServer(
+                    name = intent.getStringExtra("name") ?: "Test",
+                    url = intent.getStringExtra("url").orEmpty(),
+                    auth = com.macedonga.visor.core.assistant.mcp.AuthKind.valueOf(intent.getStringExtra("auth") ?: "NONE"),
+                    secret = intent.getStringExtra("secret").orEmpty(),
+                    header = intent.getStringExtra("header").orEmpty(),
+                )
+                mcp.store.add(server)
+                resultData = server.id
+            }
+            "MCP_STATUS" -> resultData = mcp.store.servers.value.joinToString("\n") { s ->
+                val st = mcp.status.value[s.id]
+                "${s.id} ${s.name} ${s.url} auth=${s.auth} enabled=${s.enabled} transport=${s.transport} phase=${st?.phase} busy=${st?.busy} " +
+                    "icon=${st?.icon?.size} error=${st?.error} info=${st?.info} tools=${st?.tools?.joinToString(",") { it.name }}"
+            }
+            "MCP_TOOLS" -> answerLater {
+                val box = mcp.toolbox()
+                box.tools.joinToString("\n") { "${it.name} (${it.tool.name}) readOnly=${it.tool.readOnly}" } + "\nPROMPT:" + box.prompt
+            }
+            "MCP_CALL" -> answerLater {
+                val box = mcp.toolbox()
+                val tool = box.find(intent.getStringExtra("tool").orEmpty()) ?: return@answerLater "no such tool; have ${box.tools.joinToString { it.name }}"
+                val (result, action) = mcp.call(tool, org.json.JSONObject(intent.getStringExtra("args") ?: "{}"))
+                "error=${result.isError} action=$action\n${result.text}"
+            }
+            "MCP_SIGNIN" -> answerLater {
+                val id = intent.getStringExtra("id").orEmpty()
+                mcp.signIn(id)
+                withTimeoutOrNull(20_000) {
+                    mcp.signIn.first { it.id == id && (it is com.macedonga.visor.core.assistant.mcp.SignIn.InBrowser || it is com.macedonga.visor.core.assistant.mcp.SignIn.Failed) }
+                }.toString()
+            }
+            "MCP_COMPLETE" -> answerLater {
+                val taken = mcp.complete(intent.getStringExtra("uri").orEmpty())
+                if (!taken) return@answerLater "not a sign-in's redirect"
+                withTimeoutOrNull(20_000) {
+                    mcp.signIn.first { it is com.macedonga.visor.core.assistant.mcp.SignIn.Done || it is com.macedonga.visor.core.assistant.mcp.SignIn.Failed }
+                }.toString()
+            }
+            "MCP_REMOVE" -> {
+                mcp.store.remove(intent.getStringExtra("id").orEmpty())
+                resultData = "removed"
+            }
             else -> resultData = "unknown action $action"
         }
     }

@@ -1,6 +1,11 @@
 package com.macedonga.visor.core.assistant
 
 import android.util.Base64
+import com.macedonga.visor.core.assistant.mcp.ExposedTool
+import com.macedonga.visor.core.assistant.mcp.McpHub
+import com.macedonga.visor.core.assistant.mcp.ToolAction
+import com.macedonga.visor.core.assistant.mcp.ToolResult
+import com.macedonga.visor.core.assistant.mcp.Toolbox
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.ZonedDateTime
@@ -18,8 +23,14 @@ enum class Provider { CLAUDE, OPENAI_COMPATIBLE }
 /** One question and its answer, the conversation behind the next question. */
 data class Exchange(val question: String, val answer: String)
 
-/** An answer, and what the model chose to remember while giving it. */
-data class Reply(val text: String, val remembered: List<String> = emptyList())
+/** An answer, what the model chose to remember while giving it, and what it did with the person's tools. */
+data class Reply(val text: String, val remembered: List<String> = emptyList(), val actions: List<ToolAction> = emptyList())
+
+/** What one answer may use and what it did with it. */
+private class Turn(val box: Toolbox) {
+    val remembered = ArrayList<String>()
+    val actions = ArrayList<ToolAction>()
+}
 
 /** What the assistant keeps about the wearer across conversations; the model adds and drops entries with its tools. */
 interface MemoryBook {
@@ -31,8 +42,8 @@ interface MemoryBook {
 /** Who the answer is for: spoken by the glasses, or read on the phone. */
 enum class Audience { GLASSES, PHONE }
 
-/** The model behind the assistant. The conversation comes with each question, from the diary. */
-class Brain(private val config: () -> AssistantConfig, private val book: MemoryBook? = null) {
+/** The model behind the assistant. The conversation comes with each question, from the diary; tools from [hub]. */
+class Brain(private val config: () -> AssistantConfig, private val book: MemoryBook? = null, private val hub: McpHub? = null) {
 
     /** The answer to [question] after [past], with [image] (a JPEG) when the glasses sent one. Throws on any failure. */
     suspend fun answer(
@@ -45,21 +56,23 @@ class Brain(private val config: () -> AssistantConfig, private val book: MemoryB
     ): Reply = withContext(Dispatchers.IO) {
         val c = config()
         check(c.apiKey.isNotBlank() || c.provider == Provider.OPENAI_COMPATIBLE) { "no API key is set" }
+        // The tools never stand in the way of an answer: without them the model still answers.
+        val turn = Turn(hub?.let { runCatching { it.toolbox() }.getOrNull() } ?: Toolbox(emptyList(), ""))
         val system = (if (audience == Audience.PHONE) PHONE_PROMPT else SYSTEM_PROMPT) +
             " It is ${ZonedDateTime.now().format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy, HH:mm", Locale.ENGLISH))}." +
             (if (audience == Audience.GLASSES) " The glasses are set to ${locale.getDisplayLanguage(Locale.ENGLISH)}." else "") +
             memoryPrompt() +
+            turn.box.prompt +
             (if (note.isNotBlank()) " $note" else "") +
             if (c.instructions.isNotBlank()) " " + c.instructions else ""
         val recent = past.takeLast(MAX_EXCHANGES)
         val tokens = if (audience == Audience.PHONE) PHONE_TOKENS else GLASSES_TOKENS
-        val remembered = ArrayList<String>()
         val text = when (c.provider) {
-            Provider.CLAUDE -> claude(c, c.model.ifBlank { DEFAULT_CLAUDE_MODEL }, system, recent, question, image, tokens, c.webSearch, remembered)
-            Provider.OPENAI_COMPATIBLE -> openAi(c, c.model, system, recent, question, image, tokens, remembered)
+            Provider.CLAUDE -> claude(c, c.model.ifBlank { DEFAULT_CLAUDE_MODEL }, system, recent, question, image, tokens, c.webSearch, turn)
+            Provider.OPENAI_COMPATIBLE -> openAi(c, c.model, system, recent, question, image, tokens, turn)
         }.trim()
         check(text.isNotEmpty()) { "the model gave an empty answer" }
-        Reply(text, remembered)
+        Reply(text, turn.remembered, turn.actions)
     }
 
     /** One sentence for the wearer, in [locale]'s language, written from [what]; outside the conversation. */
@@ -83,7 +96,7 @@ class Brain(private val config: () -> AssistantConfig, private val book: MemoryB
         write(c, c.linesModel.ifBlank { c.model }, system, exchanges, 300)
     }
 
-    private fun write(c: AssistantConfig, model: String, system: String, text: String, tokens: Int): String = when (c.provider) {
+    private suspend fun write(c: AssistantConfig, model: String, system: String, text: String, tokens: Int): String = when (c.provider) {
         Provider.CLAUDE -> claude(c, model.ifBlank { DEFAULT_CLAUDE_MODEL }, system, emptyList(), text, null, tokens, false, null)
         Provider.OPENAI_COMPATIBLE -> openAi(c, model, system, emptyList(), text, null, tokens, null)
     }.trim().also { check(it.isNotEmpty()) { "the model gave an empty answer" } }
@@ -100,25 +113,32 @@ class Brain(private val config: () -> AssistantConfig, private val book: MemoryB
                 " What you remember about the wearer, with each fact's id: " + known.joinToString(" ") { "[${it.id}] ${it.text}" }
     }
 
-    /** remember or forget, run for the model; what it is told back. */
-    private fun runTool(name: String, input: JSONObject, remembered: MutableList<String>): String {
-        val book = book ?: return "unavailable"
-        return when (name) {
-            "remember" -> {
-                val fact = input.optString("fact").trim()
-                if (fact.isEmpty()) return "nothing to remember"
-                book.remember(fact)
-                remembered += fact
-                "kept"
-            }
-            "forget" -> if (book.forget(input.optString("id")) != null) "forgotten" else "no such fact"
-            else -> "unknown tool"
+    /** A tool run for the model: remember or forget, or one of the person's servers'. What it is told back. */
+    private suspend fun runTool(name: String, input: JSONObject, turn: Turn): ToolResult {
+        val book = book
+        if (book != null && name == "remember") {
+            val fact = input.optString("fact").trim()
+            if (fact.isEmpty()) return ToolResult("nothing to remember", true)
+            book.remember(fact)
+            turn.remembered += fact
+            return ToolResult("kept", false)
         }
+        if (book != null && name == "forget") {
+            return if (book.forget(input.optString("id")) != null) ToolResult("forgotten", false) else ToolResult("no such fact", true)
+        }
+        val tool = turn.box.find(name) ?: return ToolResult("unknown tool", true)
+        val (result, action) = hub?.call(tool, input) ?: return ToolResult("unavailable", true)
+        action?.let(turn.actions::add)
+        return result
     }
 
-    private fun claude(
+    /** A server's tool, described for the model with where it comes from. */
+    private fun ExposedTool.help(): String =
+        ("[${server.name}] " + (if (tool.title.isNotEmpty()) "${tool.title}. " else "") + tool.description).take(MAX_TOOL_HELP)
+
+    private suspend fun claude(
         c: AssistantConfig, model: String, system: String, past: List<Exchange>, question: String, image: ByteArray?,
-        tokens: Int, webSearch: Boolean, remembered: MutableList<String>?,
+        tokens: Int, webSearch: Boolean, turn: Turn?,
     ): String {
         val messages = JSONArray()
         for (e in past) {
@@ -139,10 +159,11 @@ class Brain(private val config: () -> AssistantConfig, private val book: MemoryB
         messages.put(JSONObject().put("role", "user").put("content", content))
         val tools = JSONArray()
         if (webSearch) tools.put(JSONObject().put("type", "web_search_20250305").put("name", "web_search").put("max_uses", 2))
-        if (remembered != null && book != null) {
+        if (turn != null && book != null) {
             tools.put(JSONObject().put("name", "remember").put("description", REMEMBER_HELP).put("input_schema", schema("fact", FACT_HELP)))
             tools.put(JSONObject().put("name", "forget").put("description", FORGET_HELP).put("input_schema", schema("id", "The fact's id.")))
         }
+        turn?.box?.tools?.forEach { t -> tools.put(JSONObject().put("name", t.name).put("description", t.help()).put("input_schema", t.tool.schema)) }
         var said = ""
         repeat(MAX_TOOL_ROUNDS) {
             val body = JSONObject().put("model", model).put("max_tokens", tokens).put("system", system).put("messages", messages)
@@ -154,21 +175,24 @@ class Brain(private val config: () -> AssistantConfig, private val book: MemoryB
             val text = list.filter { it.optString("type") == "text" }.joinToString("") { it.getString("text") }
             if (text.isNotBlank()) said = text
             val uses = list.filter { it.optString("type") == "tool_use" }
-            if (answer.optString("stop_reason") != "tool_use" || uses.isEmpty() || remembered == null) return said
+            if (answer.optString("stop_reason") != "tool_use" || uses.isEmpty() || turn == null) return said
             messages.put(JSONObject().put("role", "assistant").put("content", blocks))
             val results = JSONArray()
             for (use in uses) {
-                val out = runTool(use.getString("name"), use.optJSONObject("input") ?: JSONObject(), remembered)
-                results.put(JSONObject().put("type", "tool_result").put("tool_use_id", use.getString("id")).put("content", out))
+                val out = runTool(use.getString("name"), use.optJSONObject("input") ?: JSONObject(), turn)
+                results.put(
+                    JSONObject().put("type", "tool_result").put("tool_use_id", use.getString("id")).put("content", out.text)
+                        .apply { if (out.isError) put("is_error", true) },
+                )
             }
             messages.put(JSONObject().put("role", "user").put("content", results))
         }
         return said
     }
 
-    private fun openAi(
+    private suspend fun openAi(
         c: AssistantConfig, model: String, system: String, past: List<Exchange>, question: String, image: ByteArray?,
-        tokens: Int, remembered: MutableList<String>?,
+        tokens: Int, turn: Turn?,
     ): String {
         val messages = JSONArray().put(JSONObject().put("role", "system").put("content", system))
         for (e in past) {
@@ -186,9 +210,14 @@ class Brain(private val config: () -> AssistantConfig, private val book: MemoryB
         messages.put(JSONObject().put("role", "user").put("content", user))
         val headers = if (c.apiKey.isBlank()) emptyMap() else mapOf("Authorization" to "Bearer ${c.apiKey}")
         val url = c.baseUrl.trimEnd('/') + "/chat/completions"
-        var tools = if (remembered != null && book != null) JSONArray()
-            .put(function("remember", REMEMBER_HELP, schema("fact", FACT_HELP)))
-            .put(function("forget", FORGET_HELP, schema("id", "The fact's id."))) else null
+        var tools: JSONArray? = JSONArray().apply {
+            if (turn != null && book != null) {
+                put(function("remember", REMEMBER_HELP, schema("fact", FACT_HELP)))
+                put(function("forget", FORGET_HELP, schema("id", "The fact's id.")))
+            }
+            // Some servers behind this API refuse a schema that names its own dialect.
+            turn?.box?.tools?.forEach { t -> put(function(t.name, t.help(), JSONObject(t.tool.schema.toString()).apply { remove("\$schema") })) }
+        }.takeIf { it.length() > 0 }
         var said = ""
         repeat(MAX_TOOL_ROUNDS) {
             val body = JSONObject().put("model", model).put("messages", messages).put("max_tokens", tokens)
@@ -207,14 +236,14 @@ class Brain(private val config: () -> AssistantConfig, private val book: MemoryB
             check(text.isNotBlank() || choice.optString("finish_reason") != "length") { "the model used its whole answer thinking" }
             if (text.isNotBlank()) said = text
             val calls = message.optJSONArray("tool_calls")
-            if (calls == null || calls.length() == 0 || remembered == null) return said
+            if (calls == null || calls.length() == 0 || turn == null) return said
             messages.put(message)
             for (i in 0 until calls.length()) {
                 val call = calls.getJSONObject(i)
                 val fn = call.getJSONObject("function")
                 val input = runCatching { JSONObject(fn.optString("arguments")) }.getOrDefault(JSONObject())
-                val out = runTool(fn.getString("name"), input, remembered)
-                messages.put(JSONObject().put("role", "tool").put("tool_call_id", call.getString("id")).put("content", out))
+                val out = runTool(fn.getString("name"), input, turn)
+                messages.put(JSONObject().put("role", "tool").put("tool_call_id", call.getString("id")).put("content", out.text))
             }
         }
         return said
@@ -264,7 +293,9 @@ class Brain(private val config: () -> AssistantConfig, private val book: MemoryB
         val THINKING = Regex("(?s)<think>.*?</think>")
         val TOOLS_REFUSED = Regex("tool|function", RegexOption.IGNORE_CASE)
         const val MAX_EXCHANGES = 12
-        const val MAX_TOOL_ROUNDS = 3
+        // A tool often looks something up, acts, then answers: room for a few of those.
+        const val MAX_TOOL_ROUNDS = 6
+        const val MAX_TOOL_HELP = 1_024
         const val GLASSES_TOKENS = 400
         const val PHONE_TOKENS = 900
         const val DEFAULT_CLAUDE_MODEL = "claude-sonnet-5-5"

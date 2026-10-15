@@ -658,6 +658,7 @@ private fun pageHits(): List<Triple<Int, List<String>, NavKey>> = Topic.entries.
     Triple(R.string.settings_diagnostics, listOf("diagnos", "link", "verdict"), DeviceKey),
     Triple(R.string.settings_event_log, listOf("log", "events", "eventi"), EventLogKey),
     Triple(R.string.meta_ai_memories, listOf("memor", "ricord", "remember"), MemoriesKey),
+    Triple(R.string.mcp_title, listOf("mcp", "integra", "tool", "strument", "connector", "server"), com.macedonga.visor.IntegrationsKey),
 )
 
 private const val MAX_RESULTS = 60

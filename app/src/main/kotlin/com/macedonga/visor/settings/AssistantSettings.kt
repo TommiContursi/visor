@@ -6,8 +6,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +34,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
+import com.macedonga.visor.IntegrationsKey
 import com.macedonga.visor.MemoriesKey
 import com.macedonga.visor.R
 import com.macedonga.visor.core.assistant.Assistant
@@ -45,6 +44,7 @@ import com.macedonga.visor.core.assistant.ModelInfo
 import com.macedonga.visor.core.assistant.ModelsError
 import com.macedonga.visor.core.assistant.Provider
 import com.macedonga.visor.core.assistant.listModels
+import com.macedonga.visor.core.assistant.mcp.McpHub
 import com.macedonga.visor.core.design.Visor
 import com.macedonga.visor.core.settings.GlassesSettings
 import com.macedonga.visor.ui.VisorIcons
@@ -59,6 +59,7 @@ class AssistantViewModel @Inject constructor(
     val store: AssistantConfigStore,
     val toggles: VisorToggles,
     val settings: GlassesSettings,
+    val hub: McpHub,
 ) : ViewModel()
 
 /** What came of asking the provider for its models, which is also the test of the key. */
@@ -156,6 +157,23 @@ fun AssistantSettingsScreen(open: (NavKey) -> Unit, model: AssistantViewModel = 
                             onClick = { sheet = "lines" }, sub = stringResource(R.string.ai_lines_model_sub),
                         )
                     },
+                    {
+                        // Tests the key and the model: the answer, or why there is none, comes under the row.
+                        val ready = config.enabled && check !is KeyCheck.Refused
+                        RowFrame(
+                            stringResource(R.string.ai_try),
+                            onClick = if (ready && !trying) ({
+                                trial = ""
+                                trying = true
+                                scope.launch {
+                                    trial = runCatching { model.assistant.ask("Say hello in one short sentence.") }.getOrElse { context.getString(R.string.ai_try_failed, it.message ?: "") }
+                                    trying = false
+                                }
+                            }) else null,
+                            sub = trial.ifEmpty { null },
+                            busy = trying,
+                        )
+                    },
                 )
             }
         }
@@ -192,27 +210,12 @@ fun AssistantSettingsScreen(open: (NavKey) -> Unit, model: AssistantViewModel = 
                 )
             }
         }
-        item(key = "try") {
-            Column(Modifier.fillMaxWidth().padding(horizontal = SIDE).padding(top = 20.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    ActionPill(stringResource(R.string.ai_try), {
-                        trial = ""
-                        trying = true
-                        scope.launch {
-                            trial = runCatching { model.assistant.ask("Say hello in one short sentence.") }.getOrElse { context.getString(R.string.ai_try_failed, it.message ?: "") }
-                            trying = false
-                        }
-                    }, enabled = config.enabled && check !is KeyCheck.Refused && !trying)
-                    if (trying) Spinner(Modifier.padding(start = 14.dp))
-                }
-                AnimatedVisibility(trial.isNotEmpty(), enter = fadeIn()) {
-                    Text(trial, style = Visor.type.body, color = Visor.colors.textPrimary, modifier = Modifier.padding(top = 12.dp))
-                }
-            }
-        }
-        item(key = "memories") {
-            Column(Modifier.padding(top = 16.dp)) {
-                NavRow(VisorIcons.Memory, stringResource(R.string.meta_ai_memories), stringResource(R.string.ai_memories_sub), onClick = { open(MemoriesKey) })
+        item(key = "places") {
+            Column(Modifier.padding(top = 28.dp)) {
+                Rows(
+                    { NavRow(VisorIcons.Plug, stringResource(R.string.mcp_title), integrationsSummary(model.hub), onClick = { open(IntegrationsKey) }, onCard = true) },
+                    { NavRow(VisorIcons.Memory, stringResource(R.string.meta_ai_memories), stringResource(R.string.ai_memories_sub), onClick = { open(MemoriesKey) }, onCard = true) },
+                )
             }
         }
         item(key = "glasses") {

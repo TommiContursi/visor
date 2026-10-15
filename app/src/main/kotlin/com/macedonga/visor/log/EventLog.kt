@@ -37,6 +37,7 @@ class EventLog @Inject constructor(
     settings: GlassesSettings,
     live: LiveStream,
     assistant: Assistant,
+    tools: com.macedonga.visor.core.assistant.mcp.McpHub,
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -79,6 +80,9 @@ class EventLog @Inject constructor(
         }
         scope.launch {
             assistant.notes.collect { add("Assistant: $it") }
+        }
+        scope.launch {
+            tools.notes.collect { add("Tools: $it") }
         }
         scope.launch {
             keeper.notes.collect { add(it) }

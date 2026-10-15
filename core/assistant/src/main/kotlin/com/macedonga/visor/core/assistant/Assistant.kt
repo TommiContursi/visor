@@ -1,6 +1,7 @@
 package com.macedonga.visor.core.assistant
 
 import android.content.Context
+import com.macedonga.visor.core.assistant.mcp.ToolAction
 import com.macedonga.visor.core.connection.GlassesConnection
 import com.macedonga.visor.core.media.AirshipReceiver
 import com.macedonga.visor.core.media.ExtraFiles
@@ -66,6 +67,8 @@ data class TurnRecord(
     val session: String = "",
     // What the model chose to remember while answering.
     val remembered: List<String> = emptyList(),
+    // What it did with the person's tools.
+    val actions: List<ToolAction> = emptyList(),
 )
 
 /**
@@ -629,11 +632,11 @@ class Assistant(
         if (problem.isNotEmpty()) say("The model did not answer: $problem")
         if (interaction in l.closed) {
             say("The glasses closed this turn before the answer was ready (${modelMs / 1000} s); not sending it")
-            update(interaction) { it.copy(answer = text, problem = ANSWER_TOO_LATE, modelMs = modelMs, remembered = reply.remembered) }
+            update(interaction) { it.copy(answer = text, problem = ANSWER_TOO_LATE, modelMs = modelMs, remembered = reply.remembered, actions = reply.actions) }
             if (link === l) _phase.value = AssistantPhase.LISTENING
             return
         }
-        update(interaction) { it.copy(answer = text, problem = problem, modelMs = modelMs, remembered = reply.remembered) }
+        update(interaction) { it.copy(answer = text, problem = problem, modelMs = modelMs, remembered = reply.remembered, actions = reply.actions) }
         try {
             val sentMs = deliver(l, interaction, transcript, text)
             l.answered.add(interaction)
@@ -682,7 +685,7 @@ class Assistant(
             Reply(fallback(l.locale, store.config.value.apiKey.isBlank() && store.config.value.provider == Provider.CLAUDE))
         }
         val text = reply.text
-        update(sub) { it.copy(answer = text, problem = problem, modelMs = System.currentTimeMillis() - started, remembered = reply.remembered) }
+        update(sub) { it.copy(answer = text, problem = problem, modelMs = System.currentTimeMillis() - started, remembered = reply.remembered, actions = reply.actions) }
         try {
             deliver(l, sub, question, text)
         } catch (error: Exception) {
@@ -871,7 +874,7 @@ class Assistant(
     /** [id]'s question again, with the model and settings as they are now; the new answer replaces the old one. */
     fun askAgain(id: String) {
         if (diary.turn(id) == null) return
-        diary.update(id) { it.copy(answer = "", problem = "", remembered = emptyList(), modelMs = 0) }
+        diary.update(id) { it.copy(answer = "", problem = "", remembered = emptyList(), actions = emptyList(), modelMs = 0) }
         scope.launch { answerHere(id) }
     }
 
@@ -893,7 +896,7 @@ class Assistant(
                     if (turn.source == TurnSource.LIVE_AI) LIVE_AI_NOTE else "", if (phone) Audience.PHONE else Audience.GLASSES,
                 )
             }
-            diary.update(id) { it.copy(answer = reply.text, problem = "", remembered = reply.remembered, modelMs = System.currentTimeMillis() - started) }
+            diary.update(id) { it.copy(answer = reply.text, problem = "", remembered = reply.remembered, actions = reply.actions, modelMs = System.currentTimeMillis() - started) }
         } catch (error: Exception) {
             val why = if (error is kotlinx.coroutines.TimeoutCancellationException) "no answer in ${PHONE_BUDGET_MS / 1000} s" else error.message ?: error::class.simpleName.orEmpty()
             say("The model did not answer in the app: $why")

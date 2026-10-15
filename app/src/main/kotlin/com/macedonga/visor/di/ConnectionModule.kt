@@ -16,6 +16,8 @@ import com.macedonga.visor.core.assistant.Brain
 import com.macedonga.visor.core.assistant.Diary
 import com.macedonga.visor.core.assistant.SVC_ASSISTANT
 import com.macedonga.visor.core.assistant.Voice
+import com.macedonga.visor.core.assistant.mcp.McpHub
+import com.macedonga.visor.core.assistant.mcp.McpStore
 import com.macedonga.visor.core.connection.GlassesConnection
 import com.macedonga.visor.core.connection.RealSessionHostFactory
 import com.macedonga.visor.core.connection.SessionHostFactory
@@ -123,6 +125,14 @@ object ConnectionModule {
 
     @Provides
     @Singleton
+    fun mcpStore(@ApplicationContext context: Context): McpStore = McpStore(context)
+
+    @Provides
+    @Singleton
+    fun mcpHub(@ApplicationContext context: Context, store: McpStore): McpHub = McpHub(context, store)
+
+    @Provides
+    @Singleton
     fun diary(@ApplicationContext context: Context): Diary =
         Diary(File(context.filesDir, "assistant"), File(context.filesDir, "assistant_turns.json"), File(context.cacheDir, "assistant"))
 
@@ -137,8 +147,9 @@ object ConnectionModule {
         photos: GlassesPhotos,
         settings: GlassesSettings,
         diary: Diary,
+        hub: McpHub,
     ): Assistant = Assistant(
-        context, connection, Voice(context), Brain({ config.config.value }, diary), config, airship, diary,
+        context, connection, Voice(context), Brain({ config.config.value }, diary, hub), config, airship, diary,
         live.wifiSession, live::frameNow,
         object : LiveAiCamera {
             // A Live view already running is the camera; only a stream Live AI opened is Live AI's to close.

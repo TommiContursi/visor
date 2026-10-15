@@ -654,16 +654,19 @@ fun SliderRow(
     }
 }
 
-/** A place: an icon on a tile, a name, what it holds now, and the way in. */
+/**
+ * A place: an icon on a tile, a name, what it holds now, and the way in. [onCard] for a row inside [Rows]: the card's
+ * own margins, and a tile that stands out from the card.
+ */
 @Composable
-fun NavRow(icon: ImageVector?, title: String, summary: String?, onClick: () -> Unit, dim: Boolean = false, trailing: String? = null) {
+fun NavRow(icon: ImageVector?, title: String, summary: String?, onClick: () -> Unit, dim: Boolean = false, trailing: String? = null, onCard: Boolean = false) {
     val colors = Visor.colors
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = SIDE, vertical = 11.dp).alpha(if (dim) 0.45f else 1f),
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = if (onCard) 16.dp else SIDE, vertical = if (onCard) 12.dp else 11.dp).alpha(if (dim) 0.45f else 1f),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(colors.raised), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(if (onCard) colors.control else colors.raised), contentAlignment = Alignment.Center) {
                 Icon(icon, null, Modifier.size(20.dp), tint = colors.textPrimary)
             }
             Spacer(Modifier.width(16.dp))
@@ -756,6 +759,41 @@ fun <T> ChoiceSheet(
     }
 }
 
+/** A sheet's text field: a rounded well with the hint inside while it is empty; [focus] takes the keyboard at once. */
+@Composable
+fun SheetField(
+    value: String,
+    onValue: (String) -> Unit,
+    hint: String = "",
+    singleLine: Boolean = true,
+    secret: Boolean = false,
+    keyboard: KeyboardType = KeyboardType.Text,
+    focus: Boolean = false,
+) {
+    val focusRequester = remember { FocusRequester() }
+    if (focus) LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    Box(
+        Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Visor.colors.raised)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        if (value.isEmpty()) Text(hint, style = Visor.type.body, color = Visor.colors.textTertiary)
+        BasicTextField(
+            value = value,
+            onValueChange = onValue,
+            singleLine = singleLine,
+            textStyle = Visor.type.body.copy(color = Visor.colors.textPrimary),
+            cursorBrush = SolidColor(Color.White),
+            visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboard),
+            modifier = Modifier.fillMaxWidth().heightIn(min = if (singleLine) 0.dp else 140.dp).focusRequester(focusRequester),
+        )
+    }
+}
+
 /** Text to write: one field, and Save. [extra] sits beside Save (Paste, New). */
 @Composable
 fun TextSheet(
@@ -773,30 +811,9 @@ fun TextSheet(
     extra: (@Composable RowScope.(set: (String) -> Unit) -> Unit)? = null,
 ) {
     var draft by remember { mutableStateOf(initial) }
-    val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focus.requestFocus() }
     VisorSheet(onDismiss, full = !singleLine) {
         SheetTitle(title, sub)
-        Box(
-            Modifier
-                .padding(horizontal = 16.dp)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Visor.colors.raised)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-        ) {
-            if (draft.isEmpty()) Text(hint, style = Visor.type.body, color = Visor.colors.textTertiary)
-            BasicTextField(
-                value = draft,
-                onValueChange = { draft = filter(it) },
-                singleLine = singleLine,
-                textStyle = Visor.type.body.copy(color = Visor.colors.textPrimary),
-                cursorBrush = SolidColor(Color.White),
-                visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,
-                keyboardOptions = KeyboardOptions(keyboardType = keyboard),
-                modifier = Modifier.fillMaxWidth().heightIn(min = if (singleLine) 0.dp else 140.dp).focusRequester(focus),
-            )
-        }
+        SheetField(draft, { draft = filter(it) }, hint = hint, singleLine = singleLine, secret = secret, keyboard = keyboard, focus = true)
         Row(Modifier.fillMaxWidth().padding(horizontal = SIDE).padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             extra?.invoke(this) { draft = it }
             Spacer(Modifier.weight(1f))

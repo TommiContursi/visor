@@ -671,4 +671,73 @@
     <string name="widget_sample_battery" translatable="false">82%</string>
     <string name="widget_sample_case">Case 64%</string>
     <string name="tile_subtitle">%1$s · %2$d%%</string>
+
+    <!-- Integrations: MCP servers whose tools the assistant uses. -->
+    <string name="mcp_title">Integrations</string>
+    <string name="mcp_row_none">MCP servers</string>
+    <plurals name="mcp_connected">
+        <item quantity="one">%d connected</item>
+        <item quantity="other">%d connected</item>
+    </plurals>
+    <plurals name="mcp_tools">
+        <item quantity="one">%d tool</item>
+        <item quantity="other">%d tools</item>
+    </plurals>
+    <string name="mcp_add">Add a server</string>
+    <string name="mcp_phase_idle">Not checked yet</string>
+    <string name="mcp_phase_checking">Connecting…</string>
+    <string name="mcp_phase_off">Off</string>
+    <string name="mcp_phase_ready">Connected</string>
+    <string name="mcp_phase_sign_in">Sign in to use it</string>
+    <string name="mcp_phase_needs_key">It needs a key</string>
+    <string name="mcp_phase_refused">The server refused the key</string>
+    <string name="mcp_phase_local">Allow the local network to reach it</string>
+    <string name="mcp_phase_unreachable">Not reachable from here</string>
+    <string name="mcp_phase_not_mcp">No MCP server at this address</string>
+    <string name="mcp_phase_failed">Something went wrong</string>
+    <string name="mcp_address">Address</string>
+    <string name="mcp_name">Name</string>
+    <string name="mcp_connect">Connect</string>
+    <string name="mcp_save_anyway">Save anyway</string>
+    <string name="mcp_works">Connected · %1$s</string>
+    <string name="mcp_sign_in">Sign in</string>
+    <string name="mcp_sign_in_again">Sign in again</string>
+    <string name="mcp_sign_out">Sign out</string>
+    <string name="mcp_token">Token</string>
+    <string name="mcp_header">Header</string>
+    <string name="mcp_header_name">Header name</string>
+    <string name="mcp_header_value">Header value</string>
+    <string name="mcp_use">Use with the assistant</string>
+    <string name="mcp_check_again">Check again</string>
+    <string name="mcp_section_access">Sign-in</string>
+    <string name="mcp_method">Method</string>
+    <string name="mcp_method_none">None</string>
+    <string name="mcp_method_token">Token</string>
+    <string name="mcp_method_header">Header</string>
+    <string name="mcp_method_oauth">Account</string>
+    <string name="mcp_account">Account</string>
+    <string name="mcp_signed_in_at">Signed in at %1$s</string>
+    <string name="mcp_not_signed_in">Not signed in</string>
+    <string name="mcp_finish_in_browser">Finish signing in in the browser</string>
+    <string name="mcp_signing_in">Signing in…</string>
+    <string name="mcp_signed_in">Signed in</string>
+    <string name="mcp_client_id">Client ID</string>
+    <string name="mcp_client_auto">Registered by Visor</string>
+    <string name="mcp_client_secret">Client secret</string>
+    <string name="mcp_redirect">Redirect</string>
+    <string name="mcp_redirect_app">To the app</string>
+    <string name="mcp_redirect_loopback">Through 127.0.0.1</string>
+    <string name="mcp_needs_client">This server registers no apps by itself: enter a client ID.</string>
+    <string name="mcp_section_tools">Tools</string>
+    <string name="mcp_tools_on">%1$d of %2$d on</string>
+    <string name="mcp_all_tools">All tools</string>
+    <string name="mcp_tools_empty">Its tools appear here once it is connected.</string>
+    <string name="mcp_section_server">Server</string>
+    <string name="mcp_remove">Remove server</string>
+    <string name="mcp_remove_title">Remove %1$s?</string>
+    <string name="mcp_remove_confirm">Remove</string>
+    <string name="mcp_local_network">Local network</string>
+    <string name="mcp_copied">Copied</string>
+    <string name="meta_ai_action">%1$s · %2$s</string>
+    <string name="meta_ai_action_failed">%1$s · %2$s · did not work</string>
 </resources>

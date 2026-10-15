@@ -208,6 +208,19 @@ internal fun Exchange(turn: TurnRecord, shown: Int, onLongPress: () -> Unit, onP
                     )
                 }
             }
+            // What the assistant did with the person's integrations, as quietly as what it remembered.
+            for (action in turn.actions) {
+                val tint = if (action.ok) colors.textTertiary else colors.signal
+                Row(Modifier.padding(top = 10.dp).padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(VisorIcons.Plug, null, Modifier.size(15.dp), tint = tint)
+                    Text(
+                        stringResource(if (action.ok) R.string.meta_ai_action else R.string.meta_ai_action_failed, action.server, action.what),
+                        style = Visor.type.label,
+                        color = tint,
+                        modifier = Modifier.padding(start = 6.dp),
+                    )
+                }
+            }
         }
     }
 }

@@ -10,4 +10,5 @@ dependencies {
     api(project(":core:connection"))
     // The photo for a visual question comes over airship.
     implementation(project(":core:media"))
+    implementation(libs.okhttp)
 }

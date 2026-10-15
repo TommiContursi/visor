@@ -103,6 +103,12 @@ data object AssistantSettingsKey : NavKey
 data object MemoriesKey : NavKey
 
 @Serializable
+data object IntegrationsKey : NavKey
+
+@Serializable
+data class IntegrationKey(val id: String) : NavKey
+
+@Serializable
 data class LiveSessionKey(val conversation: String) : NavKey
 
 @Serializable
@@ -261,6 +267,10 @@ fun VisorNav(opens: kotlinx.coroutines.flow.Flow<String>, markAtLaunch: Boolean)
                 entry<LanguageKey> { com.macedonga.visor.language.LanguageScreen() }
                 entry<FlagsKey> { FlagsScreen() }
                 entry<AssistantSettingsKey> { AssistantSettingsScreen(open) }
+                entry<IntegrationsKey> { com.macedonga.visor.settings.IntegrationsScreen(open) }
+                entry<IntegrationKey> { key ->
+                    com.macedonga.visor.settings.IntegrationScreen(key.id, onGone = { if (backStack.lastOrNull() == key) backStack.removeLastOrNull() })
+                }
             },
         )
         MarkOverlay(stage)
