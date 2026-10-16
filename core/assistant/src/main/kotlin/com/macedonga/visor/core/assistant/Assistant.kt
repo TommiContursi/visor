@@ -950,7 +950,7 @@ class Assistant(
     /** What the model has heard of [id]'s conversation before it. */
     private fun pastOf(id: String): List<Exchange> {
         val conversation = diary.turn(id)?.conversation ?: return emptyList()
-        return diary.past(conversation, before = id).map { Exchange(it.question, it.answer) }
+        return diary.past(conversation, before = id).map { Exchange(it.question, it.answer, it.actions) }
     }
 
     /** Into the diary, in the open conversation unless it names its own. */
