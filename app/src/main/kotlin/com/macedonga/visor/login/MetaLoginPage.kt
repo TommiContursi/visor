@@ -336,8 +336,12 @@ private val URL_QUERY = Regex("""(https?://[^\s?#"'<>]+)[?#][^\s"'<>]*""")
 
 private val TITLE = Regex("""<title[^>]*>([^<]*)</title>""", RegexOption.IGNORE_CASE)
 
-/** The names of the query parameters, never their values. */
-private fun Uri.paramNames(): String = queryParameterNames.sorted().joinToString(" ").ifEmpty { "none" }
+// Which app and redirect a request is for: no secret, and the one thing that tells two OIDC hops apart.
+private val PLAIN = setOf("app_id", "redirect_uri", "response_type", "scope")
+
+/** The names of the query parameters, with values only for [PLAIN]: never a state, code or token. */
+private fun Uri.paramNames(): String =
+    queryParameterNames.sorted().joinToString(" ") { if (it in PLAIN) "$it=${getQueryParameter(it)}" else it }.ifEmpty { "none" }
 
 /** A request worth a line: Meta's own endpoints, with the Bloks screen a fetch is for. Static files are not. */
 private fun Uri.described(): String? {
