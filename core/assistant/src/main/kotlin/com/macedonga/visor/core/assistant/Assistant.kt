@@ -422,6 +422,8 @@ class Assistant(
             }
             MT_STREAM_STATUS -> streamStatus(payload.decodeToString())
             MT_ENVELOPE -> envelope(l, payload)
+            // Some glasses send the same messages bare, without the envelope.
+            MT_NET_EVENT, MT_START_INTERACTION -> inner(l, type, payload)
             // Init answers, time stretch, TTS buffer config, MMAI enabled, assistant ready, stream consumed.
             1028, 1033, 1036, 1037, 6001 -> Unit
             else -> say("Assistant: message type $type, ${payload.size} bytes ${hex(payload)}")
@@ -433,9 +435,13 @@ class Assistant(
         val env = Wire.parse(payload)
         // Unacked, the glasses resend the same envelope for minutes.
         if (env.has(1)) l.mux.send(m0, Wire.fieldVarint(1, env.varint(1)), messageType = MT_ENVELOPE_ACK)
-        val inner = env.varint(2).toInt()
-        val blob = env.bytes(3)
-        if (inner == MT_START_INTERACTION) {
+        inner(l, env.varint(2).toInt(), env.bytes(3))
+    }
+
+    /** A start of interaction or a NetEvent, from an envelope or sent bare. */
+    private suspend fun inner(l: Link, type: Int, blob: ByteArray) {
+        val m0 = l.m0 ?: return
+        if (type == MT_START_INTERACTION) {
             val fields = runCatching { Thrift.loads(blob) }.getOrDefault(emptyMap())
             // Use case 3 is LIVE_AI_INTERACTION; after a switch to LIVE_AI the next interaction is the session's.
             if (fields[5] == 3L || liveAi.phase.value == LiveAiPhase.STARTING) liveAi.onStartInteraction(fields, l.locale)
@@ -446,8 +452,8 @@ class Assistant(
             }
             return
         }
-        if (inner != MT_NET_EVENT) {
-            say("Assistant: an envelope carrying type $inner, ${blob.size} bytes ${hex(blob)}")
+        if (type != MT_NET_EVENT) {
+            say("Assistant: an envelope carrying type $type, ${blob.size} bytes ${hex(blob)}")
             return
         }
         val event = try {
@@ -481,7 +487,7 @@ class Assistant(
                 say("Assistant: remote interaction complete ${describe(event.body)}")
                 liveAi.end("the glasses completed the interaction")
             }
-            EV_FRAME_KEEP_ALIVE_RESPONSE -> Unit
+            EV_FRAME_KEEP_ALIVE_RESPONSE, EV_KEEP_MWA_ALIVE -> Unit
             EV_FULFILLMENT_REQUEST -> fulfillmentRequest(l, event.body)
             EV_DEVICE_VOICE_STATE -> voiceState(event.body)
             EV_REMOTE_IMAGE_CAPTURE_RESPONSE -> {
