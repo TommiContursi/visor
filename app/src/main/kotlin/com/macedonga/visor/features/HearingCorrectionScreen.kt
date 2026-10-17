@@ -53,6 +53,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Hearing correction: the glasses as a hearing aid, fitted by a hearing test on the glasses. On top, where it stands
@@ -71,7 +73,7 @@ fun HearingCorrectionScreen(open: (NavKey) -> Unit, model: FeaturesModel = hiltV
     val fitted = hearing.fitted ?: tested
 
     SettingsPage(stringResource(R.string.feature_hc), stringResource(R.string.hc_lede)) {
-        item(key = "now") { CorrectionNow(hearing, allowed, fitted, model.hearing) }
+        item(key = "now") { CorrectionNow(hearing, allowed, fitted, feature in state.restart, model.hearing, model.features::restarted) }
         if (fitted) {
             item(key = "sound") {
                 val host = LocalHost.current
@@ -150,7 +152,7 @@ fun HearingCorrectionScreen(open: (NavKey) -> Unit, model: FeaturesModel = hiltV
 
 /** Where hearing correction stands, in a word and a line, with the one button that changes it once there is a profile. */
 @Composable
-private fun CorrectionNow(hearing: HearingState, allowed: Boolean, fitted: Boolean, control: Hearing) {
+private fun CorrectionNow(hearing: HearingState, allowed: Boolean, fitted: Boolean, restart: Boolean, control: Hearing, restarted: () -> Unit) {
     val host = LocalHost.current
     val connectFirst = stringResource(R.string.settings_locked)
     val correcting = hearing.mode == HearingMode.CORRECTION || hearing.mode == HearingMode.CORRECTION_NARROW
@@ -158,6 +160,7 @@ private fun CorrectionNow(hearing: HearingState, allowed: Boolean, fitted: Boole
     val paused = run == HearingRun.PAUSED || run == HearingRun.PAUSED_BY_USER
     val (title, sub) = when {
         !allowed -> R.string.cf_now_locked to R.string.cf_now_locked_sub
+        restart -> R.string.features_restart_title to R.string.features_restart_line
         !fitted -> R.string.hc_now_untested to R.string.hc_now_untested_sub
         run == HearingRun.ON -> R.string.cf_now_on to R.string.hc_now_on_sub
         paused -> R.string.cf_now_paused to R.string.cf_paused
@@ -171,7 +174,10 @@ private fun CorrectionNow(hearing: HearingState, allowed: Boolean, fitted: Boole
                 Text(stringResource(title), style = Visor.type.heading, color = Visor.colors.textPrimary)
                 Text(stringResource(sub), style = Visor.type.label, color = Visor.colors.textSecondary)
             }
-            if (fitted) {
+            if (allowed && restart) {
+                Spacer(Modifier.width(12.dp))
+                ActionPill(stringResource(R.string.features_restart_done), restarted)
+            } else if (fitted) {
                 Spacer(Modifier.width(12.dp))
                 val (label, act) = when {
                     run == HearingRun.ON -> R.string.cf_stop to control::stop
@@ -220,8 +226,13 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
     val step: StateFlow<TestStep> = _step.asStateFlow()
 
     private val levels = IntArray(TONES.size) { START_DBHL }
-    private var playing: Job? = null
     private var testing = false
+
+    // One tone request at a time, 600 ms after the last answer, as the Meta app sends them; a newer ask replaces a
+    // waiting one. Between tones the old one is stopped first, or the glasses refuse the next.
+    private val tones = Mutex()
+    private var asked = 0
+    private var moving: Job? = null
 
     fun answer(rating: Int) {
         _step.value = when (rating) {
@@ -249,6 +260,7 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
     /** Louder or quieter by one step, and play it again. */
     fun nudge(up: Boolean) {
         val s = _step.value as? TestStep.Tone ?: return
+        if (moving?.isActive == true) return
         val level = (s.level + if (up) STEP_DBHL else -STEP_DBHL).coerceIn(Hearing.MIN_DBHL, Hearing.MAX_DBHL)
         if (level != s.level) show(s.index, level)
     }
@@ -256,20 +268,17 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
     /** Can't hear it: the loudest, played again. */
     fun loudest() {
         val s = _step.value as? TestStep.Tone ?: return
+        if (moving?.isActive == true || s.level == Hearing.MAX_DBHL) return
         show(s.index, Hearing.MAX_DBHL)
     }
 
     fun next() {
         val s = _step.value as? TestStep.Tone ?: return
+        if (moving?.isActive == true) return
         levels[s.index] = s.level
-        if (s.index + 1 < TONES.size) {
-            playing?.cancel()
-            playing = viewModelScope.launch {
-                delay(BETWEEN_MS)
-                show(s.index + 1)
-            }
-        } else {
-            fit()
+        moving = viewModelScope.launch {
+            silence(s.index)
+            if (s.index + 1 < TONES.size) show(s.index + 1) else fit()
         }
     }
 
@@ -279,10 +288,22 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
 
     private fun show(index: Int, level: Int = START_DBHL) {
         _step.value = TestStep.Tone(index, level)
-        val (ear, hz) = TONES[index]
-        playing?.cancel()
-        playing = viewModelScope.launch {
-            if (!hearing.playTone(ear, hz, level)) _step.value = TestStep.Failed(R.string.hct_failed_tone)
+        val ask = ++asked
+        viewModelScope.launch {
+            tones.withLock {
+                if (ask != asked) return@withLock
+                val (ear, hz) = TONES[index]
+                if (hearing.playTone(ear, hz, level)) delay(BETWEEN_MS) else _step.value = TestStep.Failed(R.string.hct_failed_tone)
+            }
+        }
+    }
+
+    /** Stop [index]'s tone, waited for; a refusal to stop is no failure. */
+    private suspend fun silence(index: Int) {
+        asked++
+        tones.withLock {
+            val (ear, hz) = TONES[index]
+            if (hearing.playTone(ear, hz, levels[index], on = false)) delay(BETWEEN_MS)
         }
     }
 

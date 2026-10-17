@@ -39,10 +39,14 @@ enum class Feature(
         listOf(Gate.Setting("hearing_boost_nux_completed", "true")),
         page = true,
     ),
-    // setupForHCModes refuses "HC is not supported on this device" while this is off.
+    // setupForHCModes refuses "HC is not supported on this device" (INVALID_DEVICE) while the first is off. The second
+    // is the version pass Meta's server sets beside it ("update your device"). Both apply at once on the glasses.
     HEARING_CORRECTION(
         "hearing_correction", R.string.feature_hc, R.string.feature_hc_about, R.string.feature_hc_use, VisorIcons.HearingAid,
-        listOf(Gate.Config("hearing_on_sn.hc_device_supported", true)),
+        listOf(
+            Gate.Config("hearing_on_sn.hc_device_supported", true, live = true),
+            Gate.Config("hearing_on_sn.hc_device_version_passed", true, live = true),
+        ),
         page = true,
     ),
     // The group app's MainActivity finishes unless the first two are on; enable_aurachat starts aurachat through

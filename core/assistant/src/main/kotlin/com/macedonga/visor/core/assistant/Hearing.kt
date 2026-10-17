@@ -149,6 +149,8 @@ class Hearing(private val connection: GlassesConnection) : Responder {
                 note(if (ok) "Hearing correction profile made" else "Hearing correction profile failed")
             }
             MT_PERSONALIZATION_FAILURE -> note("Hearing correction did not take the sound")
+            // EstimatedNoiseLevel {1 float, 2 timestamp}, four a second while the hearing app runs.
+            MT_NOISE_LEVEL -> Unit
             else -> note("Hearing: message type ${message.info.messageType}")
         }
     }
@@ -278,6 +280,7 @@ class Hearing(private val connection: GlassesConnection) : Responder {
         private const val MT_HEARING_INPUTS = 5
         private const val MT_FIT_COMPLETE = 6
         private const val MT_ACTIVATION_FAILURE = 7
+        private const val MT_NOISE_LEVEL = 8
         private const val MT_USER_SETTING = 15
         private const val MT_PLAY_TONE_RESPONSE = 17
         private const val MT_USER_SETTING_FAILURE = 18
