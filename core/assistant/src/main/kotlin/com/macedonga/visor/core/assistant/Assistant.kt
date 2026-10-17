@@ -123,9 +123,25 @@ class Assistant(
         val l = link
         val m0 = l?.m0
         if (l == null || m0 == null) false
-        else {
-            l.mux.send(m0, netEvent(id, body), messageType = MT_NET_EVENT)
-            true
+        else runCatching { sendNetEvent(l, m0, netEvent(id, body)) }
+            .onFailure { say("Custom wake word: event $id did not go: ${it.message}") }
+            .isSuccess
+    }
+
+    /**
+     * A NetEvent onto the session; one bigger than a frame carries goes as a segmented message, a header (1002)
+     * {1 type, 2 size, 3 id} then pieces (1003) {1 bytes, 2 id, 3 last}, the way the glasses send theirs.
+     */
+    private suspend fun sendNetEvent(l: Link, m0: Int, event: ByteArray) {
+        if (event.size <= SEGMENT_BYTES) return l.mux.send(m0, event, messageType = MT_NET_EVENT)
+        val id = UUID.randomUUID().toString().encodeToByteArray()
+        l.mux.send(m0, Wire.fieldVarint(1, MT_NET_EVENT.toLong()) + Wire.fieldVarint(2, event.size.toLong()) + Wire.fieldBytes(3, id), messageType = MT_SEGMENTED_HEADER)
+        var at = 0
+        while (at < event.size) {
+            val end = minOf(event.size, at + SEGMENT_BYTES)
+            val piece = Wire.fieldBytes(1, event.copyOfRange(at, end)) + Wire.fieldBytes(2, id) + Wire.fieldVarint(3, if (end == event.size) 1 else 0)
+            l.mux.send(m0, piece, messageType = MT_SEGMENTED_BUFFER)
+            at = end
         }
     }
 
@@ -1131,6 +1147,9 @@ private const val APP_GROUP_CONVERSATIONS = 47L
 
 /** ev289's mode for a Live AI session. */
 private const val MODE_LIVE_AI = 2L
+
+/** The most a NetEvent goes as in one piece: a frame's payload length is 14 bits. */
+private const val SEGMENT_BYTES = 8_192
 
 private const val LIVE_AI_NOTE =
     "This is Live AI: a continuous conversation while the wearer shows you what they see. The image is the camera's " +
