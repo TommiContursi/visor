@@ -89,6 +89,7 @@ import com.macedonga.visor.AssistantSettingsKey
 import com.macedonga.visor.BackupKey
 import com.macedonga.visor.DeviceKey
 import com.macedonga.visor.EventLogKey
+import com.macedonga.visor.FeaturesKey
 import com.macedonga.visor.FlagsKey
 import com.macedonga.visor.GlassesKey
 import com.macedonga.visor.LanguageKey
@@ -117,6 +118,7 @@ import com.macedonga.visor.core.settings.SettingsState
 import com.macedonga.visor.core.settings.asBool
 import com.macedonga.visor.core.settings.display
 import com.macedonga.visor.core.settings.offeredOn
+import com.macedonga.visor.features.featuresWords
 import com.macedonga.visor.gallery.ImportChoice
 import com.macedonga.visor.gallery.ProgressRing
 import com.macedonga.visor.gallery.RoundIcon
@@ -168,6 +170,7 @@ class SettingsViewModel @Inject constructor(
     val toggles: VisorToggles,
     val backups: Backups,
     val updates: com.macedonga.visor.update.Updates,
+    val features: com.macedonga.visor.features.Features,
 ) : ViewModel()
 
 /**
@@ -239,6 +242,12 @@ fun SettingsScreen(open: (NavKey) -> Unit, model: SettingsViewModel = hiltViewMo
                         Column(Modifier.padding(top = if (i == 0) 18.dp else 14.dp)) {
                             for (topic in card) NavRow(topic.icon, stringResource(topic.title), summary(topic, model, state), onClick = { open(placeOf(topic)) })
                         }
+                    }
+                }
+                item(key = "features") {
+                    Column(Modifier.padding(top = 14.dp)) {
+                        val features by model.features.state.collectAsStateWithLifecycle()
+                        NavRow(VisorIcons.Spark, stringResource(R.string.features_title), featuresWords(features), onClick = { open(FeaturesKey) })
                     }
                 }
                 item(key = "advanced") {
@@ -654,6 +663,11 @@ private fun pageHits(): List<Triple<Int, List<String>, NavKey>> = Topic.entries.
     Triple(R.string.about_title, listOf("version", "versione", "licen"), AboutKey),
     Triple(R.string.notify_apps_title, listOf("app", "notification", "notifiche", "mute"), NotifyAppsKey),
     Triple(R.string.settings_flags, listOf("flag", "mobileconfig", "gate"), FlagsKey),
+    Triple(
+        R.string.features_title,
+        listOf("hidden", "nascost", "region", "beta", "early access", "accesso anticipato", "unlock", "sblocc", "conversation focus", "live ai"),
+        FeaturesKey,
+    ),
     Triple(R.string.settings_diagnostics, listOf("diagnos", "link", "verdict"), DeviceKey),
     Triple(R.string.settings_event_log, listOf("log", "events", "eventi"), EventLogKey),
     Triple(R.string.meta_ai_memories, listOf("memor", "ricord", "remember"), MemoriesKey),

@@ -8,6 +8,10 @@ import com.macedonga.visor.core.transport.LeKeeper
 import com.macedonga.visor.core.assistant.Assistant
 import com.macedonga.visor.core.assistant.LiveAiCamera
 import com.macedonga.visor.core.assistant.GlassesPhotos
+import com.macedonga.visor.core.assistant.Hearing
+import com.macedonga.visor.core.assistant.SVC_HEARING
+import com.macedonga.visor.core.assistant.SVC_TAR
+import com.macedonga.visor.core.assistant.Timers
 import com.macedonga.visor.core.assistant.SVC_GLASSES_PHOTO
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -106,7 +110,9 @@ object ConnectionModule {
         drive: RlDriveResponder,
         stream: StreamReceiver,
         photos: GlassesPhotos,
-        // A Provider, because the assistant needs the connection this factory feeds.
+        timers: Timers,
+        // A Provider, because these need the connection this factory feeds.
+        hearing: javax.inject.Provider<Hearing>,
         assistant: javax.inject.Provider<Assistant>,
     ): SessionHostFactory = RealSessionHostFactory(
         transports,
@@ -116,8 +122,18 @@ object ConnectionModule {
             SVC_MEDIA_STREAMING_CONTROL to stream,
             SVC_ASSISTANT to Responder { message, mux -> assistant.get().respond(message, mux) },
             SVC_GLASSES_PHOTO to photos,
+            SVC_TAR to timers,
+            SVC_HEARING to Responder { message, mux -> hearing.get().respond(message, mux) },
         ),
     )
+
+    @Provides
+    @Singleton
+    fun timers(@ApplicationContext context: Context): Timers = Timers(File(context.filesDir, "timers.json"))
+
+    @Provides
+    @Singleton
+    fun hearing(connection: GlassesConnection): Hearing = Hearing(connection)
 
     @Provides
     @Singleton
@@ -148,6 +164,7 @@ object ConnectionModule {
         settings: GlassesSettings,
         diary: Diary,
         hub: McpHub,
+        hearing: Hearing,
     ): Assistant = Assistant(
         context, connection, Voice(context), Brain({ config.config.value }, diary, hub), config, airship, diary,
         live.wifiSession, live::frameNow,
@@ -161,6 +178,8 @@ object ConnectionModule {
         },
         photos,
         { settings.value("assistant_voice_id") },
+        { com.macedonga.visor.core.settings.asBool(settings.value("detailed_responses_live_ai_enabled")) },
+        hearing,
     )
 
     @Provides

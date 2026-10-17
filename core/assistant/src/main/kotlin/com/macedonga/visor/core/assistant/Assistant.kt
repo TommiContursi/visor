@@ -96,6 +96,10 @@ class Assistant(
     private val glassesPhotos: GlassesPhotos? = null,
     /** The voice the glasses speak in (assistant_voice_id), for answers in their own voice. */
     private val glassesVoice: () -> String? = { null },
+    /** The wearer asked the glasses for detailed Live AI answers (detailed_responses_live_ai_enabled). */
+    private val liveAiDetailed: () -> Boolean = { false },
+    /** Conversation focus, which the phone starts when the wearer asks for it by voice. */
+    private val hearing: Hearing? = null,
 ) : Responder {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -564,6 +568,16 @@ class Assistant(
         }
         // "Hey Meta" and nothing after it: the glasses close the turn at once.
         if (intent == "IN:WAKE_WORD") return
+        // Meta's server answers these with an action Visor cannot write; the phone starts and stops it itself.
+        if (hearing != null && intent in FOCUS_INTENTS) {
+            when (intent) {
+                "IN:START_CONVERSATION_FOCUS" -> hearing.start(null)
+                "IN:STOP_CONVERSATION_FOCUS", "IN:PAUSE_CONVERSATION_FOCUS" -> hearing.stop()
+                "IN:RESUME_CONVERSATION_FOCUS" -> hearing.resume()
+            }
+            say("Conversation focus: $intent")
+            return
+        }
         when {
             // The glasses' own words for giving up.
             waiting != null && intent in CANCEL_INTENTS -> {
@@ -711,7 +725,7 @@ class Assistant(
         }
         var problem = ""
         val reply = try {
-            brain.answer(question, l.locale, pastOf(sub), image, LIVE_AI_NOTE)
+            brain.answer(question, l.locale, pastOf(sub), image, liveAiNote())
         } catch (error: Exception) {
             problem = error.message ?: error::class.simpleName.orEmpty()
             Reply(fallback(l.locale, store.config.value.apiKey.isBlank() && store.config.value.provider == Provider.CLAUDE))
@@ -906,6 +920,8 @@ class Assistant(
         return id
     }
 
+    private fun liveAiNote(): String = if (liveAiDetailed()) LIVE_AI_NOTE_DETAILED else LIVE_AI_NOTE
+
     /** [id]'s question again, with the model and settings as they are now; the new answer replaces the old one. */
     fun askAgain(id: String) {
         if (diary.turn(id) == null) return
@@ -928,7 +944,7 @@ class Assistant(
             val reply = withTimeout(PHONE_BUDGET_MS) {
                 brain.answer(
                     turn.question, if (phone) phoneLocale() else locale, pastOf(id), image,
-                    if (turn.source == TurnSource.LIVE_AI) LIVE_AI_NOTE else "", if (phone) Audience.PHONE else Audience.GLASSES,
+                    if (turn.source == TurnSource.LIVE_AI) liveAiNote() else "", if (phone) Audience.PHONE else Audience.GLASSES,
                 )
             }
             diary.update(id) { it.copy(answer = reply.text, problem = "", remembered = reply.remembered, actions = reply.actions, modelMs = System.currentTimeMillis() - started) }
@@ -1079,12 +1095,21 @@ private fun describeRead(value: Any?): String {
 /** The problem of an answer that came after the glasses had closed its turn: kept, never spoken. */
 const val ANSWER_TOO_LATE = "too late for the glasses"
 
+/** What the glasses understand as a request for conversation focus. */
+private val FOCUS_INTENTS = setOf(
+    "IN:START_CONVERSATION_FOCUS", "IN:STOP_CONVERSATION_FOCUS", "IN:PAUSE_CONVERSATION_FOCUS", "IN:RESUME_CONVERSATION_FOCUS",
+)
+
 /** ev289's mode for a Live AI session. */
 private const val MODE_LIVE_AI = 2L
 
 private const val LIVE_AI_NOTE =
     "This is Live AI: a continuous conversation while the wearer shows you what they see. The image is the camera's " +
         "view right now. Answer briefly and naturally; speak only about what matters to the question."
+
+private const val LIVE_AI_NOTE_DETAILED =
+    "This is Live AI: a continuous conversation while the wearer shows you what they see. The image is the camera's " +
+        "view right now. The wearer asked for detailed answers: explain fully, with the details you can see, still in speech."
 
 /** The camera stream Live AI sees through. */
 interface LiveAiCamera {
