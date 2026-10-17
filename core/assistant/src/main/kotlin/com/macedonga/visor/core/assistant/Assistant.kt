@@ -262,6 +262,9 @@ class Assistant(
         @Volatile var simplified = true
         // Segmented messages being put back together, by id: their type, size and bytes so far.
         val segments = ConcurrentHashMap<String, Triple<Int, Int, java.io.ByteArrayOutputStream>>()
+        // The text the glasses read in each question's photo, from their ev65.
+        private val ocr = ConcurrentHashMap<String, CompletableDeferred<String>>()
+        fun ocrOf(interaction: String): CompletableDeferred<String> = ocr.getOrPut(interaction) { CompletableDeferred() }
     }
 
     /** A photo this side is waiting for, for one interaction. */
@@ -530,6 +533,7 @@ class Assistant(
             }
             EV_FRAME_KEEP_ALIVE_RESPONSE, EV_KEEP_MWA_ALIVE -> Unit
             EV_FULFILLMENT_REQUEST -> fulfillmentRequest(l, event.body)
+            EV_MMAI_INTERACTION_REQUEST -> mmaiRequest(l, event.body)
             EV_DEVICE_VOICE_STATE -> voiceState(event.body)
             EV_REMOTE_IMAGE_CAPTURE_RESPONSE -> {
                 pending?.answered = true
@@ -554,6 +558,25 @@ class Assistant(
         l.segments.remove(id)
         if (bytes.size() != size) return say("Assistant: segmented message $id came to ${bytes.size()} bytes of $size")
         inner(l, kind, bytes.toByteArray())
+    }
+
+    /**
+     * ev65 MmaiInteractionRequest {1 interactionId, 2 ocrResult, 3 ocrPatchUuids}: the text the glasses' own OCR read in
+     * the photo for a visual question. ocrResult is base64 of a gzipped struct: {1 lines, each {1 box, 2 word indices},
+     * 2 words, each {2 text}}, lines top to bottom.
+     */
+    private fun mmaiRequest(l: Link, body: ByteArray) {
+        val f = runCatching { Thrift.loads(body) }.getOrNull() ?: return say("Assistant: an unreadable MmaiInteractionRequest")
+        val interaction = f[1].asText()
+        val text = runCatching {
+            val ocr = Thrift.loads(java.util.zip.GZIPInputStream(java.util.Base64.getDecoder().decode(f[2].asText()).inputStream()).readBytes())
+            val words = (ocr[2] as? List<*>).orEmpty().map { it.asStruct()[2].asText() }
+            (ocr[1] as? List<*>).orEmpty().map { line ->
+                (line.asStruct()[2] as? List<*>).orEmpty().mapNotNull { words.getOrNull((it as? Long)?.toInt() ?: -1) }.joinToString(" ")
+            }.filter { it.isNotBlank() }.joinToString("\n")
+        }.getOrElse { return say("Assistant: unreadable OCR from the glasses (${it.message})") }
+        say("The glasses read ${text.lines().size} lines of text in the photo")
+        l.ocrOf(interaction).complete(text)
     }
 
     /** ev339 echoed straight back as ev333, field for field. */
@@ -695,11 +718,13 @@ class Assistant(
             }
             update(interaction) { it.copy(image = file.path) }
         }
-        val note = if (visualQuestion && image == null) {
+        // The glasses' OCR of the photo they took comes just after the question; a model without vision has only this.
+        val read = if (visual.glassesCaptured) withTimeoutOrNull(OCR_WAIT_MS) { l.ocrOf(interaction).await() } else null
+        val note = listOfNotNull(
             "The wearer seems to ask about what they see, but the photo from the glasses did not arrive; say so briefly."
-        } else {
-            ""
-        }
+                .takeIf { visualQuestion && image == null && read.isNullOrBlank() },
+            read?.takeIf { it.isNotBlank() }?.let { "The glasses' OCR read this text in what the wearer sees, line by line, with errors: ${it.take(MAX_OCR)}" },
+        ).joinToString(" ")
         val waiting = scope.launch { holdOn(l) }
         val reply = try {
             // The glasses give up after their processing timeout; speech and streaming need the last seconds of it.
@@ -1075,6 +1100,9 @@ class Assistant(
         val WAKE_WORD_ONLY = Regex("^(hey|hi|ehi|ei|ok|okay)?[ ,]*(meta|mata|metta|matta|meda)[.!?]*$", RegexOption.IGNORE_CASE)
         const val MIN_MODEL_MS = 6_000L
         const val PHOTO_WAIT_MS = 8_000L
+        // ev65 came 0.14, 0.45 and 1.2 s after the question.
+        const val OCR_WAIT_MS = 2_500L
+        const val MAX_OCR = 4_000
 
         // How long a reply asked for waits for its words.
         const val REPLY_WAIT_MS = 30_000L
