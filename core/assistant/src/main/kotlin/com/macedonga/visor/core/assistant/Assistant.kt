@@ -224,6 +224,9 @@ class Assistant(
         val closed: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
         val taken: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
         @Volatile var locale: Locale = Locale.US
+        // ev57's field 30, MobileConfig assistant_on_sn.simplify_mwa_message_forwarding. Off (the factory value),
+        // the glasses act on a VARM the moment it lands and end the turn there.
+        @Volatile var simplified = true
     }
 
     /** A photo this side is waiting for, for one interaction. */
@@ -528,6 +531,7 @@ class Assistant(
             l.taken.add(it)
         }
         m[8].asText().takeIf { it.length > 8 && !l.streamIds.containsKey(interaction) }?.let { l.streamIds[interaction] = it }
+        l.simplified = m[30] != false
         val visual = Visual.from(m)
         say("Heard \"$transcript\" (request ${describe(body)}, understanding ${describeRead(m[2])})")
         // The glasses' own understanding of the request, e.g. IN:REPLY_MESSAGE, and its slots.
@@ -633,10 +637,12 @@ class Assistant(
             Reply(fallback(l.locale, store.config.value.apiKey.isBlank() && store.config.value.provider == Provider.CLAUDE))
         }
         val text = reply.text
-        waiting.cancel()
+        // Without simplified forwarding the VARM follows the audio, and the glasses keep waiting for it until then.
+        if (l.simplified) waiting.cancel()
         val modelMs = System.currentTimeMillis() - started
         if (problem.isNotEmpty()) say("The model did not answer: $problem")
         if (interaction in l.closed) {
+            waiting.cancel()
             say("The glasses closed this turn before the answer was ready (${modelMs / 1000} s); not sending it")
             update(interaction) { it.copy(answer = text, problem = ANSWER_TOO_LATE, modelMs = modelMs, remembered = reply.remembered, actions = reply.actions) }
             if (link === l) _phase.value = AssistantPhase.LISTENING
@@ -652,6 +658,7 @@ class Assistant(
             say("The answer did not reach the glasses: ${error.message}")
             update(interaction) { it.copy(problem = error.message.orEmpty()) }
         } finally {
+            waiting.cancel()
             if (link === l) _phase.value = AssistantPhase.LISTENING
         }
     }
@@ -783,10 +790,13 @@ class Assistant(
         preamble(l, interaction, transcript, text)
         _phase.value = AssistantPhase.SPEAKING
         val voiceId = glassesVoice()
-        l.mux.send(m0, netEvent(EV_VOICE_ACTION_RESPONSE, varm(interaction, transcript, text, onGlasses = true, voiceId = voiceId)), messageType = MT_NET_EVENT)
-        delay(20)
-        l.mux.send(m0, netEvent(EV_MWA_VOICE_INTERACTION_COMPLETE, interactionComplete(interaction, text)), messageType = MT_NET_EVENT)
-        delay(20)
+        val answer = netEvent(EV_VOICE_ACTION_RESPONSE, varm(interaction, transcript, text, onGlasses = true, voiceId = voiceId))
+        val complete = netEvent(EV_MWA_VOICE_INTERACTION_COMPLETE, interactionComplete(interaction, text))
+        // Without simplified forwarding the VARM is acted on as it lands, so the text must be there before it.
+        for (event in if (l.simplified) listOf(answer, complete) else listOf(complete, answer)) {
+            l.mux.send(m0, event, messageType = MT_NET_EVENT)
+            delay(20)
+        }
         val mono = System.nanoTime() / 1_000_000
         val e392 = ThriftWriter().str(1, "VoiceActionResponseMessage").i32(2, (mono and 0xFFFF).toInt()).i32(3, 1).done()
         l.mux.send(m0, netEvent(EV_KEEP_AIR_SESSION_ALIVE, e392), messageType = MT_NET_EVENT)
@@ -824,8 +834,9 @@ class Assistant(
             }
             if (i == 0) {
                 mux.send(s0, frame, messageType = MT_STREAM_AUDIO)
-                // The VARM goes after the first audio message, never before.
-                mux.send(m0, answer, messageType = MT_NET_EVENT)
+                // The VARM goes after the first audio message, never before; without simplified forwarding it would
+                // end the turn on arrival, so it waits for the end of the audio.
+                if (l.simplified) mux.send(m0, answer, messageType = MT_NET_EVENT)
             } else {
                 // A bare header: tagged with type 0, only the first 40 ms would ever play.
                 mux.send(s0, frame)
@@ -835,6 +846,7 @@ class Assistant(
             if (wait > 0) delay(wait)
         }
         mux.send(s0, ByteArray(0), messageType = MT_STREAM_END)
+        if (!l.simplified) mux.send(m0, answer, messageType = MT_NET_EVENT)
 
         val e389 = ThriftWriter().i64(1, System.currentTimeMillis()).i64(2, mono).i64(3, 7000).str(4, interaction).done()
         val e392 = ThriftWriter().str(1, "VoiceActionResponseMessage").i32(2, (mono and 0xFFFF).toInt()).i32(3, 1).done()
