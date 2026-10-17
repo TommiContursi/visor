@@ -887,11 +887,9 @@ class Assistant(
         if (pcm < ms * 96 - 960) say("The glasses played only ${pcm / 96} ms of $ms ms")
     }
 
-    private fun fallback(locale: Locale, noKey: Boolean): String = when {
-        locale.language == "it" && noKey -> "Visor è collegato, ma non c'è ancora un modello. Aggiungi una chiave API nell'app."
-        locale.language == "it" -> "Scusa, non sono riuscito a ottenere una risposta."
-        noKey -> "Visor is connected, but no AI model is set up yet. Add an API key in the app."
-        else -> "Sorry, I couldn't get an answer."
+    private fun fallback(locale: Locale, noKey: Boolean): String {
+        val (none, sorry) = FALLBACKS[locale.language] ?: FALLBACKS.getValue("en")
+        return if (noKey) none else sorry
     }
 
     /** Ask the model from the phone, without the glasses or the diary. */
@@ -992,6 +990,21 @@ class Assistant(
     private fun update(interaction: String, change: (TurnRecord) -> TurnRecord) = diary.update(interaction, change)
 
     private companion object {
+        // What the glasses say when there is no model, and when the model fails, in each of their languages.
+        val FALLBACKS = mapOf(
+            "en" to ("Visor is connected, but no AI model is set up yet. Add an API key in the app." to "Sorry, I couldn't get an answer."),
+            "it" to ("Visor è collegato, ma non c'è ancora un modello. Aggiungi una chiave API nell'app." to "Scusa, non sono riuscito a ottenere una risposta."),
+            "es" to ("Visor está conectado, pero aún no hay ningún modelo configurado. Añade una clave de API en la app." to "Lo siento, no he podido obtener una respuesta."),
+            "fr" to ("Visor est connecté, mais aucun modèle n'est encore configuré. Ajoutez une clé API dans l'application." to "Désolé, je n'ai pas pu obtenir de réponse."),
+            "de" to ("Visor ist verbunden, aber es ist noch kein Modell eingerichtet. Füge in der App einen API-Schlüssel hinzu." to "Entschuldigung, ich konnte keine Antwort bekommen."),
+            "pt" to ("O Visor está conectado, mas ainda não há um modelo configurado. Adicione uma chave de API no app." to "Desculpe, não consegui obter uma resposta."),
+            "nl" to ("Visor is verbonden, maar er is nog geen model ingesteld. Voeg een API-sleutel toe in de app." to "Sorry, ik kon geen antwoord krijgen."),
+            "tr" to ("Visor bağlı, ancak henüz bir model ayarlanmadı. Uygulamada bir API anahtarı ekleyin." to "Üzgünüm, bir yanıt alamadım."),
+            "hi" to ("Visor कनेक्ट है, लेकिन अभी कोई मॉडल सेट नहीं है। ऐप में एक API कुंजी जोड़ें।" to "माफ़ कीजिए, मुझे जवाब नहीं मिल सका।"),
+            "ja" to ("Visorは接続されていますが、まだモデルが設定されていません。アプリでAPIキーを追加してください。" to "すみません、回答を取得できませんでした。"),
+            "ko" to ("Visor가 연결되었지만 아직 모델이 설정되지 않았습니다. 앱에서 API 키를 추가하세요." to "죄송합니다. 답변을 받지 못했습니다."),
+            "zh" to ("Visor 已连接，但还没有设置模型。请在应用中添加 API 密钥。" to "抱歉，我没能获得回答。"),
+        )
         // The glasses give the whole turn 20 s; speech and streaming need some of it.
         const val TURN_BUDGET_MS = 16_000L
         const val HOLD_ON_MS = 3_000L
