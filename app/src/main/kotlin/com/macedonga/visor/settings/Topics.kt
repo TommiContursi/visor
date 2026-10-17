@@ -36,7 +36,7 @@ enum class Topic(val title: Int, val icon: ImageVector, val keys: List<String> =
     // Spatial audio is the feature row: the setting does nothing while Meta's switch is off.
     SOUND(
         R.string.topic_sound, VisorIcons.Speaker,
-        listOf("notification_volume", "mono_audio_enabled", "sg_headphone_mode_enabled"),
+        listOf("notification_volume", "avc_enabled", "mono_audio_enabled", "sg_headphone_mode_enabled"),
     ),
     // Conversation focus, hearing correction and group conversations, all the glasses' hearing app.
     HEARING(R.string.topic_hearing, VisorIcons.Ear),
