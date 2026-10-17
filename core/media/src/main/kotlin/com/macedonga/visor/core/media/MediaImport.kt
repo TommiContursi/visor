@@ -111,11 +111,21 @@ class MediaImport(
     /** Where photos are edited from their originals. */
     val darkroom = Darkroom(context, index)
 
-    private val assembly = Assembly(context, index, places, ::say) { handle ->
-        _saved.update { it + 1 }
+    private val assembly = Assembly(
+        context, index, places, ::say,
+        onSaved = { handle ->
+            _saved.update { it + 1 }
+            _inFlight.update { it - handle }
+            // A problem about captures that have now arrived is no longer one.
+            _problem.update { p -> p?.copy(handles = p.handles - handle)?.takeIf { it.handles.isNotEmpty() } }
+        },
+        onFailed = { handle, why -> report(handle, ImportProblem.Kind.NOT_SAVED, why) },
+    )
+
+    /** [handle] is no longer coming: it joins the problem on show, or starts one of [kind]. */
+    private fun report(handle: String, kind: ImportProblem.Kind, detail: String = "") {
         _inFlight.update { it - handle }
-        // A problem about captures that have now arrived is no longer one.
-        _problem.update { p -> p?.copy(handles = p.handles - handle)?.takeIf { it.handles.isNotEmpty() } }
+        _problem.update { p -> p?.copy(handles = p.handles + handle) ?: ImportProblem(kind, detail, setOf(handle)) }
     }
 
     private val _previews = MutableStateFlow(
@@ -271,7 +281,7 @@ class MediaImport(
                     val missing = handles.filterTo(HashSet()) { it in _inFlight.value && !assembly.waiting(it) }
                     if (missing.isNotEmpty()) {
                         say("${missing.size} did not come: the glasses went quiet")
-                        _problem.value = ImportProblem(ImportProblem.Kind.CUT_OFF, handles = missing)
+                        _problem.update { p -> ImportProblem(ImportProblem.Kind.CUT_OFF, handles = missing + p?.handles.orEmpty()) }
                     }
                 }
             }
@@ -282,7 +292,9 @@ class MediaImport(
             if (!overBluetooth(captures)) {
                 // Glasses that are gone are the thing to fix, whatever Wi-Fi did.
                 val gone = connection.state.value.link != LinkState.READY
-                _problem.value = (if (gone) ImportProblem(ImportProblem.Kind.CUT_OFF) else why).copy(handles = handles intersect _inFlight.value)
+                _problem.update { p ->
+                    (if (gone) ImportProblem(ImportProblem.Kind.CUT_OFF) else why).copy(handles = (handles intersect _inFlight.value) + p?.handles.orEmpty())
+                }
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -525,11 +537,19 @@ class MediaImport(
                     refresh()
                 }
             }
+            val asked = capture?.takeIf { c -> c.wanted.any { it.id == received.offer.uuid } }
             when {
-                !received.verified -> say("A file arrived damaged and was not saved. Import it again.")
-                capture != null && capture.wanted.any { it.id == received.offer.uuid } -> {
-                    assembly.take(capture, received.offer.uuid, received.file)
-                    markDelivered(capture.handle, received.offer.uuid)
+                !received.verified -> {
+                    say("A file arrived damaged and was not saved${describe(received.offer.uuid)}")
+                    if (asked != null) {
+                        // Delivered as far as the glasses know: the next import asks for it by name.
+                        markDelivered(asked.handle, received.offer.uuid)
+                        report(asked.handle, ImportProblem.Kind.DAMAGED)
+                    }
+                }
+                asked != null -> {
+                    assembly.take(asked, received.offer.uuid, received.file)
+                    markDelivered(asked.handle, received.offer.uuid)
                 }
                 capture != null -> Unit
                 // Not in the list: the full still is always HEIC and the video MP4, the thumbnail JPEG.

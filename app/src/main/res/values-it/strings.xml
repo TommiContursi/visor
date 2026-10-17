@@ -660,6 +660,8 @@
     <string name="import_problem_not_allowed">Consenti i dispositivi nelle vicinanze per importare via Wi-Fi Direct.</string>
     <string name="import_problem_failed">L\'importazione si è fermata: %1$s</string>
     <string name="import_problem_cut_off">Gli occhiali si sono disconnessi prima che arrivasse tutto. Importa il resto quando tornano.</string>
+    <string name="import_problem_damaged">Alcuni file sono arrivati danneggiati. Importali di nuovo.</string>
+    <string name="import_problem_not_saved">Il telefono non l\'ha salvato: %1$s</string>
     <string name="import_retry">Riprova</string>
     <string name="import_over_bluetooth">Arriva via Bluetooth: gli occhiali possono metterci circa cinque minuti a partire.</string>
 
