@@ -176,7 +176,7 @@ fun VisorNav(opens: kotlinx.coroutines.flow.Flow<String>, markAtLaunch: Boolean)
     CompositionLocalProvider(LocalStage provides stage, LocalBack provides { backStack.removeLastOrNull() }) {
       // The one stage under every screen: those that show the pair leave it a hole and say where it goes.
       Box(Modifier.fillMaxSize().background(Visor.colors.canvas)) {
-        SharedStage(stage, shown = backStack.lastOrNull().let { it == HomeKey || it == SettingsKey || it == LiveKey || it == HearingTestKey || it is OnboardingKey })
+        SharedStage(stage, shown = backStack.lastOrNull().let { it == HomeKey || it == SettingsKey || it == LiveKey || it == HearingTestKey || it == WakeWordKey || it is OnboardingKey })
         NavDisplay(
             backStack = backStack,
             onBack = { backStack.removeLastOrNull() },

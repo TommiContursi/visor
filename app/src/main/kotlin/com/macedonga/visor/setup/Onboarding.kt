@@ -907,7 +907,7 @@ private object Demo {
 
 /** The one kind of button that moves the setup on: a white pill, wide. */
 @Composable
-private fun BigPill(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+internal fun BigPill(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Box(
         modifier
             .fillMaxWidth()
@@ -923,7 +923,7 @@ private fun BigPill(text: String, onClick: () -> Unit, modifier: Modifier = Modi
 }
 
 @Composable
-private fun QuietButton(text: String, onClick: () -> Unit) {
+internal fun QuietButton(text: String, onClick: () -> Unit) {
     Box(
         Modifier.height(54.dp).clip(RoundedCornerShape(50)).clickable(onClick = onClick).padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
@@ -932,8 +932,8 @@ private fun QuietButton(text: String, onClick: () -> Unit) {
     }
 }
 
-private val SETTLE = CubicBezierEasing(0.2f, 0f, 0f, 1f)
-private val LED_BLUE = Color(0xFF2F6BFF)
+internal val SETTLE = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+internal val LED_BLUE = Color(0xFF2F6BFF)
 /** How closely the pair follows the story's turns: a camera with a little weight. */
 private const val FOLLOW_SECONDS = 0.18f
 private const val CAMERA_SECONDS = 0.5f

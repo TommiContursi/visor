@@ -1,9 +1,13 @@
 package com.macedonga.visor.features
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -14,19 +18,25 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -63,20 +73,23 @@ import com.macedonga.visor.settings.ToggleRow
 import com.macedonga.visor.settings.TopBar
 import com.macedonga.visor.settings.ValueRow
 import com.macedonga.visor.settings.row
+import com.macedonga.visor.setup.BigPill
+import com.macedonga.visor.setup.QuietButton
+import com.macedonga.visor.setup.SETTLE
 import com.macedonga.visor.stage.LightLook
 import com.macedonga.visor.stage.LocalStage
 import com.macedonga.visor.stage.Mood
 import com.macedonga.visor.stage.STAGE_ASPECT
-import com.macedonga.visor.stage.StageLight
-import com.macedonga.visor.stage.StageSpot
+import com.macedonga.visor.stage.StageCue
+import com.macedonga.visor.stage.StoryStage
 import com.macedonga.visor.stage.lookOf
+import com.macedonga.visor.stage.nod
+import com.macedonga.visor.stage.shake
 import com.macedonga.visor.ui.VisorIcons
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -84,7 +97,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 
 /**
  * Hearing correction: the glasses as a hearing aid, fitted by a hearing test on the glasses. On top, where it stands
@@ -410,137 +422,182 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
     }
 }
 
+
+/**
+ * The hearing test told as the setup tells its story: the pair turned to the ear under test with the tone leaving that
+ * temple, swaying while the glasses get ready or make the profile, a flash and a nod when it is made, a shake when not.
+ */
 @Composable
 fun HearingTestScreen(model: HearingTestModel = hiltViewModel()) = SettingsHost(seeThrough = true) {
     val step by model.step.collectAsStateWithLifecycle()
-    val density = LocalDensity.current
+    val stage = LocalStage.current
+    val host = LocalHost.current
+    val colors = Visor.colors
     DisposableEffect(model) {
         model.enter()
         onDispose { model.leave() }
     }
+
+    val cue = remember { StageCue() }
+    val tone = step as? TestStep.Tone
+    val ear = tone?.let { if (it.index < HearingTestModel.TONES_PER_EAR) Ear.LEFT else Ear.RIGHT }
+    cue.yaw = when (ear) {
+        Ear.LEFT -> LEFT_EAR_YAW
+        Ear.RIGHT -> RIGHT_EAR_YAW
+        null -> 0f
+    }
+    cue.orbit = step == TestStep.Starting || step == TestStep.Fitting
+    cue.source = when (ear) {
+        Ear.LEFT -> "temple_l"
+        Ear.RIGHT -> "temple_r"
+        null -> null
+    }
+    cue.inward = false
+    cue.level = tone?.let { 0.3f + 0.7f * (it.level - Hearing.MIN_DBHL) / (Hearing.MAX_DBHL - Hearing.MIN_DBHL).toFloat() } ?: 0f
+    val look = when (step) {
+        is TestStep.Tone -> LightLook(colors.lightNeutral, colors.lightWarm, level = 0.9f, spread = 1f, breathSeconds = 1.6f, breathDepth = 0.3f)
+        TestStep.Starting, TestStep.Fitting -> lookOf(Mood.SEARCHING, colors).copy(breathSeconds = 2.2f)
+        is TestStep.Failed, is TestStep.Saved, is TestStep.NotFor -> lookOf(Mood.FAR, colors)
+        else -> lookOf(Mood.CONNECTED, colors)
+    }
+    val moment = step::class
+    LaunchedEffect(moment) {
+        when (step) {
+            TestStep.Done -> {
+                host.haptics.connected()
+                stage.light.flash()
+                delay(400)
+                stage.pose.nod()
+            }
+            is TestStep.Failed, is TestStep.Saved -> {
+                host.haptics.error()
+                stage.light.flicker()
+                stage.pose.shake()
+            }
+            else -> Unit
+        }
+    }
+
     BoxWithConstraints(Modifier.fillMaxSize()) {
+        val density = LocalDensity.current
         val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val strip = top + BAR + TEST_STAGE
-        with(density) { TestStage(step, (maxWidth / STAGE_ASPECT).toPx(), strip.toPx(), (top + BAR + TEST_STAGE / 2).toPx()) }
-        Box(Modifier.fillMaxSize().padding(top = strip).background(Visor.colors.canvas))
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = strip, bottom = bottom + 32.dp)) {
-            TestStepContent(step, model)
+        val stagePx = with(density) { (maxWidth / STAGE_ASPECT).toPx() }
+        // During the tones the pair comes closer, so the temple and its sound fill the stage.
+        StoryStage(cue, look, with(density) { (top + BAR + STORY_ZONE / 2).toPx() }, if (tone != null) 1f else 0.8f, stagePx)
+        AnimatedContent(
+            targetState = step,
+            contentKey = { it::class to (it as? TestStep.Tone)?.index },
+            transitionSpec = {
+                (fadeIn(tween(420, delayMillis = 120)) + slideInVertically(tween(520, delayMillis = 120, easing = SETTLE)) { it / 14 })
+                    .togetherWith(fadeOut(tween(180)))
+            },
+            label = "step",
+        ) { shown ->
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(top = top + BAR + STORY_ZONE, bottom = bottom + 20.dp).padding(horizontal = 24.dp),
+            ) {
+                TestStepContent(shown, model)
+            }
         }
         TopBar(stringResource(R.string.hct_title))
-    }
-}
-
-/** The pair under its light with its temples open, turned to the ear being tested; the light breathes while a tone plays. */
-@Composable
-private fun TestStage(step: TestStep, fullPx: Float, stripPx: Float, centrePx: Float) {
-    val stage = LocalStage.current
-    val colors = Visor.colors
-    StageSpot(closed = false, liveliness = 0.3f) { folding(fullPx, stripPx, 1f, TEST_SCALE, centrePx) }
-    val ear = (step as? TestStep.Tone)?.let { if (it.index < HearingTestModel.TONES_PER_EAR) Ear.LEFT else Ear.RIGHT }
-    StageLight(
-        if (ear != null) LightLook(colors.lightNeutral, colors.lightWarm, level = 1f, spread = 1f, breathSeconds = 1.6f, breathDepth = 0.35f)
-        else lookOf(Mood.CONNECTED, colors),
-    )
-    LaunchedEffect(ear) {
-        val yaw = when (ear) {
-            Ear.LEFT -> LEFT_EAR_YAW
-            Ear.RIGHT -> RIGHT_EAR_YAW
-            null -> 0f
-        }
-        stage.yaw.animateTo(yaw, spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessVeryLow))
-    }
-    // The next screen gets the pair facing ahead again.
-    LaunchedEffect(Unit) {
-        try {
-            awaitCancellation()
-        } finally {
-            withContext(NonCancellable) { stage.yaw.animateTo(0f, tween(400)) }
-        }
     }
 }
 
 @Composable
 private fun TestStepContent(step: TestStep, model: HearingTestModel) {
     val back = LocalBack.current
-    when (val s = step) {
-        TestStep.Who -> Column {
-            StepCard(stringResource(R.string.hct_who_title), stringResource(R.string.hct_who_body))
-            SectionLabel(stringResource(R.string.hct_question), Modifier.padding(top = 24.dp))
-            Rows(
-                *listOf(
-                    HearingTestModel.RATING_NONE to R.string.hct_rating_none,
+    when (step) {
+        TestStep.Who -> {
+            StoryWords(stringResource(R.string.hct_who_title), stringResource(R.string.hct_who_body))
+            Text(stringResource(R.string.hct_question), style = Visor.type.label, color = Visor.colors.textSecondary, modifier = Modifier.padding(top = 24.dp, bottom = 10.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                for ((rating, words) in listOf(
                     HearingTestModel.RATING_MILD to R.string.hct_rating_mild,
+                    HearingTestModel.RATING_NONE to R.string.hct_rating_none,
                     HearingTestModel.RATING_SEVERE to R.string.hct_rating_severe,
                     HearingTestModel.RATING_IMPLANT to R.string.hct_rating_implant,
-                ).map { (rating, words) -> row { ValueRow(stringResource(words), null, onClick = { model.answer(rating) }) } }.toTypedArray(),
-            )
+                )) ChoicePill(stringResource(words)) { model.answer(rating) }
+            }
         }
-        is TestStep.NotFor -> StepCard(stringResource(R.string.hct_not_title), stringResource(s.why)) {
-            ActionPill(stringResource(R.string.features_restart_done), back)
+        is TestStep.NotFor -> StoryWords(stringResource(R.string.hct_not_title), stringResource(step.why)) {
+            BigPill(stringResource(R.string.features_restart_done), back)
         }
-        TestStep.Ready -> StepCard(stringResource(R.string.hct_ready_title), stringResource(R.string.hct_ready_body)) {
-            ActionPill(stringResource(R.string.hct_begin), model::begin)
+        TestStep.Ready -> StoryWords(stringResource(R.string.hct_ready_title), stringResource(R.string.hct_ready_body)) {
+            BigPill(stringResource(R.string.hct_begin), model::begin)
         }
-        TestStep.Starting -> StepCard(stringResource(R.string.hct_starting), null)
-        is TestStep.Tone -> ToneCard(s, model)
-        TestStep.Fitting -> StepCard(stringResource(R.string.hct_fitting), null)
-        is TestStep.Saved -> StepCard(stringResource(R.string.hct_saved_title), stringResource(s.why)) {
-            ActionPill(stringResource(R.string.features_restart_done), back)
+        TestStep.Starting -> StoryWords(stringResource(R.string.hct_starting), null)
+        is TestStep.Tone -> ToneControls(step, model)
+        TestStep.Fitting -> StoryWords(stringResource(R.string.hct_fitting), null)
+        is TestStep.Saved -> StoryWords(stringResource(R.string.hct_saved_title), stringResource(step.why)) {
+            BigPill(stringResource(R.string.features_restart_done), back)
         }
-        TestStep.Done -> StepCard(stringResource(R.string.hct_done_title), stringResource(R.string.hct_done_body)) {
-            ActionPill(stringResource(R.string.features_restart_done), back)
+        TestStep.Done -> StoryWords(stringResource(R.string.hct_done_title), stringResource(R.string.hct_done_body)) {
+            BigPill(stringResource(R.string.features_restart_done), back)
         }
-        is TestStep.Failed -> StepCard(stringResource(R.string.hct_failed_title), stringResource(s.why)) {
-            ActionPill(stringResource(R.string.hct_retry), model::retry)
+        is TestStep.Failed -> StoryWords(stringResource(R.string.hct_failed_title), stringResource(step.why)) {
+            BigPill(stringResource(R.string.hct_retry), model::retry)
         }
     }
 }
 
-/** The strip the pair stands in under the bar during the test, and how large it is there. */
-private val TEST_STAGE = 230.dp
-private const val TEST_SCALE = 0.95f
+@Composable
+private fun ToneControls(s: TestStep.Tone, model: HearingTestModel) {
+    val perEar = HearingTestModel.TONES_PER_EAR
+    val last = s.index == perEar * 2 - 1
+    Text(stringResource(if (s.index < perEar) R.string.hct_left else R.string.hct_right), style = Visor.type.label, color = Visor.colors.textSecondary)
+    Text(stringResource(R.string.hct_tone, s.index % perEar + 1, perEar), style = Visor.type.title, color = Visor.colors.textPrimary, modifier = Modifier.padding(top = 4.dp))
+    Text(stringResource(R.string.hct_tone_body), style = Visor.type.body, color = Visor.colors.textSecondary, modifier = Modifier.padding(top = 8.dp))
+    Row(Modifier.fillMaxWidth().padding(vertical = 22.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        RoundIcon(VisorIcons.Minus, stringResource(R.string.hct_quieter), { model.nudge(up = false) }, size = 68.dp, background = Visor.colors.control)
+        LevelDots(s.level, Modifier.padding(horizontal = 24.dp))
+        RoundIcon(VisorIcons.Plus, stringResource(R.string.hct_louder), { model.nudge(up = true) }, size = 68.dp, background = Visor.colors.control)
+    }
+    if (s.level == Hearing.MAX_DBHL) Text(stringResource(R.string.hct_loudest_note), style = Visor.type.label, color = Visor.colors.textSecondary, modifier = Modifier.padding(bottom = 12.dp))
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        QuietButton(stringResource(R.string.hct_cant_hear), model::loudest)
+        Spacer(Modifier.width(8.dp))
+        BigPill(stringResource(if (last) R.string.hct_finish else R.string.hct_next), model::next, Modifier.weight(1f))
+    }
+}
+
+/** The tone's level as a column of steps, the lit ones up to where it is. */
+@Composable
+private fun LevelDots(level: Int, modifier: Modifier) {
+    val steps = (Hearing.MAX_DBHL - Hearing.MIN_DBHL) / 5 + 1
+    val lit = (level - Hearing.MIN_DBHL) / 5 + 1
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        for (k in steps downTo 1) {
+            val on = k <= lit
+            Box(Modifier.size(width = (10 + k * 2).dp, height = 3.dp).clip(RoundedCornerShape(2.dp)).background(if (on) Color.White else Visor.colors.control))
+        }
+    }
+}
+
+/** A step's words, as the setup's pages have them, and what moves it on. */
+@Composable
+internal fun StoryWords(title: String, body: String?, action: (@Composable () -> Unit)? = null) {
+    Text(title, style = Visor.type.title, color = Visor.colors.textPrimary)
+    if (body != null) Text(body, style = Visor.type.body, color = Visor.colors.textSecondary, modifier = Modifier.padding(top = 10.dp))
+    if (action != null) Box(Modifier.padding(top = 28.dp)) { action() }
+}
+
+/** One answer of several, a raised pill. */
+@Composable
+internal fun ChoicePill(text: String, onClick: () -> Unit) {
+    Box(
+        Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(26.dp)).background(Visor.colors.raised)
+            .clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 14.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(text, style = Visor.type.body, color = Visor.colors.textPrimary)
+    }
+}
+
+/** How tall the stage zone is above a step's words. */
+private val STORY_ZONE = 290.dp
 
 // The pair rests at -24 degrees; these show the left temple, then the right, to the viewer.
 private const val LEFT_EAR_YAW = -46f
 private const val RIGHT_EAR_YAW = 70f
-
-@Composable
-private fun StepCard(title: String, body: String?, actions: (@Composable () -> Unit)? = null) {
-    Card {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = Visor.type.heading, color = Visor.colors.textPrimary)
-            if (body != null) Text(body, style = Visor.type.body, color = Visor.colors.textSecondary)
-            if (actions != null) Row(Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                Spacer(Modifier.weight(1f))
-                actions()
-            }
-        }
-    }
-}
-
-@Composable
-private fun ToneCard(s: TestStep.Tone, model: HearingTestModel) {
-    val perEar = HearingTestModel.TONES_PER_EAR
-    val last = s.index == perEar * 2 - 1
-    Column {
-        Card {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(if (s.index < perEar) R.string.hct_left else R.string.hct_right), style = Visor.type.label, color = Visor.colors.textSecondary)
-                Text(stringResource(R.string.hct_tone, s.index % perEar + 1, perEar), style = Visor.type.heading, color = Visor.colors.textPrimary)
-                Text(stringResource(R.string.hct_tone_body), style = Visor.type.body, color = Visor.colors.textSecondary)
-                Row(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    RoundIcon(VisorIcons.Minus, stringResource(R.string.hct_quieter), { model.nudge(up = false) }, size = 64.dp, background = Visor.colors.control)
-                    Spacer(Modifier.width(32.dp))
-                    RoundIcon(VisorIcons.Plus, stringResource(R.string.hct_louder), { model.nudge(up = true) }, size = 64.dp, background = Visor.colors.control)
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ActionPill(stringResource(R.string.hct_cant_hear), model::loudest, quiet = true)
-                    Spacer(Modifier.weight(1f))
-                    ActionPill(stringResource(if (last) R.string.hct_finish else R.string.hct_next), model::next)
-                }
-            }
-        }
-        if (s.level == Hearing.MAX_DBHL) Footnote(stringResource(R.string.hct_loudest_note))
-    }
-}

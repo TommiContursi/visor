@@ -823,6 +823,7 @@
     <string name="cf_refused_device">Questi occhiali non possono avviarlo.</string>
     <string name="cf_refused_bluetooth">Serve che gli occhiali siano collegati al telefono.</string>
     <string name="ww_title">Parola di attivazione personale</string>
+    <string name="ww_on">Attiva</string>
     <string name="ww_phrase_title">Scegli la frase</string>
     <string name="ww_phrase_body">Scrivi cosa dirai per attivare gli occhiali, come “Hey Jarvis”. Poi dilla tre volte con gli occhiali indossati.</string>
     <string name="ww_phrase">Frase</string>

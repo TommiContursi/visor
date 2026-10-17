@@ -8,8 +8,11 @@ import java.nio.ByteOrder
 import java.util.UUID
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withTimeoutOrNull
 
 /** What the glasses answered to an enrolment. */
@@ -24,6 +27,11 @@ data class WakeWordResult(val success: Boolean, val error: String, val wakeword:
 class CustomWakeWord internal constructor(private val send: suspend (Int, ByteArray) -> Boolean) {
     private val _notes = MutableSharedFlow<String>(extraBufferCapacity = 16)
     val notes: SharedFlow<String> = _notes.asSharedFlow()
+
+    private val _results = MutableSharedFlow<WakeWordResult>(extraBufferCapacity = 4)
+
+    /** Every answer the glasses give, also one that comes after [enroll] stopped waiting. */
+    val results: SharedFlow<WakeWordResult> = _results.asSharedFlow()
 
     @Volatile
     private var answer: CompletableDeferred<WakeWordResult>? = null
@@ -40,6 +48,11 @@ class CustomWakeWord internal constructor(private val send: suspend (Int, ByteAr
     @Volatile
     private var take: Take? = null
 
+    private val _level = MutableStateFlow(0f)
+
+    /** How loud the voice is in the recording under way, 0 to 1; 0 between recordings. */
+    val level: StateFlow<Float> = _level.asStateFlow()
+
     /**
      * Record one sample on the glasses' microphone, up to [ms] long: they stream it as Opus on the assistant's stream
      * channel (header 6106, data 6100, end 6101). The phrase as 16 kHz 16-bit mono PCM with the silence around it
@@ -47,7 +60,7 @@ class CustomWakeWord internal constructor(private val send: suspend (Int, ByteAr
      */
     suspend fun record(ms: Long = TAKE_MS): ByteArray? {
         val request = UUID.randomUUID().toString()
-        val t = Take(runCatching { opusDecoder() }.getOrElse { note("Custom wake word: no Opus decoder: ${it.message}"); return null })
+        val t = Take(_level, runCatching { opusDecoder() }.getOrElse { note("Custom wake word: no Opus decoder: ${it.message}"); return null })
         take = t
         try {
             if (!capture(true, request)) return null
@@ -56,6 +69,7 @@ class CustomWakeWord internal constructor(private val send: suspend (Int, ByteAr
             withTimeoutOrNull(END_MS) { t.ended.await() }
         } finally {
             take = null
+            _level.value = 0f
             t.close()
         }
         note("Custom wake word: recorded ${t.pcm.size() / BYTES_PER_MS} ms in ${t.packets} packets" + (t.header?.let { ", header $it" } ?: ""))
@@ -72,7 +86,7 @@ class CustomWakeWord internal constructor(private val send: suspend (Int, ByteAr
     }
 
     /** One recording on its way in: the decoder, and the 16 kHz PCM so far. */
-    private class Take(val codec: MediaCodec) {
+    private class Take(val level: MutableStateFlow<Float>, val codec: MediaCodec) {
         val pcm = ByteArrayOutputStream()
         val ended = CompletableDeferred<Unit>()
         var header: String? = null
@@ -101,6 +115,8 @@ class CustomWakeWord internal constructor(private val send: suspend (Int, ByteAr
                         val bytes = ByteBuffer.allocate(wide.size / 3 * 2).order(ByteOrder.LITTLE_ENDIAN)
                         for (k in 0 until wide.size / 3) bytes.putShort(((wide[k * 3] + wide[k * 3 + 1] + wide[k * 3 + 2]) / 3).toShort())
                         pcm.write(bytes.array())
+                        val loud = (0 until wide.size / 3).maxOfOrNull { k -> kotlin.math.abs(bytes.getShort(k * 2).toInt()) } ?: 0
+                        level.value = (loud / LOUD).coerceIn(0f, 1f)
                     }
                     codec.releaseOutputBuffer(o, false)
                 }
@@ -114,7 +130,7 @@ class CustomWakeWord internal constructor(private val send: suspend (Int, ByteAr
         }
     }
 
-    /** Send the phrase and its recordings (16 kHz 16-bit mono PCM); the glasses' answer, or null after a minute. */
+    /** Send the phrase and its recordings (16 kHz 16-bit mono PCM); the glasses' answer, or null after three minutes. */
     suspend fun enroll(phrase: String, clips: List<ByteArray>): WakeWordResult? {
         val id = UUID.randomUUID().toString()
         val waiting = CompletableDeferred<WakeWordResult>()
@@ -138,6 +154,7 @@ class CustomWakeWord internal constructor(private val send: suspend (Int, ByteAr
         )
         note("Custom wake word: ${if (result.success) "enrolled \"${result.wakeword}\"" else "refused: ${result.error}"} (heard \"${result.transcript}\")")
         answer?.complete(result)
+        _results.tryEmit(result)
     }
 
     private fun note(text: String) {
@@ -152,11 +169,14 @@ class CustomWakeWord internal constructor(private val send: suspend (Int, ByteAr
         private const val TAKE_MS = 3_000L
         private const val END_MS = 2_000L
         private const val BYTES_PER_MS = 32
+        // A voice near the glasses peaks around a third of full scale.
+        private const val LOUD = 12_000f
         private const val EV_BATCH_ENROLLMENT = 386
         private const val EV_SESSION_BEGIN = 390
         private const val EV_SESSION_END = 391
         private const val EV_CAPTURE_CONTROL = 394
-        private const val ENROLL_MS = 60_000L
+        // The Meta app waits 60 s; these glasses answered after 61.
+        private const val ENROLL_MS = 180_000L
     }
 }
 

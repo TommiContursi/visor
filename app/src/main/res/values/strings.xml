@@ -825,6 +825,7 @@
     <string name="cf_refused_device">These glasses cannot run it.</string>
     <string name="cf_refused_bluetooth">It needs the glasses connected to the phone.</string>
     <string name="ww_title">Custom wake word</string>
+    <string name="ww_on">On</string>
     <string name="ww_phrase_title">Choose the phrase</string>
     <string name="ww_phrase_body">Type what you\'ll say to wake the glasses, like “Hey Jarvis”. Then say it three times with the glasses on.</string>
     <string name="ww_phrase">Phrase</string>
