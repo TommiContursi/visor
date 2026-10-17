@@ -246,6 +246,9 @@ sealed interface TestStep {
     data class Tone(val index: Int, val level: Int) : TestStep
     data object Fitting : TestStep
     data object Done : TestStep
+
+    /** The profile is made, but the glasses did not start hearing correction with it. */
+    data class Saved(val why: Int) : TestStep
     data class Failed(val why: Int) : TestStep
 }
 
@@ -362,13 +365,14 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
             testing = false
             features.hearingTested()
             val now = hearing.state.value
-            if (now.mode != HearingMode.CORRECTION || now.run != HearingRun.ON) {
+            val on = (now.mode == HearingMode.CORRECTION && now.run == HearingRun.ON) || run {
                 hearing.stop()
                 hearing.awaitStopped()
                 hearing.startCorrection()
                 hearing.awaitRunning(HearingMode.CORRECTION, START_MS)
             }
-            _step.value = TestStep.Done
+            _step.value = if (on) TestStep.Done
+            else TestStep.Saved(if (hearing.state.value.refusal == HearingRefusal.ENABLE_FAILED) R.string.hc_refused_chip else R.string.cf_refused)
         }
     }
 
@@ -481,6 +485,9 @@ private fun TestStepContent(step: TestStep, model: HearingTestModel) {
         TestStep.Starting -> StepCard(stringResource(R.string.hct_starting), null)
         is TestStep.Tone -> ToneCard(s, model)
         TestStep.Fitting -> StepCard(stringResource(R.string.hct_fitting), null)
+        is TestStep.Saved -> StepCard(stringResource(R.string.hct_saved_title), stringResource(s.why)) {
+            ActionPill(stringResource(R.string.features_restart_done), back)
+        }
         TestStep.Done -> StepCard(stringResource(R.string.hct_done_title), stringResource(R.string.hct_done_body)) {
             ActionPill(stringResource(R.string.features_restart_done), back)
         }

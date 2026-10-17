@@ -877,6 +877,7 @@
     <string name="hct_finish">Fine</string>
     <string name="hct_fitting">Creo il tuo profilo…</string>
     <string name="hct_done_title">La correzione dell\'udito è attiva</string>
+    <string name="hct_saved_title">Profilo salvato, ma non avviata</string>
     <string name="hct_done_body">All\'inizio i suoni che non sentivi da tempo possono sembrare diversi. Parlane con il medico se senti dolore o vertigini, o se il tuo udito peggiora.</string>
     <string name="hct_failed_title">Qualcosa non va</string>
     <string name="hct_failed_start">Gli occhiali non hanno avviato il test dell\'udito. Indossali, chiudi chiamate o audio e riprova.</string>

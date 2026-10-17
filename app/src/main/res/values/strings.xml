@@ -879,6 +879,7 @@
     <string name="hct_finish">Finish</string>
     <string name="hct_fitting">Making your profile…</string>
     <string name="hct_done_title">Hearing correction is on</string>
+    <string name="hct_saved_title">Profile saved, but not started</string>
     <string name="hct_done_body">Sounds you haven\'t heard in a while may feel different at first. Talk to your doctor if you feel pain or dizziness, or if your hearing gets worse.</string>
     <string name="hct_failed_title">Something went wrong</string>
     <string name="hct_failed_start">The glasses did not start the hearing test. Wear them, end any call or audio, and try again.</string>
