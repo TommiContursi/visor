@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -75,7 +74,6 @@ import com.macedonga.visor.settings.ValueRow
 import com.macedonga.visor.settings.row
 import com.macedonga.visor.setup.BigPill
 import com.macedonga.visor.setup.QuietButton
-import com.macedonga.visor.setup.SETTLE
 import com.macedonga.visor.stage.LightLook
 import com.macedonga.visor.stage.LocalStage
 import com.macedonga.visor.stage.Mood
@@ -488,10 +486,8 @@ fun HearingTestScreen(model: HearingTestModel = hiltViewModel()) = SettingsHost(
         AnimatedContent(
             targetState = step,
             contentKey = { it::class to (it as? TestStep.Tone)?.index },
-            transitionSpec = {
-                (fadeIn(tween(420, delayMillis = 120)) + slideInVertically(tween(520, delayMillis = 120, easing = SETTLE)) { it / 14 })
-                    .togetherWith(fadeOut(tween(180)))
-            },
+            // A step dissolves into the next: nothing slides, and the size stays put.
+            transitionSpec = { (fadeIn(tween(380, delayMillis = 90)) togetherWith fadeOut(tween(260))) using null },
             label = "step",
         ) { shown ->
             Column(
