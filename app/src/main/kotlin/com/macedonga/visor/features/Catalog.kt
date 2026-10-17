@@ -33,6 +33,22 @@ enum class Feature(
         listOf(Gate.Setting("hearing_boost_nux_completed", "true")),
         page = true,
     ),
+    // setupForHCModes refuses "HC is not supported on this device" while this is off; Meta's app offers it on 262 and 263 only.
+    HEARING_CORRECTION(
+        "hearing_correction", R.string.feature_hc, R.string.feature_hc_about, R.string.feature_hc_use, VisorIcons.HearingAid,
+        listOf(Gate.Config("hearing_on_sn.hc_device_supported", true)),
+        page = true,
+    ),
+    // The group app's MainActivity finishes unless the first two are on; enable_aurachat starts aurachat through
+    // sysprop_map. Without Meta's signed key material the group key is AurachatKeyManager's all-zero DEBUG_KEY.
+    GROUP_CONVERSATIONS(
+        "group_conversations", R.string.feature_gc, R.string.feature_gc_about, R.string.feature_gc_use, VisorIcons.People,
+        listOf(
+            Gate.Config("wearables_group_conversations.enabled", true),
+            Gate.Config("wearables_group_conversations.min_device_version_passed", true),
+            Gate.Config("wearable_connectivity_device_features.enable_aurachat", true),
+        ),
+    ),
     // The assistant's isLiveAiEnabled takes MobileConfig mmai_live_onframe_enabled or this setting, read on each ask.
     LIVE_AI(
         "live_ai", R.string.feature_live_ai, R.string.feature_live_ai_about, R.string.feature_live_ai_use, VisorIcons.Live,
@@ -62,9 +78,7 @@ enum class Feature(
 
 /** A feature that cannot work on these glasses with Visor, and why: each was followed past its gates to what stops it. */
 enum class OutOfReach(@StringRes val title: Int, @StringRes val why: Int) {
-    GROUP(R.string.out_group, R.string.out_group_why),
     TUTOR(R.string.out_tutor, R.string.out_tutor_why),
     WAKE_WORD(R.string.out_wake_word, R.string.out_wake_word_why),
     PALM(R.string.out_palm, R.string.out_palm_why),
-    HEARING_CORRECTION(R.string.out_hearing, R.string.out_hearing_why),
 }

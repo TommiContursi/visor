@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import com.macedonga.visor.ConversationFocusKey
 import com.macedonga.visor.FlagsKey
+import com.macedonga.visor.HearingCorrectionKey
 import com.macedonga.visor.R
 import com.macedonga.visor.core.design.Visor
 import com.macedonga.visor.core.media.ConfigState
@@ -222,6 +223,7 @@ private fun lineOf(feature: Feature, standing: Standing, waits: Boolean): Pair<S
 /** Where a feature with a page of its own lives. */
 private fun pageOf(feature: Feature): NavKey = when (feature) {
     Feature.CONVERSATION_FOCUS -> ConversationFocusKey
+    Feature.HEARING_CORRECTION -> HearingCorrectionKey
     else -> error("${feature.id} has no page")
 }
 

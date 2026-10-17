@@ -30,6 +30,8 @@ import com.macedonga.visor.core.design.Visor
 import com.macedonga.visor.device.DeviceScreen
 import com.macedonga.visor.features.ConversationFocusScreen
 import com.macedonga.visor.features.FeaturesScreen
+import com.macedonga.visor.features.HearingCorrectionScreen
+import com.macedonga.visor.features.HearingTestScreen
 import com.macedonga.visor.gallery.GalleryScreen
 import com.macedonga.visor.home.HomeScreen
 import com.macedonga.visor.log.EventLogScreen
@@ -97,6 +99,12 @@ data object FeaturesKey : NavKey
 
 @Serializable
 data object ConversationFocusKey : NavKey
+
+@Serializable
+data object HearingCorrectionKey : NavKey
+
+@Serializable
+data object HearingTestKey : NavKey
 
 @Serializable
 data object LiveSettingsKey : NavKey
@@ -276,6 +284,8 @@ fun VisorNav(opens: kotlinx.coroutines.flow.Flow<String>, markAtLaunch: Boolean)
                 entry<FlagsKey> { FlagsScreen() }
                 entry<FeaturesKey> { FeaturesScreen(open) }
                 entry<ConversationFocusKey> { ConversationFocusScreen() }
+                entry<HearingCorrectionKey> { HearingCorrectionScreen(open) }
+                entry<HearingTestKey> { HearingTestScreen() }
                 entry<AssistantSettingsKey> { AssistantSettingsScreen(open) }
                 entry<IntegrationsKey> { com.macedonga.visor.settings.IntegrationsScreen(open) }
                 entry<IntegrationKey> { key ->

@@ -19,6 +19,7 @@ import com.macedonga.visor.R
 import com.macedonga.visor.core.assistant.FocusStyle
 import com.macedonga.visor.core.assistant.Hearing
 import com.macedonga.visor.core.assistant.HearingCause
+import com.macedonga.visor.core.assistant.HearingMode
 import com.macedonga.visor.core.assistant.HearingRefusal
 import com.macedonga.visor.core.assistant.HearingRun
 import com.macedonga.visor.core.assistant.HearingState
@@ -131,7 +132,8 @@ fun ConversationFocusScreen(model: FeaturesModel = hiltViewModel()) {
 private fun FocusNow(hearing: HearingState, allowed: Boolean, model: FeaturesModel) {
     val host = LocalHost.current
     val connectFirst = stringResource(R.string.settings_locked)
-    val run = hearing.run
+    // The hearing app runs one mode at a time; hearing correction running is focus off.
+    val run = if (hearing.mode == HearingMode.FOCUS || hearing.mode == HearingMode.UNSET) hearing.run else HearingRun.OFF
     val paused = run == HearingRun.PAUSED || run == HearingRun.PAUSED_BY_USER
     val title = when {
         !allowed -> R.string.cf_now_locked

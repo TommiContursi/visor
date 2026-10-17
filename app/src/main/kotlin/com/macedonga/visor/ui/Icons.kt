@@ -173,6 +173,14 @@ object VisorIcons {
     /** An ear: hearing the person in front of you. */
     val Ear = icon("M7.5 9.5a4.5 4.5 0 1 1 9 0c0 2.6-1.8 3.6-2.8 4.6-.8.8-1 1.6-1.2 2.6a2.6 2.6 0 0 1-5 .3", "M10 9.8a2 2 0 1 1 3.6 1.2")
 
+    /** The ear with sound coming to it: hearing correction. */
+    val HearingAid = icon(
+        "M5.5 9.5a4.5 4.5 0 1 1 9 0c0 2.6-1.8 3.6-2.8 4.6-.8.8-1 1.6-1.2 2.6a2.6 2.6 0 0 1-5 .3", "M8 9.8a2 2 0 1 1 3.6 1.2",
+        "M17.5 8a5 5 0 0 1 0 5", "M19.8 6a8 8 0 0 1 0 9",
+    )
+
+    val Minus = icon("M5.5 12h13")
+
     val Timer = icon("M12 13.5m-6.5 0a6.5 6.5 0 1 0 13 0a6.5 6.5 0 1 0-13 0", "M12 13.5V10", "M10 3.5h4", "M12 3.5V7")
 
     val Captions = icon(

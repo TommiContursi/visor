@@ -578,6 +578,13 @@ class Assistant(
             say("Conversation focus: $intent")
             return
         }
+        // The same for a group conversation: the glasses' group app (svc28 app 47) finds or opens the group itself.
+        if (intent in GROUP_INTENTS) {
+            val type = if (intent == "IN:LEAVE_GROUP_CONVERSATION") MT_STOP_APP else MT_START_APP
+            connection.submit { it.sendOnService(SVC_COMPANION, type, Wire.fieldVarint(1, APP_GROUP_CONVERSATIONS)) }
+            say("Group conversation: $intent")
+            return
+        }
         when {
             // The glasses' own words for giving up.
             waiting != null && intent in CANCEL_INTENTS -> {
@@ -1099,6 +1106,14 @@ const val ANSWER_TOO_LATE = "too late for the glasses"
 private val FOCUS_INTENTS = setOf(
     "IN:START_CONVERSATION_FOCUS", "IN:STOP_CONVERSATION_FOCUS", "IN:PAUSE_CONVERSATION_FOCUS", "IN:RESUME_CONVERSATION_FOCUS",
 )
+
+/** What the glasses understand as starting, joining or leaving a group conversation. */
+private val GROUP_INTENTS = setOf("IN:START_GROUP_CONVERSATION", "IN:JOIN_GROUP_CONVERSATION", "IN:LEAVE_GROUP_CONVERSATION")
+
+private const val SVC_COMPANION = 28
+private const val MT_START_APP = 2000
+private const val MT_STOP_APP = 2002
+private const val APP_GROUP_CONVERSATIONS = 47L
 
 /** ev289's mode for a Live AI session. */
 private const val MODE_LIVE_AI = 2L
