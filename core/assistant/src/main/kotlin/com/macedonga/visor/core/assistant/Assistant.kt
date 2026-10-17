@@ -100,6 +100,8 @@ class Assistant(
     private val liveAiDetailed: () -> Boolean = { false },
     /** Conversation focus, which the phone starts when the wearer asks for it by voice. */
     private val hearing: Hearing? = null,
+    /** How long the glasses wait for an answer (assistant_on_sn.default_processing_timeout_s), when known. */
+    private val processingTimeoutS: () -> Long? = { null },
 ) : Responder {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -700,7 +702,9 @@ class Assistant(
         }
         val waiting = scope.launch { holdOn(l) }
         val reply = try {
-            val left = (TURN_BUDGET_MS - (System.currentTimeMillis() - started)).coerceAtLeast(MIN_MODEL_MS)
+            // The glasses give up after their processing timeout; speech and streaming need the last seconds of it.
+            val budget = (processingTimeoutS() ?: FACTORY_PROCESSING_S) * 1000 - DELIVERY_MS
+            val left = (budget - (System.currentTimeMillis() - started)).coerceAtLeast(MIN_MODEL_MS)
             withTimeout(left) { brain.answer(transcript, l.locale, pastOf(interaction), image, note) }
         } catch (error: Exception) {
             problem = error.message ?: error::class.simpleName.orEmpty()
@@ -1058,8 +1062,8 @@ class Assistant(
             "ko" to ("Visor가 연결되었지만 아직 모델이 설정되지 않았습니다. 앱에서 API 키를 추가하세요." to "죄송합니다. 답변을 받지 못했습니다."),
             "zh" to ("Visor 已连接，但还没有设置模型。请在应用中添加 API 密钥。" to "抱歉，我没能获得回答。"),
         )
-        // The glasses give the whole turn 20 s; speech and streaming need some of it.
-        const val TURN_BUDGET_MS = 16_000L
+        const val FACTORY_PROCESSING_S = 20L
+        const val DELIVERY_MS = 4_000L
         const val HOLD_ON_MS = 3_000L
         /** How long the glasses' own recognition gets to send its ev57 before the server's answer goes instead. */
         const val OWN_RECOGNITION_GRACE_MS = 1_200L

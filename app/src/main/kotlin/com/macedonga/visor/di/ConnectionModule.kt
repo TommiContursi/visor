@@ -165,6 +165,7 @@ object ConnectionModule {
         diary: Diary,
         hub: McpHub,
         hearing: Hearing,
+        glassesConfig: GlassesConfig,
     ): Assistant = Assistant(
         context, connection, Voice(context), Brain({ config.config.value }, diary, hub, config), config, airship, diary,
         live.wifiSession, live::frameNow,
@@ -180,6 +181,7 @@ object ConnectionModule {
         { settings.value("assistant_voice_id") },
         { com.macedonga.visor.core.settings.asBool(settings.value("detailed_responses_live_ai_enabled")) },
         hearing,
+        { (glassesConfig.state.value.values[com.macedonga.visor.language.PROCESSING_TIMEOUT] as? Number)?.toLong() },
     )
 
     @Provides

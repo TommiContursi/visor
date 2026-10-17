@@ -202,6 +202,14 @@ fun AssistantSettingsScreen(open: (NavKey) -> Unit, model: AssistantViewModel = 
                         )
                     },
                     {
+                        PillsRow(
+                            stringResource(R.string.ai_answer_wait),
+                            com.macedonga.visor.core.assistant.ANSWER_WAITS.map { it to stringResource(R.string.ai_seconds, it) },
+                            config.answerWaitSeconds,
+                            onPick = { s -> model.store.update { it.copy(answerWaitSeconds = s) } },
+                        )
+                    },
+                    {
                         ValueRow(
                             stringResource(R.string.ai_instructions),
                             config.instructions.lineSequence().firstOrNull()?.takeIf { it.isNotBlank() } ?: stringResource(R.string.ai_instructions_none),

@@ -23,7 +23,12 @@ data class AssistantConfig(
     val instructions: String = "",
     // How long a conversation is remembered after its last question.
     val memoryMinutes: Int = 10,
+    // How long the glasses wait for an answer before they give up, written to them on connect.
+    val answerWaitSeconds: Int = 45,
 )
+
+/** The waits offered: 20 is the glasses' own; their watchdog ends a turn still processing at 60. */
+val ANSWER_WAITS = listOf(20, 30, 45, 55)
 
 class AssistantConfigStore(context: Context) : FieldBook {
 
@@ -62,6 +67,7 @@ class AssistantConfigStore(context: Context) : FieldBook {
             .putBoolean("glasses_voice", next.glassesVoice)
             .putString("instructions", next.instructions)
             .putInt("memory_minutes", next.memoryMinutes)
+            .putInt("answer_wait_s", next.answerWaitSeconds)
             .apply()
         _config.value = next
     }
@@ -80,6 +86,7 @@ class AssistantConfigStore(context: Context) : FieldBook {
             glassesVoice = prefs.getBoolean("glasses_voice", d.glassesVoice),
             instructions = prefs.getString("instructions", d.instructions).orEmpty(),
             memoryMinutes = prefs.getInt("memory_minutes", d.memoryMinutes),
+            answerWaitSeconds = prefs.getInt("answer_wait_s", d.answerWaitSeconds),
         )
     }
 
