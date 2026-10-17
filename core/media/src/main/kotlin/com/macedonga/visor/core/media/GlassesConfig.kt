@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -246,6 +247,18 @@ class GlassesConfig(
             } ?: continue
             t.getValue(p.sessionless)[kind][p.slot] = v
         }
+        // The glasses drop a table with no value in it. One Meta never filled gets a test param nothing reads, at the
+        // value both the firmware and Meta's server give it.
+        for ((filler, value) in FILLERS) {
+            val p = state.value.params[filler]?.takeIf { it.type == 1 } ?: continue
+            val table = t.getValue(p.sessionless)
+            if (table.all { it.isEmpty() }) table[0][p.slot] = value
+        }
+        // The name must be 88 characters, so it needs a session uuid; a pair Meta never synced has none to report.
+        if (sessionId.length != 36) {
+            sessionId = UUID.randomUUID().toString()
+            File(dir, SESSION).writeText(JSONObject().put("session_id", sessionId).toString())
+        }
         val name = "${stamp()}_${sessionId}_mobileconfig_params_values.zip"
         val zip = ByteArrayOutputStream().also { bytes ->
             ZipOutputStream(bytes).use { z ->
@@ -297,6 +310,8 @@ class GlassesConfig(
         // BugReportParams.mode 1: 355 KB in 10 s over Bluetooth on 7238, where the default full report was 4.3 MB in 2 min.
         private const val LITE_REPORT = 1
         const val SEND_TIMEOUT_MS = 60_000L
+        // One sessionless, one sessioned.
+        val FILLERS = mapOf("smartglasses_test_config.test_1" to true, "smartglasses_test_config_sessioned.gw_test_1" to false)
     }
 }
 
