@@ -229,8 +229,9 @@ class Brain(private val config: () -> AssistantConfig, private val book: MemoryB
             val answer = try {
                 send(url, headers, body)
             } catch (error: IllegalStateException) {
-                // A server without tools refuses the field; then the conversation goes on without memory.
-                if (tools == null || !TOOLS_REFUSED.containsMatchIn(error.message.orEmpty())) throw error
+                // A server without tools refuses the field; then the conversation goes on without memory. The person's
+                // own tools are never dropped unseen: their refusal is the answer's error.
+                if (tools == null || turn?.box?.tools.orEmpty().isNotEmpty() || !TOOLS_REFUSED.containsMatchIn(error.message.orEmpty())) throw error
                 tools = null
                 send(url, headers, body.apply { remove("tools") })
             }
