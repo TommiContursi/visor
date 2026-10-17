@@ -227,6 +227,8 @@ class Assistant(
         // ev57's field 30, MobileConfig assistant_on_sn.simplify_mwa_message_forwarding. Off (the factory value),
         // the glasses act on a VARM the moment it lands and end the turn there.
         @Volatile var simplified = true
+        // Segmented messages being put back together, by id: their type, size and bytes so far.
+        val segments = ConcurrentHashMap<String, Triple<Int, Int, java.io.ByteArrayOutputStream>>()
     }
 
     /** A photo this side is waiting for, for one interaction. */
@@ -426,7 +428,7 @@ class Assistant(
             MT_STREAM_STATUS -> streamStatus(payload.decodeToString())
             MT_ENVELOPE -> envelope(l, payload)
             // Some glasses send the same messages bare, without the envelope.
-            MT_NET_EVENT, MT_START_INTERACTION -> inner(l, type, payload)
+            MT_NET_EVENT, MT_START_INTERACTION, MT_SEGMENTED_HEADER, MT_SEGMENTED_BUFFER -> inner(l, type, payload)
             // Init answers, time stretch, TTS buffer config, MMAI enabled, assistant ready, stream consumed.
             1028, 1033, 1036, 1037, 6001 -> Unit
             else -> say("Assistant: message type $type, ${payload.size} bytes ${hex(payload)}")
@@ -455,6 +457,7 @@ class Assistant(
             }
             return
         }
+        if (type == MT_SEGMENTED_HEADER || type == MT_SEGMENTED_BUFFER) return segment(l, type, blob)
         if (type != MT_NET_EVENT) {
             say("Assistant: an envelope carrying type $type, ${blob.size} bytes ${hex(blob)}")
             return
@@ -499,6 +502,22 @@ class Assistant(
             }
             else -> say("Assistant: ${eventName(event.id)} (${event.id}), ${event.body.size} bytes ${describe(event.body)}")
         }
+    }
+
+    /** 1002 opens a segmented message, 1003 carries its pieces; the whole one goes on as its own type. */
+    private suspend fun segment(l: Link, type: Int, blob: ByteArray) {
+        val f = Wire.parse(blob)
+        val id = f.bytes(if (type == MT_SEGMENTED_HEADER) 3 else 2).decodeToString()
+        if (type == MT_SEGMENTED_HEADER) {
+            l.segments[id] = Triple(f.varint(1).toInt(), f.varint(2).toInt(), java.io.ByteArrayOutputStream())
+            return
+        }
+        val (kind, size, bytes) = l.segments[id] ?: return say("Assistant: a segment of unknown message $id")
+        bytes.write(f.bytes(1))
+        if (f.varint(3) == 0L) return
+        l.segments.remove(id)
+        if (bytes.size() != size) return say("Assistant: segmented message $id came to ${bytes.size()} bytes of $size")
+        inner(l, kind, bytes.toByteArray())
     }
 
     /** ev339 echoed straight back as ev333, field for field. */
