@@ -793,12 +793,8 @@
     <string name="out_tutor_why">The lessons come from Meta\'s servers.</string>
     <string name="out_wake_word">Custom wake word</string>
     <string name="out_wake_word_why">Meta records it and trains the model on its servers.</string>
-    <string name="out_partners">Be My Eyes, Garmin, golf and fitness</string>
-    <string name="out_partners_why">Each needs the partner\'s own app and service.</string>
     <string name="out_palm">Palm unlock</string>
     <string name="out_palm_why">Needs your palm enrolled in Meta\'s app first.</string>
-    <string name="out_voices">Celebrity voices</string>
-    <string name="out_voices_why">Meta makes them on its servers, for a subscription.</string>
     <string name="out_hearing">Hearing correction</string>
     <string name="out_hearing_why">A hearing aid mode that needs a hearing test and fitting. Not safe to force.</string>
     <string name="feature_spatial">Spatial audio</string>

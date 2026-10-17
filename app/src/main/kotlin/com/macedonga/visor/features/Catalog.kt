@@ -65,8 +65,6 @@ enum class OutOfReach(@StringRes val title: Int, @StringRes val why: Int) {
     GROUP(R.string.out_group, R.string.out_group_why),
     TUTOR(R.string.out_tutor, R.string.out_tutor_why),
     WAKE_WORD(R.string.out_wake_word, R.string.out_wake_word_why),
-    PARTNERS(R.string.out_partners, R.string.out_partners_why),
     PALM(R.string.out_palm, R.string.out_palm_why),
-    VOICES(R.string.out_voices, R.string.out_voices_why),
     HEARING_CORRECTION(R.string.out_hearing, R.string.out_hearing_why),
 }

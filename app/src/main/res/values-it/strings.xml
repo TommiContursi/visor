@@ -791,12 +791,8 @@
     <string name="out_tutor_why">Le lezioni arrivano dai server di Meta.</string>
     <string name="out_wake_word">Parola di attivazione personale</string>
     <string name="out_wake_word_why">Meta la registra e addestra il modello sui suoi server.</string>
-    <string name="out_partners">Be My Eyes, Garmin, golf e fitness</string>
-    <string name="out_partners_why">Ognuna richiede l\'app e il servizio del partner.</string>
     <string name="out_palm">Sblocco con il palmo</string>
     <string name="out_palm_why">Richiede di registrare il palmo nell\'app di Meta.</string>
-    <string name="out_voices">Voci di celebrità</string>
-    <string name="out_voices_why">Meta le crea sui suoi server, con un abbonamento.</string>
     <string name="out_hearing">Correzione dell\'udito</string>
     <string name="out_hearing_why">Una modalità apparecchio acustico che richiede un esame dell\'udito e una taratura. Non è sicuro forzarla.</string>
     <string name="feature_spatial">Audio spaziale</string>
