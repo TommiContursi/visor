@@ -613,6 +613,7 @@
     <string name="onboard_login_log">Qualcosa non va? Vedi cosa è successo</string>
     <string name="native_login_stuck">Questo passaggio non si è caricato. Torna indietro e riprova.</string>
     <string name="event_log_lede">Tutto ciò che ha fatto l\'app, dal più vecchio. Niente qui contiene password, codici o token.</string>
+    <string name="event_log_save">Salva</string>
     <string name="event_log_share">Condividi</string>
     <string name="event_log_clear">Svuota</string>
     <string name="event_log_empty">Non è ancora successo niente.</string>
