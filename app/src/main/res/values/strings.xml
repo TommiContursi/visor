@@ -609,6 +609,7 @@
     <string name="onboard_login_other">Use another account</string>
     <string name="onboard_login_foot">Passkeys do not work on a login page inside an app: use your password or an email code.</string>
     <string name="onboard_login_log">Something wrong? See what happened</string>
+    <string name="native_login_stuck">This step did not load. Go back and try again.</string>
     <string name="event_log_lede">Everything the app did, oldest first. Nothing here carries passwords, codes or tokens.</string>
     <string name="event_log_share">Share</string>
     <string name="event_log_clear">Clear</string>

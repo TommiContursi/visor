@@ -166,6 +166,16 @@ class BloksSession(
         if (screens.isEmpty()) finish(Outcome.Cancelled)
     }
 
+    /** The page waited and the top screen still has nothing to draw, with nothing on its way: name it in the log. */
+    fun stuck() {
+        if (done) return
+        thread.execute {
+            val top = screens.lastOrNull()?.appId
+            log("$top shows nothing to draw")
+            trace("STUCK $top: nothing to draw, nothing pending")
+        }
+    }
+
     fun close() {
         done = true
         thread.shutdownNow()
