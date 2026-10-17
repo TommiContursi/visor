@@ -219,6 +219,11 @@ fun AssistantSettingsScreen(open: (NavKey) -> Unit, model: AssistantViewModel = 
                 )
             }
         }
+        item(key = "wake-word") {
+            Column(Modifier.padding(top = 28.dp)) {
+                Rows(row { WakeWordRow(onClick = { open(com.macedonga.visor.WakeWordKey) }) })
+            }
+        }
         item(key = "glasses") {
             Column {
                 SectionLabel(stringResource(R.string.section_on_glasses))

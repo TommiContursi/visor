@@ -118,6 +118,17 @@ class Assistant(
     private val _notes = MutableSharedFlow<String>(extraBufferCapacity = 64, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val notes: SharedFlow<String> = _notes.asSharedFlow()
 
+    /** The glasses' custom wake word enrolment, over this session. */
+    val wakeWord = CustomWakeWord { id, body ->
+        val l = link
+        val m0 = l?.m0
+        if (l == null || m0 == null) false
+        else {
+            l.mux.send(m0, netEvent(id, body), messageType = MT_NET_EVENT)
+            true
+        }
+    }
+
     private val liveAi = LiveAi(context, scope, object : LiveAiHost {
         override suspend fun event(id: Int, body: ByteArray) {
             val l = link ?: return
@@ -430,6 +441,8 @@ class Assistant(
                 ears?.finish()
             }
             MT_STREAM_STATUS -> streamStatus(payload.decodeToString())
+            // A custom wake word sample, recorded on the glasses for an enrolment.
+            CustomWakeWord.MT_ENROLLMENT_HEADER, CustomWakeWord.MT_STREAMER_DATA, CustomWakeWord.MT_STREAMER_END -> wakeWord.onStream(type, payload)
             MT_ENVELOPE -> envelope(l, payload)
             // Some glasses send the same messages bare, without the envelope.
             MT_NET_EVENT, MT_START_INTERACTION, MT_SEGMENTED_HEADER, MT_SEGMENTED_BUFFER -> inner(l, type, payload)
@@ -504,6 +517,7 @@ class Assistant(
                 pending?.answered = true
                 say("The glasses took the photo: ${describe(event.body)}")
             }
+            CustomWakeWord.EV_RESULT -> wakeWord.onResult(runCatching { Thrift.loads(event.body) }.getOrDefault(emptyMap()))
             else -> say("Assistant: ${eventName(event.id)} (${event.id}), ${event.body.size} bytes ${describe(event.body)}")
         }
     }

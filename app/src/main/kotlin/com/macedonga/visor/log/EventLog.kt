@@ -97,6 +97,9 @@ class EventLog @Inject constructor(
         scope.launch {
             hearing.notes.collect { add("Hearing: $it") }
         }
+        scope.launch {
+            assistant.wakeWord.notes.collect { add(it) }
+        }
     }
 
     fun add(text: String) {

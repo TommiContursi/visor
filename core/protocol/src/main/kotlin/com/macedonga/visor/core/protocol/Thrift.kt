@@ -506,5 +506,18 @@ class ThriftWriter {
         return this
     }
 
+    fun listOfBinaries(fid: Int, items: List<ByteArray>): ThriftWriter {
+        header(fid, Thrift.LIST)
+        val n = items.size
+        if (n < 15) {
+            buf += ((n shl 4) or Thrift.BIN).toByte()
+        } else {
+            buf += (0xF0 or Thrift.BIN).toByte()
+            buf += Thrift.wvarint(n.toLong())
+        }
+        items.forEach { buf += Thrift.wvarint(it.size.toLong()) + it }
+        return this
+    }
+
     fun done(): ByteArray = buf + byteArrayOf(0)
 }

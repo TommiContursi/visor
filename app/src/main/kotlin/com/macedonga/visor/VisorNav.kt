@@ -107,6 +107,9 @@ data object HearingCorrectionKey : NavKey
 data object HearingTestKey : NavKey
 
 @Serializable
+data object WakeWordKey : NavKey
+
+@Serializable
 data object LiveSettingsKey : NavKey
 
 @Serializable
@@ -286,6 +289,7 @@ fun VisorNav(opens: kotlinx.coroutines.flow.Flow<String>, markAtLaunch: Boolean)
                 entry<ConversationFocusKey> { ConversationFocusScreen() }
                 entry<HearingCorrectionKey> { HearingCorrectionScreen(open) }
                 entry<HearingTestKey> { HearingTestScreen() }
+                entry<WakeWordKey> { com.macedonga.visor.settings.WakeWordScreen() }
                 entry<AssistantSettingsKey> { AssistantSettingsScreen(open) }
                 entry<IntegrationsKey> { com.macedonga.visor.settings.IntegrationsScreen(open) }
                 entry<IntegrationKey> { key ->
