@@ -198,9 +198,13 @@ class DebugReceiver : BroadcastReceiver() {
                     s.params.keys.filter { key in it }.joinToString("\n") { "$it=${s.values[it]} slot=${s.params[it]?.slot} sessionless=${s.params[it]?.sessionless}" }
             }
             "MC_BUILD", "MC_APPLY" -> {
-                // --es on "a.b,c.d" sets them true, --es off "e.f" false.
+                // --es on "a.b,c.d" sets them true, --es off "e.f" false, --es set "g.h=60,i.j=1.5" numbers.
                 val on = intent.getStringExtra("on").orEmpty().split(',').filter { it.isNotBlank() }.associateWith { true as Any } +
-                    intent.getStringExtra("off").orEmpty().split(',').filter { it.isNotBlank() }.associateWith { false as Any }
+                    intent.getStringExtra("off").orEmpty().split(',').filter { it.isNotBlank() }.associateWith { false as Any } +
+                    intent.getStringExtra("set").orEmpty().split(',').filter { '=' in it }.associate { pair ->
+                        val (k, v) = pair.split('=', limit = 2)
+                        k.trim() to (v.trim().toLongOrNull() ?: v.trim().toDouble())
+                    }
                 if (action == "MC_APPLY") {
                     config.apply(on)
                     resultData = "sending; ${config.state.value.note}"
