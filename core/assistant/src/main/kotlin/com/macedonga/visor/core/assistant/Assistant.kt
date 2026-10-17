@@ -1148,8 +1148,8 @@ private const val APP_GROUP_CONVERSATIONS = 47L
 /** ev289's mode for a Live AI session. */
 private const val MODE_LIVE_AI = 2L
 
-/** The most a NetEvent goes as in one piece: a frame's payload length is 14 bits. */
-private const val SEGMENT_BYTES = 8_192
+/** The most a NetEvent goes as in one piece: an AirShield frame holds 255 blocks, and the glasses send 1 KB pieces. */
+private const val SEGMENT_BYTES = 1_024
 
 private const val LIVE_AI_NOTE =
     "This is Live AI: a continuous conversation while the wearer shows you what they see. The image is the camera's " +
