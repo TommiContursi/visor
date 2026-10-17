@@ -11,8 +11,12 @@ import java.net.URL
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.concurrent.thread
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -274,7 +278,7 @@ class Brain(
      * models, and servers relaying them (Azure, a proxy), want max_completion_tokens. The first answer finds out which,
      * and that is kept for the address and model.
      */
-    private fun send(url: String, headers: Map<String, String>, body: JSONObject): JSONObject {
+    private suspend fun send(url: String, headers: Map<String, String>, body: JSONObject): JSONObject {
         val key = url + " " + body.optString("model")
         val known = fields?.fields(key)
         // Every OpenAI model takes max_completion_tokens.
@@ -298,8 +302,11 @@ class Brain(
         if (f.completionTokens) put("max_completion_tokens", remove("max_tokens"))
     }
 
-    private fun post(url: String, headers: Map<String, String>, body: JSONObject): JSONObject {
+    /** Cancelled with its turn: a blocking read ignores cancellation, so the connection is closed under it. */
+    private suspend fun post(url: String, headers: Map<String, String>, body: JSONObject): JSONObject = suspendCancellableCoroutine { call ->
         val http = URL(url).openConnection() as HttpURLConnection
+        // disconnect can wait on the read it ends, so not on the cancelling thread.
+        call.invokeOnCancellation { thread { http.disconnect() } }
         try {
             http.requestMethod = "POST"
             http.connectTimeout = 5_000
@@ -315,7 +322,9 @@ class Brain(
                 val message = runCatching { JSONObject(text).getJSONObject("error").getString("message") }.getOrDefault(text.take(200))
                 error("the model answered $code: $message")
             }
-            return JSONObject(text)
+            call.resume(JSONObject(text))
+        } catch (error: Exception) {
+            call.resumeWithException(error)
         } finally {
             http.disconnect()
         }
