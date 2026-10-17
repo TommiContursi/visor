@@ -3,12 +3,18 @@ package com.macedonga.visor.features
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.macedonga.visor.R
+import com.macedonga.visor.core.media.McParam
 import com.macedonga.visor.ui.VisorIcons
 
 /** A switch a feature needs, and the value that turns the feature on. */
 sealed interface Gate {
-    /** A MobileConfig param: it goes out in a table, and the glasses read most of them when they start. */
-    data class Config(val name: String, val on: Any, val off: Any? = null) : Gate
+    /**
+     * A MobileConfig param: it goes out in a table, and the glasses read most of them when they start. [live]: one
+     * the glasses keep per session but apply at once all the same, as seen on the glasses, so no restart is asked.
+     */
+    data class Config(val name: String, val on: Any, val off: Any? = null, val live: Boolean = false) : Gate {
+        fun needsRestart(params: Map<String, McParam>) = !live && params[name]?.sessionless == false
+    }
 
     /** A glasses setting: written and read back at once. */
     data class Setting(val key: String, val on: String, val off: String? = null) : Gate
@@ -33,7 +39,7 @@ enum class Feature(
         listOf(Gate.Setting("hearing_boost_nux_completed", "true")),
         page = true,
     ),
-    // setupForHCModes refuses "HC is not supported on this device" while this is off; Meta's app offers it on 262 and 263 only.
+    // setupForHCModes refuses "HC is not supported on this device" while this is off.
     HEARING_CORRECTION(
         "hearing_correction", R.string.feature_hc, R.string.feature_hc_about, R.string.feature_hc_use, VisorIcons.HearingAid,
         listOf(Gate.Config("hearing_on_sn.hc_device_supported", true)),
@@ -62,7 +68,7 @@ enum class Feature(
     // SgAudioServerController applies spatial_media_enabled only while xn_spatial_media is on, else logs a no-op.
     SPATIAL_AUDIO(
         "spatial_audio", R.string.feature_spatial, R.string.feature_spatial_about, R.string.feature_spatial_use, VisorIcons.Speaker,
-        listOf(Gate.Config("audio_on_xn.xn_spatial_media", true), Gate.Setting("spatial_media_enabled", "1", off = "0")),
+        listOf(Gate.Config("audio_on_xn.xn_spatial_media", true, live = true), Gate.Setting("spatial_media_enabled", "1", off = "0")),
     ),
     FOLLOW_UPS(
         "follow_ups", R.string.feature_follow_ups, R.string.feature_follow_ups_about, R.string.feature_follow_ups_use, VisorIcons.Chat,

@@ -84,7 +84,7 @@ class Features @Inject constructor(
     private val turning = mutableMapOf<Feature, Boolean>()
     private val checking = MutableStateFlow(false)
     private val refused = MutableStateFlow(load(REFUSED))
-    private val restart = MutableStateFlow(load(RESTART))
+    private val restart = MutableStateFlow(load(RESTART).filter { f -> f.gates.any { it is Gate.Config && !it.live } }.toSet())
     private val problem = MutableStateFlow<String?>(null)
     private var flush: Job? = null
 
@@ -212,7 +212,7 @@ class Features @Inject constructor(
         if (failed.isNotEmpty()) refused.update { it + failed }
         // A switch the glasses keep per session only takes effect once they start again.
         val waiting = features.filter { (f, on) ->
-            on && f !in failed && f.gates.any { it is Gate.Config && it.name in changes && after.params[it.name]?.sessionless == false }
+            on && f !in failed && f.gates.any { it is Gate.Config && it.name in changes && it.needsRestart(after.params) }
         }.keys
         restart.update { it + waiting }
         save()

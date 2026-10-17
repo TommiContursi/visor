@@ -866,7 +866,7 @@
     <string name="hc_test_take">Take the hearing test</string>
     <string name="hc_test_again">Take it again</string>
     <string name="hc_allow">Allow hearing correction</string>
-    <string name="hc_allow_off">Meta offers it on other models only.</string>
+    <string name="hc_allow_off">Meta keeps it off on these glasses.</string>
     <string name="hct_title">Hearing test</string>
     <string name="hct_who_title">Who can use it</string>
     <string name="hct_who_body">Hearing correction is for people 18 and older with mild to moderate hearing loss. Don\'t use it without hearing loss, with severe or profound loss, with an implanted hearing device, or with another hearing device.</string>

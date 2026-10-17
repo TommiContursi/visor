@@ -293,7 +293,7 @@ private fun FeatureSheet(
             Spacer(Modifier.size(14.dp))
             Text(stringResource(R.string.features_changes), style = Visor.type.label, color = Visor.colors.textSecondary)
             for (gate in feature.gates) KeyLine(gateWords(gate, config, settings))
-            if (feature.gates.any { it is Gate.Config && config.params[it.name]?.sessionless == false }) {
+            if (feature.gates.any { it is Gate.Config && it.needsRestart(config.params) }) {
                 Text(stringResource(R.string.features_changes_restart), style = Visor.type.label, color = Visor.colors.textSecondary, modifier = Modifier.padding(top = 6.dp))
             }
         }

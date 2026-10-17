@@ -864,7 +864,7 @@
     <string name="hc_test_take">Fai il test dell\'udito</string>
     <string name="hc_test_again">Rifallo</string>
     <string name="hc_allow">Consenti correzione dell\'udito</string>
-    <string name="hc_allow_off">Meta la offre solo su altri modelli.</string>
+    <string name="hc_allow_off">Meta la tiene spenta su questi occhiali.</string>
     <string name="hct_title">Test dell\'udito</string>
     <string name="hct_who_title">Chi può usarla</string>
     <string name="hct_who_body">La correzione dell\'udito è per chi ha almeno 18 anni e una perdita uditiva da lieve a moderata. Non usarla senza perdita uditiva, con una perdita grave o profonda, con un dispositivo uditivo impiantato o insieme a un altro dispositivo uditivo.</string>
