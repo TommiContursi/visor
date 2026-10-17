@@ -87,6 +87,14 @@ fun FeaturesScreen(open: (NavKey) -> Unit, model: FeaturesModel = hiltViewModel(
             if (state.busy) Spinner(Modifier.padding(horizontal = 13.dp))
             else if (state.configRead) RoundIcon(VisorIcons.Refresh, stringResource(R.string.features_check), { model.features.check() })
         },
+        sheet = {
+            details?.let { f ->
+                FeatureSheet(
+                    f, state.standings[f] ?: Standing.UNKNOWN, on = state.wanted[f] == true, config = config, settings = model.settings,
+                    toggle = { model.features.set(f, it) }, onDismiss = { details = null },
+                )
+            }
+        },
     ) {
         if (!state.configRead) item(key = "read") { ReadCard(state.busy) { model.features.check() } }
         if (state.restart.isNotEmpty()) item(key = "restart") { RestartCard(state.restart) { model.features.restarted() } }
@@ -126,13 +134,6 @@ fun FeaturesScreen(open: (NavKey) -> Unit, model: FeaturesModel = hiltViewModel(
                 NavRow(VisorIcons.Flag, stringResource(R.string.settings_flags), stringResource(R.string.features_flags_sub), onClick = { open(FlagsKey) })
             }
         }
-    }
-
-    details?.let { f ->
-        FeatureSheet(
-            f, state.standings[f] ?: Standing.UNKNOWN, on = state.wanted[f] == true, config = config, settings = model.settings,
-            toggle = { model.features.set(f, it) }, onDismiss = { details = null },
-        )
     }
 }
 
