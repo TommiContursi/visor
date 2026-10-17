@@ -4,6 +4,7 @@ import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.json.JSONObject
 
 /** How the assistant answers. The key stays in this app's private storage. */
 data class AssistantConfig(
@@ -24,16 +25,32 @@ data class AssistantConfig(
     val memoryMinutes: Int = 10,
 )
 
-class AssistantConfigStore(context: Context) {
+class AssistantConfigStore(context: Context) : FieldBook {
 
     private val prefs = context.getSharedPreferences("assistant", Context.MODE_PRIVATE)
 
     private val _config = MutableStateFlow(load())
     val config: StateFlow<AssistantConfig> = _config.asStateFlow()
 
+    override fun fields(key: String): Fields? = runCatching {
+        JSONObject(prefs.getString(FIELDS, null) ?: return null).optJSONObject(key)
+            ?.let { Fields(it.getBoolean("reasoning_off"), it.getBoolean("completion_tokens")) }
+    }.getOrNull()
+
+    override fun keep(key: String, fields: Fields) {
+        val all = runCatching { JSONObject(prefs.getString(FIELDS, null) ?: "{}") }.getOrDefault(JSONObject())
+        all.put(key, JSONObject().put("reasoning_off", fields.reasoningOff).put("completion_tokens", fields.completionTokens))
+        prefs.edit().putString(FIELDS, all.toString()).apply()
+    }
+
     fun update(change: (AssistantConfig) -> AssistantConfig) {
-        val next = change(_config.value)
+        val before = _config.value
+        val next = change(before)
+        // What a server took holds for the address and models it was found with.
+        val moved = next.provider != before.provider || next.baseUrl != before.baseUrl || next.model != before.model ||
+            next.linesModel != before.linesModel
         prefs.edit()
+            .apply { if (moved) remove(FIELDS) }
             .putBoolean("enabled", next.enabled)
             .putString("provider", next.provider.name)
             .putString("api_key", next.apiKey)
@@ -64,5 +81,9 @@ class AssistantConfigStore(context: Context) {
             instructions = prefs.getString("instructions", d.instructions).orEmpty(),
             memoryMinutes = prefs.getInt("memory_minutes", d.memoryMinutes),
         )
+    }
+
+    private companion object {
+        const val FIELDS = "server_fields"
     }
 }

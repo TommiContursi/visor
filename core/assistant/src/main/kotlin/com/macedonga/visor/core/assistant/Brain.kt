@@ -43,11 +43,25 @@ interface MemoryBook {
     fun forget(id: String): Memory?
 }
 
+/** What an OpenAI-compatible server and model take: reasoning_effort none, max_completion_tokens for max_tokens. */
+data class Fields(val reasoningOff: Boolean, val completionTokens: Boolean)
+
+/** Where [Fields] are kept, by address and model, until either changes. */
+interface FieldBook {
+    fun fields(key: String): Fields?
+    fun keep(key: String, fields: Fields)
+}
+
 /** Who the answer is for: spoken by the glasses, or read on the phone. */
 enum class Audience { GLASSES, PHONE }
 
 /** The model behind the assistant. The conversation comes with each question, from the diary; tools from [hub]. */
-class Brain(private val config: () -> AssistantConfig, private val book: MemoryBook? = null, private val hub: McpHub? = null) {
+class Brain(
+    private val config: () -> AssistantConfig,
+    private val book: MemoryBook? = null,
+    private val hub: McpHub? = null,
+    private val fields: FieldBook? = null,
+) {
 
     /** The answer to [question] after [past], with [image] (a JPEG) when the glasses sent one. Throws on any failure. */
     suspend fun answer(
@@ -254,21 +268,35 @@ class Brain(private val config: () -> AssistantConfig, private val book: MemoryB
         return said
     }
 
-    /** A local reasoning model (LM Studio, llama.cpp) otherwise spends the whole answer thinking; OpenAI's own and some others refuse the field. */
+    /**
+     * A reasoning model otherwise spends the whole answer thinking (LM Studio, llama.cpp), or refuses tools on this API
+     * (OpenAI's GPT-6), so reasoning_effort goes out as none; a model without reasoning refuses the field. OpenAI's newer
+     * models, and servers relaying them (Azure, a proxy), want max_completion_tokens. The first answer finds out which,
+     * and that is kept for the address and model.
+     */
     private fun send(url: String, headers: Map<String, String>, body: JSONObject): JSONObject {
-        // OpenAI's newer models refuse max_tokens, and every one of its models takes max_completion_tokens.
-        if ("api.openai.com" in url) return post(url, headers, completionTokens(body))
-        return try {
-            runCatching { post(url, headers, JSONObject(body.toString()).put("reasoning_effort", "none")) }
-                .getOrElse { if ("reasoning" in it.message.orEmpty()) post(url, headers, body) else throw it }
-        } catch (error: IllegalStateException) {
-            // A server that relays those models (Azure, a proxy) says which field it wants.
-            if ("max_completion_tokens" !in error.message.orEmpty()) throw error
-            post(url, headers, completionTokens(body))
+        val key = url + " " + body.optString("model")
+        val known = fields?.fields(key)
+        // Every OpenAI model takes max_completion_tokens.
+        var f = known ?: Fields(reasoningOff = true, completionTokens = "api.openai.com" in url)
+        while (true) {
+            try {
+                return post(url, headers, shaped(body, f)).also { if (f != known) fields?.keep(key, f) }
+            } catch (error: IllegalStateException) {
+                val why = error.message.orEmpty()
+                f = when {
+                    known == null && f.reasoningOff && "reasoning" in why -> f.copy(reasoningOff = false)
+                    known == null && !f.completionTokens && "max_completion_tokens" in why -> f.copy(completionTokens = true)
+                    else -> throw error
+                }
+            }
         }
     }
 
-    private fun completionTokens(body: JSONObject) = JSONObject(body.toString()).apply { put("max_completion_tokens", remove("max_tokens")) }
+    private fun shaped(body: JSONObject, f: Fields) = JSONObject(body.toString()).apply {
+        if (f.reasoningOff) put("reasoning_effort", "none")
+        if (f.completionTokens) put("max_completion_tokens", remove("max_tokens"))
+    }
 
     private fun post(url: String, headers: Map<String, String>, body: JSONObject): JSONObject {
         val http = URL(url).openConnection() as HttpURLConnection
