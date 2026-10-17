@@ -232,10 +232,10 @@ class DebugReceiver : BroadcastReceiver() {
             }
             // An APK adb pushed into the external files dir, installed by the glasses' app manager: --es file --es pkg --el version.
             "APP_INSTALL" -> {
-                val file = java.io.File(context.getExternalFilesDir(null), intent.getStringExtra("file").orEmpty())
+                val file = pushed(context, intent.getStringExtra("file"))
                 val pkg = intent.getStringExtra("pkg").orEmpty()
-                resultData = if (!file.isFile || pkg.isEmpty()) "need --es file (in ${context.getExternalFilesDir(null)}) and --es pkg" else "installing; see logcat -s Visor"
-                if (file.isFile && pkg.isNotEmpty()) scope.launch {
+                resultData = if (file == null || pkg.isEmpty()) "need --es file (in ${context.getExternalFilesDir(null)}) and --es pkg" else "installing; see logcat -s Visor"
+                if (file != null && pkg.isNotEmpty()) scope.launch {
                     val done = runCatching {
                         com.macedonga.visor.core.media.AppInstall(connection, airship).install(file, pkg, intent.getLongExtra("version", 1)) { log.add(it) }
                     }.getOrElse { it.toString() }
@@ -246,10 +246,10 @@ class DebugReceiver : BroadcastReceiver() {
             "APP_QUERY" -> answerLater { com.macedonga.visor.core.media.AppInstall(connection, airship).query(intent.getStringExtra("pkg").orEmpty()) { log.add(it) } }
             // A file adb pushed into this app's external files dir, offered to the glasses over airship.
             "PUSH_FILE" -> {
-                val file = java.io.File(context.getExternalFilesDir(null), intent.getStringExtra("file").orEmpty())
+                val file = pushed(context, intent.getStringExtra("file"))
                 val namespace = intent.getStringExtra("ns").orEmpty()
                 answerLater {
-                    if (!file.isFile) return@answerLater "no file ${file.path}"
+                    if (file == null) return@answerLater "no file ${intent.getStringExtra("file")} in ${context.getExternalFilesDir(null)}"
                     val done = kotlinx.coroutines.CompletableDeferred<String?>()
                     connection.submit { mux -> done.complete(airship.send(mux, namespace, file.name, file.readBytes())) }
                     val why = withTimeoutOrNull(60_000) { done.await() }
@@ -258,12 +258,12 @@ class DebugReceiver : BroadcastReceiver() {
             }
             // A file adb pushed into the external files dir, offered over Wi-Fi Direct for its size: --es file --es ns.
             "PUSH_WIFI" -> {
-                val file = java.io.File(context.getExternalFilesDir(null), intent.getStringExtra("file").orEmpty())
+                val file = pushed(context, intent.getStringExtra("file"))
                 val namespace = intent.getStringExtra("ns").orEmpty()
-                val name = intent.getStringExtra("name") ?: file.name
+                val name = intent.getStringExtra("name") ?: file?.name.orEmpty()
                 // Minutes long, so it runs on its own and reports to logcat -s Visor, not to the broadcast.
-                resultData = if (!file.isFile) "no file ${file.path}" else "sending ${file.length()} bytes; see logcat -s Visor"
-                if (file.isFile) scope.launch {
+                resultData = if (file == null) "no file ${intent.getStringExtra("file")} in ${context.getExternalFilesDir(null)}" else "sending ${file.length()} bytes; see logcat -s Visor"
+                if (file != null) scope.launch {
                     val started = System.currentTimeMillis()
                     val why = runCatching { live.overWifi { mux -> airship.send(mux, namespace, name, file) } }.getOrElse { it.toString() }
                     Log.i("Visor", "PUSH_WIFI: " + if (why == null) "sent $name in $namespace in ${(System.currentTimeMillis() - started) / 1000} s" else "failed: $why")
@@ -373,6 +373,13 @@ class DebugReceiver : BroadcastReceiver() {
             pending.resultData = text
             pending.finish()
         }
+    }
+
+    /** A file adb pushed into the external files dir, by [name]; a name that leads out of the dir finds nothing. */
+    private fun pushed(context: Context, name: String?): java.io.File? {
+        val dir = context.getExternalFilesDir(null)?.canonicalFile ?: return null
+        val file = java.io.File(dir, name ?: return null).canonicalFile
+        return file.takeIf { it.toPath().startsWith(dir.toPath()) && it.isFile }
     }
 
     private companion object {
