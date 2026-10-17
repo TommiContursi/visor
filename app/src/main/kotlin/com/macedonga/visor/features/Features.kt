@@ -166,6 +166,16 @@ class Features @Inject constructor(
         if (ready) hearing.tune(style, v)
     }
 
+    private val _tested = MutableStateFlow(prefs.getBoolean(HEARING_TESTED, false))
+
+    /** Whether a hearing test made hearing correction's profile, kept here as the Meta app keeps it. */
+    val tested: StateFlow<Boolean> = _tested.asStateFlow()
+
+    fun hearingTested() {
+        _tested.value = true
+        prefs.edit().putBoolean(HEARING_TESTED, true).apply()
+    }
+
     /** Whether tap and hold on the touchpad starts conversation focus. */
     fun holdStartsFocus(s: SettingsState): Boolean = same(settings.catalogue[HOLD]?.kind, s.pending[HOLD] ?: s.stored[HOLD] ?: settings.catalogue[HOLD]?.default, HOLD_FOCUS)
 
@@ -284,6 +294,7 @@ class Features @Inject constructor(
         const val HOLD_BEFORE = "hold_before"
         const val FOCUS_STYLE = "focus_style"
         const val FOCUS_VOLUME = "focus_volume"
+        const val HEARING_TESTED = "hearing_tested"
     }
 }
 

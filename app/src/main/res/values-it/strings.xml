@@ -848,10 +848,9 @@
     <string name="feature_hc_use">Fai il test dell\'udito dalla sua pagina, poi avviala da lì.</string>
     <string name="hc_lede">I microfoni degli occhiali raccolgono i suoni intorno a te e gli altoparlanti li riproducono, più forti dove il tuo udito ne ha bisogno.</string>
     <string name="hc_now_untested">Da configurare</string>
-    <string name="hc_now_untested_sub">Prima fai il test dell\'udito.</string>
+    <string name="hc_now_untested_sub">Fai il test dell\'udito qui sotto.</string>
     <string name="hc_now_on_sub">Riproduce i suoni intorno a te, regolati sul tuo udito.</string>
     <string name="hc_now_off_sub">Avviala da qui.</string>
-    <string name="hc_set_up">Configura</string>
     <string name="hc_amplification">Amplificazione</string>
     <string name="hc_sharpness">Nitidezza</string>
     <string name="hc_balance">Bilanciamento</string>

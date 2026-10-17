@@ -63,13 +63,16 @@ import kotlinx.coroutines.launch
 fun HearingCorrectionScreen(open: (NavKey) -> Unit, model: FeaturesModel = hiltViewModel()) {
     val state by model.features.state.collectAsStateWithLifecycle()
     val hearing by model.hearing.state.collectAsStateWithLifecycle()
+    val tested by model.features.tested.collectAsStateWithLifecycle()
     val feature = Feature.HEARING_CORRECTION
     val standing = state.standings[feature] ?: Standing.UNKNOWN
     val allowed = standing == Standing.ON
+    // The glasses' word when they give it, else what the last test here left.
+    val fitted = hearing.fitted ?: tested
 
     SettingsPage(stringResource(R.string.feature_hc), stringResource(R.string.hc_lede)) {
-        item(key = "now") { CorrectionNow(hearing, allowed, model.hearing) { open(HearingTestKey) } }
-        if (hearing.fitted == true) {
+        item(key = "now") { CorrectionNow(hearing, allowed, fitted, model.hearing) }
+        if (fitted) {
             item(key = "sound") {
                 val host = LocalHost.current
                 val tone = hearing.correction ?: CorrectionTone()
@@ -117,7 +120,7 @@ fun HearingCorrectionScreen(open: (NavKey) -> Unit, model: FeaturesModel = hiltV
                 Rows(
                     row {
                         ValueRow(
-                            stringResource(if (hearing.fitted == true) R.string.hc_test_again else R.string.hc_test_take), null,
+                            stringResource(if (fitted) R.string.hc_test_again else R.string.hc_test_take), null,
                             onClick = { open(HearingTestKey) },
                             locked = !host.ready || !allowed,
                         )
@@ -145,15 +148,14 @@ fun HearingCorrectionScreen(open: (NavKey) -> Unit, model: FeaturesModel = hiltV
     }
 }
 
-/** Where hearing correction stands, in a word and a line, with the one button that changes it. */
+/** Where hearing correction stands, in a word and a line, with the one button that changes it once there is a profile. */
 @Composable
-private fun CorrectionNow(hearing: HearingState, allowed: Boolean, control: Hearing, test: () -> Unit) {
+private fun CorrectionNow(hearing: HearingState, allowed: Boolean, fitted: Boolean, control: Hearing) {
     val host = LocalHost.current
     val connectFirst = stringResource(R.string.settings_locked)
     val correcting = hearing.mode == HearingMode.CORRECTION || hearing.mode == HearingMode.CORRECTION_NARROW
     val run = if (correcting) hearing.run else HearingRun.OFF
     val paused = run == HearingRun.PAUSED || run == HearingRun.PAUSED_BY_USER
-    val fitted = hearing.fitted == true
     val (title, sub) = when {
         !allowed -> R.string.cf_now_locked to R.string.cf_now_locked_sub
         !fitted -> R.string.hc_now_untested to R.string.hc_now_untested_sub
@@ -169,25 +171,26 @@ private fun CorrectionNow(hearing: HearingState, allowed: Boolean, control: Hear
                 Text(stringResource(title), style = Visor.type.heading, color = Visor.colors.textPrimary)
                 Text(stringResource(sub), style = Visor.type.label, color = Visor.colors.textSecondary)
             }
-            Spacer(Modifier.width(12.dp))
-            val (label, act) = when {
-                !fitted -> R.string.hc_set_up to test
-                run == HearingRun.ON -> R.string.cf_stop to control::stop
-                paused -> R.string.cf_resume to control::resume
-                else -> R.string.cf_start_now to { control.startCorrection() }
+            if (fitted) {
+                Spacer(Modifier.width(12.dp))
+                val (label, act) = when {
+                    run == HearingRun.ON -> R.string.cf_stop to control::stop
+                    paused -> R.string.cf_resume to control::resume
+                    else -> R.string.cf_start_now to { control.startCorrection() }
+                }
+                ActionPill(
+                    stringResource(label),
+                    {
+                        if (!host.ready) host.notice.show(connectFirst)
+                        else {
+                            host.haptics.toggle()
+                            act()
+                        }
+                    },
+                    quiet = run == HearingRun.ON,
+                    enabled = allowed,
+                )
             }
-            ActionPill(
-                stringResource(label),
-                {
-                    if (!host.ready) host.notice.show(connectFirst)
-                    else {
-                        host.haptics.toggle()
-                        act()
-                    }
-                },
-                quiet = run == HearingRun.ON,
-                enabled = allowed,
-            )
         }
     }
 }
@@ -212,7 +215,7 @@ sealed interface TestStep {
  * thresholds to the glasses, which make the profile and switch to hearing correction.
  */
 @HiltViewModel
-class HearingTestModel @Inject constructor(private val hearing: Hearing) : ViewModel() {
+class HearingTestModel @Inject constructor(private val hearing: Hearing, private val features: Features) : ViewModel() {
     private val _step = MutableStateFlow<TestStep>(TestStep.Who)
     val step: StateFlow<TestStep> = _step.asStateFlow()
 
@@ -293,6 +296,7 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing) : ViewM
                 return@launch
             }
             testing = false
+            features.hearingTested()
             val now = hearing.state.value
             if (now.mode != HearingMode.CORRECTION || now.run != HearingRun.ON) {
                 hearing.stop()
