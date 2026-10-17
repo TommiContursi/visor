@@ -38,7 +38,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import com.macedonga.visor.ConversationFocusKey
-import com.macedonga.visor.FlagsKey
 import com.macedonga.visor.HearingCorrectionKey
 import com.macedonga.visor.R
 import com.macedonga.visor.core.design.Visor
@@ -70,27 +69,6 @@ class FeaturesModel @Inject constructor(
     val settings: GlassesSettings,
     val hearing: com.macedonga.visor.core.assistant.Hearing,
 ) : ViewModel()
-
-/** What is not built yet, and every one of Meta's switches. The features themselves are on their topics' pages. */
-@Composable
-fun FeaturesScreen(open: (NavKey) -> Unit) {
-    SettingsPage(stringResource(R.string.features_title)) {
-        if (OutOfReach.entries.isNotEmpty()) {
-            item(key = "out") {
-                Column {
-                    SectionLabel(stringResource(R.string.features_out_section))
-                    Rows(*OutOfReach.entries.map { o -> @Composable { OutRow(o) } }.toTypedArray())
-                    Footnote(stringResource(R.string.features_out_note))
-                }
-            }
-        }
-        item(key = "flags") {
-            Column(Modifier.padding(top = 20.dp)) {
-                NavRow(VisorIcons.Flag, stringResource(R.string.settings_flags), stringResource(R.string.features_flags_sub), onClick = { open(FlagsKey) })
-            }
-        }
-    }
-}
 
 /**
  * [topic]'s features Meta keeps off, on its page. A row says what one does while it is off and how to use it once it
@@ -220,14 +198,6 @@ private fun pageOf(feature: Feature): NavKey = when (feature) {
     Feature.CONVERSATION_FOCUS -> ConversationFocusKey
     Feature.HEARING_CORRECTION -> HearingCorrectionKey
     else -> error("${feature.id} has no page")
-}
-
-@Composable
-private fun OutRow(item: OutOfReach) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 13.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(stringResource(item.title), style = Visor.type.body, color = Visor.colors.textSecondary)
-        Text(stringResource(item.why), style = Visor.type.label, color = Visor.colors.textTertiary)
-    }
 }
 
 /** A feature in full: what it does, how to use it, and every switch Visor writes for it, with where each stands. */

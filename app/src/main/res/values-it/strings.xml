@@ -533,8 +533,10 @@
     <string name="access_mic_why">Per capire le domande successive e Live AI con il riconoscimento del telefono. Il microfono del telefono ascolta solo mentre tieni premuto il microfono in Meta AI.</string>
     <string name="access_contacts">Contatti</string>
     <string name="access_contacts_why">Così gli occhiali possono dire da chi arriva un messaggio.</string>
-    <string name="access_location">Posizione, sempre</string>
-    <string name="access_location_why">Per annotare dove gli occhiali hanno fatto ogni foto, anche con Visor chiusa.</string>
+    <string name="access_location">Posizione</string>
+    <string name="access_location_why">Per annotare dove gli occhiali hanno fatto ogni foto.</string>
+    <string name="access_location_always">Posizione, sempre</string>
+    <string name="access_location_always_why">Così il luogo viene annotato anche con Visor chiusa. Scegli “Consenti sempre”.</string>
     <string name="access_wifi">Wi-Fi nelle vicinanze</string>
     <string name="access_wifi_why">Per le importazioni e la visione live via Wi-Fi Direct.</string>
     <string name="access_foot">Se rifiutato per sempre, Android apre invece la pagina di Visor.</string>
@@ -744,12 +746,8 @@
     <string name="meta_ai_action_failed">%1$s · %2$s · non riuscito</string>
 
     <!-- Funzioni nascoste -->
-    <string name="features_title">Funzioni nascoste</string>
     <string name="features_section">Funzioni</string>
     <string name="features_problem">L\'ultima modifica non è arrivata agli occhiali (%1$s).</string>
-    <string name="features_out_section">Fuori portata</string>
-    <string name="features_out_note">Cosa blocca ciascuna, come risulta dal firmware degli occhiali.</string>
-    <string name="features_flags_sub">Ogni interruttore, uno per uno</string>
     <string name="features_read_first">Prima leggi la configurazione degli occhiali.</string>
     <string name="features_needs_config">In attesa della configurazione degli occhiali</string>
     <string name="features_partly">Accesa in parte. Tocca per finire di accenderla.</string>
@@ -765,14 +763,9 @@
     <string name="features_changes_restart">Gli occhiali leggono alcune di queste all\'avvio.</string>
     <string name="features_turn_on">Accendi</string>
     <string name="features_turn_off">Spegni</string>
-    <string name="features_sum">Non ancora fatte, e ogni interruttore</string>
     <string name="feature_cf">Focus conversazione</string>
     <string name="feature_cf_about">Rende più forte e chiara la persona davanti a te, in un posto rumoroso.</string>
     <string name="feature_cf_use">Avvialo dalla sua pagina, con la voce o tenendo premuto il touchpad.</string>
-    <string name="out_tutor">Insegnante di lingue</string>
-    <string name="out_tutor_why">Le lezioni arrivano dai server di Meta.</string>
-    <string name="out_palm">Sblocco con il palmo</string>
-    <string name="out_palm_why">Richiede di registrare il palmo nell\'app di Meta.</string>
     <string name="feature_spatial">Audio spaziale</string>
     <string name="feature_spatial_about">Musica e video suonano avvolgenti, come se arrivassero da intorno a te e non dalle orecchie.</string>
     <string name="feature_spatial_use">Fai partire musica o un video. Spegnila qui per lo stereo.</string>

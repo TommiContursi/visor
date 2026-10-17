@@ -90,9 +90,3 @@ enum class Feature(
 
     val needsConfig: Boolean get() = gates.any { it is Gate.Config }
 }
-
-/** A feature that cannot work on these glasses with Visor, and why: each was followed past its gates to what stops it. */
-enum class OutOfReach(@StringRes val title: Int, @StringRes val why: Int) {
-    TUTOR(R.string.out_tutor, R.string.out_tutor_why),
-    PALM(R.string.out_palm, R.string.out_palm_why),
-}

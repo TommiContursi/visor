@@ -89,7 +89,6 @@ import com.macedonga.visor.AssistantSettingsKey
 import com.macedonga.visor.BackupKey
 import com.macedonga.visor.DeviceKey
 import com.macedonga.visor.EventLogKey
-import com.macedonga.visor.FeaturesKey
 import com.macedonga.visor.FlagsKey
 import com.macedonga.visor.GlassesKey
 import com.macedonga.visor.LanguageKey
@@ -244,11 +243,6 @@ fun SettingsScreen(open: (NavKey) -> Unit, model: SettingsViewModel = hiltViewMo
                         Column(Modifier.padding(top = if (i == 0) 18.dp else 14.dp)) {
                             for (topic in card) NavRow(topic.icon, stringResource(topic.title), summary(topic, model, state), onClick = { open(placeOf(topic)) })
                         }
-                    }
-                }
-                item(key = "features") {
-                    Column(Modifier.padding(top = 14.dp)) {
-                        NavRow(VisorIcons.Spark, stringResource(R.string.features_title), stringResource(R.string.features_sum), onClick = { open(FeaturesKey) })
                     }
                 }
                 item(key = "advanced") {
@@ -670,9 +664,9 @@ private fun pageHits(): List<Triple<Int, List<String>, NavKey>> = Topic.entries.
     Triple(R.string.notify_apps_title, listOf("app", "notification", "notifiche", "mute"), NotifyAppsKey),
     Triple(R.string.settings_flags, listOf("flag", "mobileconfig", "gate"), FlagsKey),
     Triple(
-        R.string.features_title,
-        listOf("hidden", "nascost", "region", "beta", "early access", "accesso anticipato", "unlock", "sblocc", "conversation focus", "live ai"),
-        FeaturesKey,
+        R.string.topic_hearing,
+        listOf("conversation focus", "focus", "hearing correction", "hearing aid", "group conversation", "udito", "conversazion", "apparecchio"),
+        TopicKey(Topic.HEARING.name),
     ),
     Triple(R.string.settings_diagnostics, listOf("diagnos", "link", "verdict"), DeviceKey),
     Triple(R.string.settings_event_log, listOf("log", "events", "eventi"), EventLogKey),

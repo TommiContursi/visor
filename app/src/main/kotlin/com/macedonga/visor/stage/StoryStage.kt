@@ -46,9 +46,6 @@ class StageCue {
 
     /** How strong the sound is, 0 to 1. */
     var level by mutableFloatStateOf(0f)
-
-    /** The inner LED, the wearer's light, 0 to 1. */
-    var led by mutableFloatStateOf(0f)
 }
 
 /**
@@ -87,7 +84,6 @@ fun StoryStage(cue: StageCue, look: LightLook, centrePx: Float, scale: Float, st
                 val k = 1f - exp(-dt / FOLLOW_SECONDS)
                 val sway = if (c.orbit) sin(clock.floatValue * ORBIT_SPEED) * ORBIT_DEGREES else 0f
                 pose.viewYaw += (c.yaw + sway - pose.viewYaw) * k
-                pose.innerLed += (c.led - pose.innerLed) * k
                 // The voice is in the light too: each loud moment swells it.
                 if (c.inward && c.level > 0.05f) stage.light.pulse(c.level * 0.6f)
                 stage.renderer.invalidate()
@@ -95,10 +91,7 @@ fun StoryStage(cue: StageCue, look: LightLook, centrePx: Float, scale: Float, st
         }
     }
     DisposableEffect(stage) {
-        onDispose {
-            stage.pose.viewYaw = 0f
-            stage.pose.innerLed = 0f
-        }
+        onDispose { stage.pose.viewYaw = 0f }
     }
 
     Canvas(Modifier.fillMaxSize()) {
@@ -109,12 +102,6 @@ fun StoryStage(cue: StageCue, look: LightLook, centrePx: Float, scale: Float, st
                 val at = stage.onWindow(fx, fy, size.width)
                 if (cue.inward) voiceIn(at, t, cue.level, colors.lightWarm) else soundOut(at, t, cue.level, colors.lightNeutral)
             }
-        }
-        val led = stage.pose.innerLed
-        if (led > 0.01f) stage.renderer.partOnScreen("inner_led")?.let { (fx, fy) ->
-            val c = stage.onWindow(fx, fy, size.width)
-            drawCircle(Brush.radialGradient(listOf(LED_GLOW.copy(alpha = 0.55f * led), LED_GLOW.copy(alpha = 0.18f * led), Color.Transparent), c, 44.dp.toPx()), 44.dp.toPx(), c)
-            drawCircle(Color.White.copy(alpha = 0.85f * led), 2.dp.toPx(), c)
         }
     }
 }
@@ -146,4 +133,3 @@ private const val ORBIT_SPEED = 0.7f
 private const val ORBIT_DEGREES = 28f
 private const val RINGS = 3
 private const val RING_SECONDS = 1.2f
-private val LED_GLOW = Color(0xFF2F6BFF)

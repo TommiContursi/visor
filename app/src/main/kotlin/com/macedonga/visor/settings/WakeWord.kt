@@ -205,8 +205,7 @@ class WakeWordModel @Inject constructor(
 
 /**
  * The enrolment told as the setup tells its story: the pair waits under its light while the phrase is chosen; while a
- * take records, the voice is drawn going into the front of the frame, the wearer's light is on and the stage light
- * swells with it; a good take gets a nod, a missed one a shake; the pair sways while the glasses make the model, and
+ * take records, the voice is drawn going into the front of the frame and the stage light swells with it; a good take gets a nod, a missed one a shake; the pair sways while the glasses make the model, and
  * flashes and nods when it is theirs.
  */
 @Composable
@@ -231,7 +230,6 @@ fun WakeWordScreen(model: WakeWordModel = hiltViewModel()) = SettingsHost(seeThr
     cue.source = if (recording) "front" else null
     cue.inward = true
     cue.level = if (recording) 0.25f + 0.75f * level else 0f
-    cue.led = if (recording) 1f else 0f
     val look = when {
         recording -> LightLook(colors.lightNeutral, colors.lightWarm, level = 0.85f, spread = 1f, breathSeconds = 2.4f, breathDepth = 0.15f)
         step == WakeStep.Enrolling -> lookOf(Mood.SEARCHING, colors).copy(breathSeconds = 2.2f)
