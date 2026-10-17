@@ -91,8 +91,8 @@ class Assembly(
         var format = if (type == CaptureType.VIDEO) Format.MP4 else Format.JPEG
         val kept = when (type) {
             CaptureType.VIDEO -> {
-                val uri = insert(format, takenAt) { out -> main.inputStream().use { it.copyTo(out) } }
-                say("Saved a video to Movies/Visor")
+                val (uri, where) = insert(format, takenAt) { out -> main.inputStream().use { it.copyTo(out) } }
+                say("Saved a video: $where")
                 Kept(handle, uri.toString(), type, takenAt, lat = place?.lat, lon = place?.lon)
             }
             else -> {
@@ -101,8 +101,8 @@ class Assembly(
                     // A photo this phone cannot develop still goes to the gallery, as the glasses' own HEIC.
                     say("Could not develop ${handle.take(8)} (${error.message}): saving the HEIC as it came")
                     format = Format.HEIC
-                    val uri = insert(format, takenAt) { out -> main.inputStream().use { it.copyTo(out) } }
-                    say("Saved a photo to Pictures/Visor")
+                    val (uri, where) = insert(format, takenAt) { out -> main.inputStream().use { it.copyTo(out) } }
+                    say("Saved a photo: $where")
                     Kept(handle, uri.toString(), CaptureType.PHOTO, takenAt, lat = place?.lat, lon = place?.lon)
                 }
             }
@@ -141,8 +141,8 @@ class Assembly(
             else -> 0
         }
         val bytes = if (motion != null) motionPhoto(jpeg, motion.readBytes(), keyUs) else jpeg
-        val uri = insert(Format.JPEG, takenAt) { it.write(bytes) }
-        say(if (motion != null) "Saved a live photo to Pictures/Visor" else "Saved a photo to Pictures/Visor")
+        val (uri, where) = insert(Format.JPEG, takenAt) { it.write(bytes) }
+        say(if (motion != null) "Saved a live photo: $where" else "Saved a photo: $where")
         return Kept(
             handle, uri.toString(), if (motion != null) CaptureType.LIVE else CaptureType.PHOTO, takenAt,
             clipBytes = motion?.length() ?: 0, keyFrameUs = keyUs, shutterNs = shutterNs, lat = place?.lat, lon = place?.lon,
@@ -155,7 +155,8 @@ class Assembly(
         MP4("mp4", "video/mp4", true),
     }
 
-    private fun insert(format: Format, takenAt: Long, write: (OutputStream) -> Unit): Uri {
+    /** The new row, and where it is as MediaStore has it. */
+    private fun insert(format: Format, takenAt: Long, write: (OutputStream) -> Unit): Pair<Uri, String> {
         val video = format.video
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName(format, takenAt))
@@ -170,12 +171,11 @@ class Assembly(
         val uri = resolver.insert(collection, values) ?: error("the gallery would not take it")
         try {
             checkNotNull(resolver.openOutputStream(uri)).use(write)
-            resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+            return uri to publish(resolver, uri)
         } catch (error: Exception) {
             resolver.delete(uri, null, null)
             throw error
         }
-        return uri
     }
 
     companion object {

@@ -104,7 +104,10 @@ private fun LogRow(line: String) {
 /** The log as a text file for mail or chat, headed by what it came from. */
 private fun share(context: Context, text: String) {
     val webView = WebView.getCurrentWebViewPackage()?.let { "${it.packageName} ${it.versionName}" } ?: "unknown"
-    val head = "Visor ${BuildConfig.VERSION_NAME}, ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}, WebView $webView"
+    // A work profile or Samsung's Secure Folder is another user: what Visor saves there, the main gallery never shows.
+    val user = android.os.Process.myUid() / 100_000
+    val head = "Visor ${BuildConfig.VERSION_NAME}, ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}, WebView $webView" +
+        if (user != 0) ", user $user" else ""
     // The last Meta login's Bloks trace rides along: every call, request and failure of it.
     val trace = MetaLogin.traceFile(context).takeIf { it.exists() && it.length() > 0 }?.readText()
     val file = File(context.cacheDir, "log/visor-log.txt").apply {

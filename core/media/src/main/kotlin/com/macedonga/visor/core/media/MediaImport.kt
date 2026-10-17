@@ -556,9 +556,9 @@ class MediaImport(
                 capture != null -> Unit
                 // Not in the list: the full still is always HEIC and the video MP4, the thumbnail JPEG.
                 ext == "heic" || ext == "mp4" -> {
-                    save(received.file, ext, null)
+                    val where = save(received.file, ext, null)
                     _saved.update { it + 1 }
-                    say(if (ext == "mp4") "Saved a video to Movies/Visor" else "Saved a photo to Pictures/Visor")
+                    say(if (ext == "mp4") "Saved a video: $where" else "Saved a photo: $where")
                 }
                 ext == null -> say("Skipped a ${sizeWords(received.offer.size)} file nothing asked for")
             }
@@ -584,7 +584,7 @@ class MediaImport(
         }
     }
 
-    private fun save(file: File, ext: String, capture: Capture?) {
+    private fun save(file: File, ext: String, capture: Capture?): String {
         val video = ext == "mp4"
         val taken = capture?.takenAtMillis ?: System.currentTimeMillis()
         val values = ContentValues().apply {
@@ -603,7 +603,7 @@ class MediaImport(
         val uri = resolver.insert(collection, values) ?: error("the gallery would not take it")
         try {
             checkNotNull(resolver.openOutputStream(uri)).use { out -> file.inputStream().use { it.copyTo(out) } }
-            resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+            return publish(resolver, uri)
         } catch (error: Exception) {
             resolver.delete(uri, null, null)
             throw error
