@@ -96,7 +96,7 @@ class DebugReceiver : BroadcastReceiver() {
             "LIVE_REPLAY" -> answerLater { "replay ${live.outputs.replay.heldUs / 1000} ms: ${live.outputs.saveReplay()}" }
             "LIVE_FRAME" -> answerLater { "frame: ${live.outputs.saveFrame()}" }
             "BUGREPORT" -> {
-                media.requestBugReport()
+                media.requestBugReport(if (intent.hasExtra("mode")) intent.getIntExtra("mode", 0) else null)
                 resultData = "asked; the zip goes to Download/Visor"
             }
             "DRIVE_SET" -> {

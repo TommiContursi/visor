@@ -470,7 +470,8 @@ class MediaImport(
      * Ask the glasses for a bug report, the way the Meta app does: svc7006 REQUEST_BUG_REPORT. The zip
      * comes back over airship in the "bugreport" namespace and goes to Download/Visor.
      */
-    fun requestBugReport() {
+    /** [mode] is BugReportParams.mode (field 6.1), which the Meta app never sends; null leaves the glasses' default. */
+    fun requestBugReport(mode: Int? = null) {
         val id = java.util.UUID.randomUUID().toString()
         fun entry(key: String, value: String) = ProtoWriter().string(1, key).string(2, value).build()
         val request = ProtoWriter()
@@ -481,6 +482,7 @@ class MediaImport(
             .bytes(5, entry("bug_category_label", "visor"))
             .bytes(5, entry("is_constellation", "false"))
             .bytes(5, entry("bug_report_id", id))
+            .apply { if (mode != null) bytes(6, ProtoWriter().varint(1, mode.toLong()).build()) }
             .build()
         connection.submit { it.sendOnService(SVC_BUG_REPORTER, MT_REQUEST_BUG_REPORT, request) }
         say("Asked the glasses for a bug report. It comes over airship: minutes over Bluetooth, seconds over Wi-Fi.")

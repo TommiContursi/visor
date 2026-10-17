@@ -46,13 +46,16 @@ data class ConfigState(
     // The values from before Visor's first write, the way back.
     val baseline: Map<String, Any>? = null,
     val readAt: Long? = null,
+    // The glasses' boot as the last report named it: a new one means they restarted since.
+    val boot: String? = null,
     val busy: String = "",
     val note: String = "",
 )
 
 /**
- * The glasses' MobileConfig, Meta's server-side feature switches. They come out of a bug report
- * (mobileconfig/current_mc_values.json and the params map); a change goes back as a full pair of
+ * The glasses' MobileConfig, Meta's server-side feature switches. They come out of a lite bug report, the directory
+ * collectors without dumpstate (mobileconfig/current_mc_values.json and the params map, in seconds where a full report
+ * takes minutes over Bluetooth); a change goes back as a full pair of
  * FBMobileConfigTables zipped onto airship namespace "mobileconfig", the way the Meta app syncs them.
  * Most switches are read at boot, so the glasses need a restart after a write.
  */
@@ -72,6 +75,7 @@ class GlassesConfig(
     private var sessionId = ""
     private var waiting: CompletableDeferred<Unit>? = null
     private var reading: Deferred<Boolean>? = null
+    private var boot: String? = null
     private val writes = Mutex()
 
     init {
@@ -90,8 +94,8 @@ class GlassesConfig(
     @Synchronized
     private fun readAsync(): Deferred<Boolean> = reading?.takeIf { it.isActive } ?: scope.async {
         val done = CompletableDeferred<Unit>().also { waiting = it }
-        _state.update { it.copy(busy = "Asking the glasses for their configuration. Over Bluetooth this takes a few minutes.", note = "") }
-        media.requestBugReport()
+        _state.update { it.copy(busy = "Asking the glasses for their configuration.", note = "") }
+        media.requestBugReport(LITE_REPORT)
         val got = withTimeoutOrNull(READ_TIMEOUT_MS) { done.await() } != null
         waiting = null
         _state.update { it.copy(busy = "", note = if (got) it.note else "The glasses did not send their configuration.") }
@@ -159,10 +163,11 @@ class GlassesConfig(
             File(dir, NAMES).writeBytes(names)
             bytes("mobileconfig/session_info.json")?.let { File(dir, SESSION).writeBytes(it) }
             bytes("mobileconfig/current_timestamp.txt")?.let { File(dir, TIMESTAMP).writeText(String(it).trim()) }
+            boot = bytes("settingsservice/boot_session_id")?.let { String(it).trim() } ?: boot
             values == null
         }
         load()
-        _state.update { it.copy(readAt = System.currentTimeMillis(), note = "Read ${it.values.size} values from the glasses.") }
+        _state.update { it.copy(readAt = System.currentTimeMillis(), boot = boot, note = "Read ${it.values.size} values from the glasses.") }
         // A reset leaves the glasses on built-in defaults, without what Meta's servers had set (dynamic photos among
         // it); the last values Visor saw go back.
         if (lost && state.value.values.isNotEmpty()) scope.launch { write(emptyMap(), "The glasses had lost their configuration; the last one went back. Restart the glasses to use it.") }
@@ -289,6 +294,8 @@ class GlassesConfig(
         const val STAMP = "MMM-dd-yyyy-HH-mm-ss"
         const val STALE_MARGIN_MS = 15 * 60_000L
         const val READ_TIMEOUT_MS = 10 * 60_000L
+        // BugReportParams.mode 1: 355 KB in 10 s over Bluetooth on 7238, where the default full report was 4.3 MB in 2 min.
+        private const val LITE_REPORT = 1
         const val SEND_TIMEOUT_MS = 60_000L
     }
 }

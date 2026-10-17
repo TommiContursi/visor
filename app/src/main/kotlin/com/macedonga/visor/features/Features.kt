@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -92,6 +94,18 @@ class Features @Inject constructor(
     val state: StateFlow<FeaturesState> = _state.asStateFlow()
 
     init {
+        // Back after a restart is pending: a quick read says whether the glasses booted again, and that clears it.
+        scope.launch {
+            connection.state.map { it.link == LinkState.READY }.distinctUntilChanged().collect { up ->
+                if (up && restart.value.isNotEmpty() && prefs.getString(RESTART_BOOT, null) != null) config.read()
+            }
+        }
+        scope.launch {
+            config.state.map { it.boot }.distinctUntilChanged().collect { boot ->
+                val marked = prefs.getString(RESTART_BOOT, null)
+                if (boot != null && marked != null && boot != marked && restart.value.isNotEmpty()) restarted()
+            }
+        }
         scope.launch {
             val marks = combine(checking, refused, restart, problem) { c, f, r, p -> Marks(c, f, r, p) }
             combine(config.state, settings.state, queued, marks) { c, s, q, m ->
@@ -197,6 +211,7 @@ class Features @Inject constructor(
     /** The glasses were restarted: what waited for it is in use. */
     fun restarted() {
         restart.value = emptySet()
+        prefs.edit().remove(RESTART_BOOT).apply()
         save()
     }
 
@@ -225,6 +240,7 @@ class Features @Inject constructor(
             on && f !in failed && f.gates.any { it is Gate.Config && it.name in changes && it.needsRestart(after.params) }
         }.keys
         restart.update { it + waiting }
+        if (waiting.isNotEmpty()) after.boot?.let { prefs.edit().putString(RESTART_BOOT, it).apply() }
         save()
     }
 
@@ -295,6 +311,7 @@ class Features @Inject constructor(
         const val FOCUS_STYLE = "focus_style"
         const val FOCUS_VOLUME = "focus_volume"
         const val HEARING_TESTED = "hearing_tested"
+        const val RESTART_BOOT = "restart_boot"
     }
 }
 

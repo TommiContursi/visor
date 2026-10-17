@@ -764,7 +764,7 @@
     <string name="features_refused">The glasses kept the old value. Try again.</string>
     <string name="features_restart_line">On. Restart the glasses to finish.</string>
     <string name="features_read_title">Visor needs the glasses\' configuration</string>
-    <string name="features_read_body">Meta\'s switches travel in a bug report from the glasses: a few minutes over Bluetooth, less over Wi-Fi.</string>
+    <string name="features_read_body">Meta\'s switches come in a short report from the glasses. It takes a few seconds.</string>
     <string name="features_reading">Reading. Keep the glasses near the phone.</string>
     <string name="features_read_action">Read it now</string>
     <string name="features_restart_title">Restart the glasses</string>

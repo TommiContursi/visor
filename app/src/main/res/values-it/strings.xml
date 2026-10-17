@@ -762,7 +762,7 @@
     <string name="features_refused">Gli occhiali hanno tenuto il valore di prima. Riprova.</string>
     <string name="features_restart_line">Accesa. Riavvia gli occhiali per finire.</string>
     <string name="features_read_title">A Visor serve la configurazione degli occhiali</string>
-    <string name="features_read_body">Gli interruttori di Meta arrivano in un rapporto dagli occhiali: qualche minuto via Bluetooth, meno via Wi-Fi.</string>
+    <string name="features_read_body">Gli interruttori di Meta arrivano in un breve rapporto dagli occhiali. Ci vogliono pochi secondi.</string>
     <string name="features_reading">Lettura in corso. Tieni gli occhiali vicino al telefono.</string>
     <string name="features_read_action">Leggila ora</string>
     <string name="features_restart_title">Riavvia gli occhiali</string>
