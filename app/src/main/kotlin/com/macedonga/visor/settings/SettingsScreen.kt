@@ -118,7 +118,8 @@ import com.macedonga.visor.core.settings.SettingsState
 import com.macedonga.visor.core.settings.asBool
 import com.macedonga.visor.core.settings.display
 import com.macedonga.visor.core.settings.offeredOn
-import com.macedonga.visor.features.featuresWords
+import com.macedonga.visor.features.Feature
+import com.macedonga.visor.features.Standing
 import com.macedonga.visor.gallery.ImportChoice
 import com.macedonga.visor.gallery.ProgressRing
 import com.macedonga.visor.gallery.RoundIcon
@@ -247,8 +248,7 @@ fun SettingsScreen(open: (NavKey) -> Unit, model: SettingsViewModel = hiltViewMo
                 }
                 item(key = "features") {
                     Column(Modifier.padding(top = 14.dp)) {
-                        val features by model.features.state.collectAsStateWithLifecycle()
-                        NavRow(VisorIcons.Spark, stringResource(R.string.features_title), featuresWords(features), onClick = { open(FeaturesKey) })
+                        NavRow(VisorIcons.Spark, stringResource(R.string.features_title), stringResource(R.string.features_sum), onClick = { open(FeaturesKey) })
                     }
                 }
                 item(key = "advanced") {
@@ -549,6 +549,11 @@ private fun summary(topic: Topic, model: SettingsViewModel, state: SettingsState
             shown("notification_volume")?.let { stringResource(R.string.sum_sound_volume, it) },
             stringResource(R.string.sum_headphone).takeIf { isOn("sg_headphone_mode_enabled") == true },
         ).joinToString(" · ")
+        Topic.HEARING -> {
+            val features by model.features.state.collectAsStateWithLifecycle()
+            Feature.entries.filter { it.topic == Topic.HEARING && features.standings[it] == Standing.ON }
+                .map { stringResource(it.title) }.joinToString(" · ").ifEmpty { stringResource(R.string.sum_all_off) }
+        }
         Topic.WEAR -> listOfNotNull(
             stringResource(R.string.sum_wear_detection).takeIf { isOn("wear_detection_enabled") == true },
             stringResource(R.string.sum_battery_saver).takeIf { isOn("battery_saver_mode_enabled") == true },

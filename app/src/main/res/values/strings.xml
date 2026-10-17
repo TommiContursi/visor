@@ -355,6 +355,7 @@
     <string name="topic_notifications">Notifications and calls</string>
     <string name="topic_controls">Controls</string>
     <string name="topic_sound">Sound</string>
+    <string name="topic_hearing">Hearing</string>
     <string name="topic_wear">Wear and battery</string>
     <string name="topic_camera">Camera</string>
     <string name="topic_photos">Photos and import</string>
@@ -746,12 +747,8 @@
 
     <!-- Hidden features -->
     <string name="features_title">Hidden features</string>
-    <string name="features_lede">What the glasses can do but Meta keeps off, for your country or for testers. Visor turns it on the way Meta\'s servers would.</string>
-    <string name="features_check">Check with the glasses</string>
     <string name="features_section">Features</string>
     <string name="features_problem">The last change did not reach the glasses (%1$s).</string>
-    <string name="features_note">Hold a feature to see what Visor changes for it.</string>
-    <string name="features_read_at">Configuration read at %1$s.</string>
     <string name="features_out_section">Out of reach</string>
     <string name="features_out_note">What stops each one, as traced in the glasses’ firmware.</string>
     <string name="features_flags_sub">Every switch, one by one</string>
@@ -763,30 +760,17 @@
     <string name="features_unconfirmed">Sent. Check with the glasses to confirm.</string>
     <string name="features_refused">The glasses kept the old value. Try again.</string>
     <string name="features_restart_line">On. Restart the glasses to finish.</string>
-    <string name="features_read_title">Visor needs the glasses\' configuration</string>
-    <string name="features_read_body">Meta\'s switches come in a short report from the glasses. It takes a few seconds.</string>
-    <string name="features_reading">Reading. Keep the glasses near the phone.</string>
-    <string name="features_read_action">Read it now</string>
     <string name="features_restart_title">Restart the glasses</string>
-    <string name="features_restart_body">To finish turning on %1$s, switch the glasses off and on again.</string>
     <string name="features_restart_done">Done</string>
     <string name="features_how">How to use it</string>
     <string name="features_changes">What Visor changes</string>
     <string name="features_changes_restart">The glasses read some of these when they start.</string>
     <string name="features_turn_on">Turn on</string>
     <string name="features_turn_off">Turn off</string>
-    <string name="features_sum">Features Meta keeps off</string>
-    <string name="features_sum_restart">Waiting for the glasses to restart</string>
-    <plurals name="features_sum_on">
-        <item quantity="one">%d on</item>
-        <item quantity="other">%d on</item>
-    </plurals>
+    <string name="features_sum">Not built yet, and every switch</string>
     <string name="feature_cf">Conversation focus</string>
     <string name="feature_cf_about">Makes the person in front of you louder and clearer in a noisy place.</string>
     <string name="feature_cf_use">Start it from its page, by voice, or with tap and hold.</string>
-    <string name="feature_live_ai">Live AI</string>
-    <string name="feature_live_ai_about">The assistant sees what you see and keeps listening, so you talk to it without saying “Hey Meta” each time.</string>
-    <string name="feature_live_ai_use">Say “Hey Meta, start Live AI”.</string>
     <string name="out_tutor">Language tutor</string>
     <string name="out_tutor_why">The lessons come from Meta\'s servers.</string>
     <string name="out_wake_word">Custom wake word</string>
@@ -795,7 +779,7 @@
     <string name="out_palm_why">Needs your palm enrolled in Meta\'s app first.</string>
     <string name="feature_spatial">Spatial audio</string>
     <string name="feature_spatial_about">Music and videos sound immersive, as if they played around you rather than in your ears.</string>
-    <string name="feature_spatial_use">Play music or a video. Choose Stereo in Sound to go back.</string>
+    <string name="feature_spatial_use">Play music or a video. Turn it off here for stereo.</string>
     <string name="feature_follow_ups">More follow-ups</string>
     <string name="feature_follow_ups_about">After more kinds of answers the assistant keeps listening, so you can go on without “Hey Meta”. A sound says when it stops.</string>
     <string name="feature_follow_ups_use">Ask something, then keep talking after the answer.</string>
@@ -852,6 +836,7 @@
     <string name="hc_now_untested">Not set up</string>
     <string name="hc_now_untested_sub">Take the hearing test below.</string>
     <string name="hc_now_on_sub">Playing the sound around you, set to your hearing.</string>
+    <string name="hc_refused_chip">The glasses\' audio chip refused the right ear\'s profile.</string>
     <string name="hc_now_off_sub">Start it here.</string>
     <string name="hc_amplification">Amplification</string>
     <string name="hc_sharpness">Sharpness</string>

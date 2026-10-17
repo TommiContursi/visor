@@ -1,17 +1,32 @@
 package com.macedonga.visor.features
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -25,12 +40,14 @@ import com.macedonga.visor.core.assistant.CorrectionTone
 import com.macedonga.visor.core.assistant.Ear
 import com.macedonga.visor.core.assistant.Hearing
 import com.macedonga.visor.core.assistant.HearingMode
+import com.macedonga.visor.core.assistant.HearingRefusal
 import com.macedonga.visor.core.assistant.HearingRun
 import com.macedonga.visor.core.assistant.HearingState
 import com.macedonga.visor.core.assistant.Thresholds
 import com.macedonga.visor.core.design.Visor
 import com.macedonga.visor.gallery.RoundIcon
 import com.macedonga.visor.settings.ActionPill
+import com.macedonga.visor.settings.BAR
 import com.macedonga.visor.settings.Card
 import com.macedonga.visor.settings.Footnote
 import com.macedonga.visor.settings.LocalBack
@@ -38,16 +55,27 @@ import com.macedonga.visor.settings.LocalHost
 import com.macedonga.visor.settings.PillsRow
 import com.macedonga.visor.settings.Rows
 import com.macedonga.visor.settings.SectionLabel
+import com.macedonga.visor.settings.SettingsHost
 import com.macedonga.visor.settings.SettingsPage
 import com.macedonga.visor.settings.SliderRow
 import com.macedonga.visor.settings.ToggleRow
+import com.macedonga.visor.settings.TopBar
 import com.macedonga.visor.settings.ValueRow
 import com.macedonga.visor.settings.row
+import com.macedonga.visor.stage.LightLook
+import com.macedonga.visor.stage.LocalStage
+import com.macedonga.visor.stage.Mood
+import com.macedonga.visor.stage.STAGE_ASPECT
+import com.macedonga.visor.stage.StageLight
+import com.macedonga.visor.stage.StageSpot
+import com.macedonga.visor.stage.lookOf
 import com.macedonga.visor.ui.VisorIcons
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -55,6 +83,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * Hearing correction: the glasses as a hearing aid, fitted by a hearing test on the glasses. On top, where it stands
@@ -164,15 +193,19 @@ private fun CorrectionNow(hearing: HearingState, allowed: Boolean, fitted: Boole
         !fitted -> R.string.hc_now_untested to R.string.hc_now_untested_sub
         run == HearingRun.ON -> R.string.cf_now_on to R.string.hc_now_on_sub
         paused -> R.string.cf_now_paused to R.string.cf_paused
+        // USECASE_ENABLE_FAILURE: the glasses' audio chip took the left ear's profile and refused the right's.
+        hearing.refusal == HearingRefusal.ENABLE_FAILED -> R.string.cf_now_off to R.string.hc_refused_chip
+        hearing.refusal != null -> R.string.cf_now_off to R.string.cf_refused
         else -> R.string.cf_now_off to R.string.hc_now_off_sub
     }
+    val warn = hearing.refusal != null && run != HearingRun.ON && allowed && fitted && !restart
     Card {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             FeatureTile(VisorIcons.HearingAid, lit = run == HearingRun.ON, size = 52)
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(stringResource(title), style = Visor.type.heading, color = Visor.colors.textPrimary)
-                Text(stringResource(sub), style = Visor.type.label, color = Visor.colors.textSecondary)
+                Text(stringResource(sub), style = Visor.type.label, color = if (warn) Visor.colors.signal else Visor.colors.textSecondary)
             }
             if (allowed && restart) {
                 Spacer(Modifier.width(12.dp))
@@ -349,44 +382,92 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
 }
 
 @Composable
-fun HearingTestScreen(model: HearingTestModel = hiltViewModel()) {
+fun HearingTestScreen(model: HearingTestModel = hiltViewModel()) = SettingsHost(seeThrough = true) {
     val step by model.step.collectAsStateWithLifecycle()
-    val back = LocalBack.current
+    val density = LocalDensity.current
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val strip = top + BAR + TEST_STAGE
+        with(density) { TestStage(step, (maxWidth / STAGE_ASPECT).toPx(), strip.toPx(), (top + BAR + TEST_STAGE / 2).toPx()) }
+        Box(Modifier.fillMaxSize().padding(top = strip).background(Visor.colors.canvas))
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = strip, bottom = bottom + 32.dp)) {
+            TestStepContent(step, model)
+        }
+        TopBar(stringResource(R.string.hct_title))
+    }
+}
 
-    SettingsPage(stringResource(R.string.hct_title)) {
-        item(key = "step") {
-            when (val s = step) {
-                TestStep.Who -> Column {
-                    StepCard(stringResource(R.string.hct_who_title), stringResource(R.string.hct_who_body))
-                    SectionLabel(stringResource(R.string.hct_question), Modifier.padding(top = 24.dp))
-                    Rows(
-                        *listOf(
-                            HearingTestModel.RATING_NONE to R.string.hct_rating_none,
-                            HearingTestModel.RATING_MILD to R.string.hct_rating_mild,
-                            HearingTestModel.RATING_SEVERE to R.string.hct_rating_severe,
-                            HearingTestModel.RATING_IMPLANT to R.string.hct_rating_implant,
-                        ).map { (rating, words) -> row { ValueRow(stringResource(words), null, onClick = { model.answer(rating) }) } }.toTypedArray(),
-                    )
-                }
-                is TestStep.NotFor -> StepCard(stringResource(R.string.hct_not_title), stringResource(s.why)) {
-                    ActionPill(stringResource(R.string.features_restart_done), back)
-                }
-                TestStep.Ready -> StepCard(stringResource(R.string.hct_ready_title), stringResource(R.string.hct_ready_body)) {
-                    ActionPill(stringResource(R.string.hct_begin), model::begin)
-                }
-                TestStep.Starting -> StepCard(stringResource(R.string.hct_starting), null)
-                is TestStep.Tone -> ToneCard(s, model)
-                TestStep.Fitting -> StepCard(stringResource(R.string.hct_fitting), null)
-                TestStep.Done -> StepCard(stringResource(R.string.hct_done_title), stringResource(R.string.hct_done_body)) {
-                    ActionPill(stringResource(R.string.features_restart_done), back)
-                }
-                is TestStep.Failed -> StepCard(stringResource(R.string.hct_failed_title), stringResource(s.why)) {
-                    ActionPill(stringResource(R.string.hct_retry), model::retry)
-                }
-            }
+/** The pair under its light with its temples open, turned to the ear being tested; the light breathes while a tone plays. */
+@Composable
+private fun TestStage(step: TestStep, fullPx: Float, stripPx: Float, centrePx: Float) {
+    val stage = LocalStage.current
+    val colors = Visor.colors
+    StageSpot(closed = false, liveliness = 0.3f) { folding(fullPx, stripPx, 1f, TEST_SCALE, centrePx) }
+    val ear = (step as? TestStep.Tone)?.let { if (it.index < HearingTestModel.TONES_PER_EAR) Ear.LEFT else Ear.RIGHT }
+    StageLight(
+        if (ear != null) LightLook(colors.lightNeutral, colors.lightWarm, level = 1f, spread = 1f, breathSeconds = 1.6f, breathDepth = 0.35f)
+        else lookOf(Mood.CONNECTED, colors),
+    )
+    LaunchedEffect(ear) {
+        val yaw = when (ear) {
+            Ear.LEFT -> LEFT_EAR_YAW
+            Ear.RIGHT -> RIGHT_EAR_YAW
+            null -> 0f
+        }
+        stage.yaw.animateTo(yaw, spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessVeryLow))
+    }
+    // The next screen gets the pair facing ahead again.
+    LaunchedEffect(Unit) {
+        try {
+            awaitCancellation()
+        } finally {
+            withContext(NonCancellable) { stage.yaw.animateTo(0f, tween(400)) }
         }
     }
 }
+
+@Composable
+private fun TestStepContent(step: TestStep, model: HearingTestModel) {
+    val back = LocalBack.current
+    when (val s = step) {
+        TestStep.Who -> Column {
+            StepCard(stringResource(R.string.hct_who_title), stringResource(R.string.hct_who_body))
+            SectionLabel(stringResource(R.string.hct_question), Modifier.padding(top = 24.dp))
+            Rows(
+                *listOf(
+                    HearingTestModel.RATING_NONE to R.string.hct_rating_none,
+                    HearingTestModel.RATING_MILD to R.string.hct_rating_mild,
+                    HearingTestModel.RATING_SEVERE to R.string.hct_rating_severe,
+                    HearingTestModel.RATING_IMPLANT to R.string.hct_rating_implant,
+                ).map { (rating, words) -> row { ValueRow(stringResource(words), null, onClick = { model.answer(rating) }) } }.toTypedArray(),
+            )
+        }
+        is TestStep.NotFor -> StepCard(stringResource(R.string.hct_not_title), stringResource(s.why)) {
+            ActionPill(stringResource(R.string.features_restart_done), back)
+        }
+        TestStep.Ready -> StepCard(stringResource(R.string.hct_ready_title), stringResource(R.string.hct_ready_body)) {
+            ActionPill(stringResource(R.string.hct_begin), model::begin)
+        }
+        TestStep.Starting -> StepCard(stringResource(R.string.hct_starting), null)
+        is TestStep.Tone -> ToneCard(s, model)
+        TestStep.Fitting -> StepCard(stringResource(R.string.hct_fitting), null)
+        TestStep.Done -> StepCard(stringResource(R.string.hct_done_title), stringResource(R.string.hct_done_body)) {
+            ActionPill(stringResource(R.string.features_restart_done), back)
+        }
+        is TestStep.Failed -> StepCard(stringResource(R.string.hct_failed_title), stringResource(s.why)) {
+            ActionPill(stringResource(R.string.hct_retry), model::retry)
+        }
+    }
+}
+
+/** The strip the pair stands in under the bar during the test, and how large it is there. */
+private val TEST_STAGE = 230.dp
+private const val TEST_SCALE = 0.95f
+
+// The pair rests at -24 degrees; these show the left temple, then the right, to the viewer.
+private const val LEFT_EAR_YAW = -46f
+private const val RIGHT_EAR_YAW = 70f
 
 @Composable
 private fun StepCard(title: String, body: String?, actions: (@Composable () -> Unit)? = null) {

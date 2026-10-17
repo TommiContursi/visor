@@ -354,6 +354,7 @@
     <string name="topic_notifications">Notifiche e chiamate</string>
     <string name="topic_controls">Comandi</string>
     <string name="topic_sound">Suono</string>
+    <string name="topic_hearing">Udito</string>
     <string name="topic_wear">Indossare e batteria</string>
     <string name="topic_camera">Fotocamera</string>
     <string name="topic_photos">Foto e importazione</string>
@@ -744,12 +745,8 @@
 
     <!-- Funzioni nascoste -->
     <string name="features_title">Funzioni nascoste</string>
-    <string name="features_lede">Ciò che gli occhiali sanno fare ma Meta tiene spento, per il tuo paese o per chi prova le novità. Visor lo accende come farebbero i server di Meta.</string>
-    <string name="features_check">Controlla sugli occhiali</string>
     <string name="features_section">Funzioni</string>
     <string name="features_problem">L\'ultima modifica non è arrivata agli occhiali (%1$s).</string>
-    <string name="features_note">Tieni premuta una funzione per vedere cosa cambia Visor.</string>
-    <string name="features_read_at">Configurazione letta alle %1$s.</string>
     <string name="features_out_section">Fuori portata</string>
     <string name="features_out_note">Cosa blocca ciascuna, come risulta dal firmware degli occhiali.</string>
     <string name="features_flags_sub">Ogni interruttore, uno per uno</string>
@@ -761,30 +758,17 @@
     <string name="features_unconfirmed">Inviata. Controlla sugli occhiali per conferma.</string>
     <string name="features_refused">Gli occhiali hanno tenuto il valore di prima. Riprova.</string>
     <string name="features_restart_line">Accesa. Riavvia gli occhiali per finire.</string>
-    <string name="features_read_title">A Visor serve la configurazione degli occhiali</string>
-    <string name="features_read_body">Gli interruttori di Meta arrivano in un breve rapporto dagli occhiali. Ci vogliono pochi secondi.</string>
-    <string name="features_reading">Lettura in corso. Tieni gli occhiali vicino al telefono.</string>
-    <string name="features_read_action">Leggila ora</string>
     <string name="features_restart_title">Riavvia gli occhiali</string>
-    <string name="features_restart_body">Per finire di accendere %1$s, spegni e riaccendi gli occhiali.</string>
     <string name="features_restart_done">Fatto</string>
     <string name="features_how">Come si usa</string>
     <string name="features_changes">Cosa cambia Visor</string>
     <string name="features_changes_restart">Gli occhiali leggono alcune di queste all\'avvio.</string>
     <string name="features_turn_on">Accendi</string>
     <string name="features_turn_off">Spegni</string>
-    <string name="features_sum">Funzioni che Meta tiene spente</string>
-    <string name="features_sum_restart">In attesa del riavvio degli occhiali</string>
-    <plurals name="features_sum_on">
-        <item quantity="one">%d accesa</item>
-        <item quantity="other">%d accese</item>
-    </plurals>
+    <string name="features_sum">Non ancora fatte, e ogni interruttore</string>
     <string name="feature_cf">Focus conversazione</string>
     <string name="feature_cf_about">Rende più forte e chiara la persona davanti a te, in un posto rumoroso.</string>
     <string name="feature_cf_use">Avvialo dalla sua pagina, con la voce o tenendo premuto il touchpad.</string>
-    <string name="feature_live_ai">Live AI</string>
-    <string name="feature_live_ai_about">L\'assistente vede ciò che vedi e resta in ascolto, così gli parli senza dire ogni volta “Hey Meta”.</string>
-    <string name="feature_live_ai_use">Di\' “Hey Meta, avvia Live AI”.</string>
     <string name="out_tutor">Insegnante di lingue</string>
     <string name="out_tutor_why">Le lezioni arrivano dai server di Meta.</string>
     <string name="out_wake_word">Parola di attivazione personale</string>
@@ -793,7 +777,7 @@
     <string name="out_palm_why">Richiede di registrare il palmo nell\'app di Meta.</string>
     <string name="feature_spatial">Audio spaziale</string>
     <string name="feature_spatial_about">Musica e video suonano avvolgenti, come se arrivassero da intorno a te e non dalle orecchie.</string>
-    <string name="feature_spatial_use">Fai partire musica o un video. Scegli Stereo in Suono per tornare indietro.</string>
+    <string name="feature_spatial_use">Fai partire musica o un video. Spegnila qui per lo stereo.</string>
     <string name="feature_follow_ups">Più domande di seguito</string>
     <string name="feature_follow_ups_about">Dopo più tipi di risposte l\'assistente resta in ascolto, così continui senza “Hey Meta”. Un suono ti dice quando smette.</string>
     <string name="feature_follow_ups_use">Chiedi qualcosa, poi continua a parlare dopo la risposta.</string>
@@ -850,6 +834,7 @@
     <string name="hc_now_untested">Da configurare</string>
     <string name="hc_now_untested_sub">Fai il test dell\'udito qui sotto.</string>
     <string name="hc_now_on_sub">Riproduce i suoni intorno a te, regolati sul tuo udito.</string>
+    <string name="hc_refused_chip">Il chip audio degli occhiali ha rifiutato il profilo dell\'orecchio destro.</string>
     <string name="hc_now_off_sub">Avviala da qui.</string>
     <string name="hc_amplification">Amplificazione</string>
     <string name="hc_sharpness">Nitidezza</string>

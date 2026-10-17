@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,9 +45,7 @@ import com.macedonga.visor.core.design.Visor
 import com.macedonga.visor.core.media.ConfigState
 import com.macedonga.visor.core.media.GlassesConfig
 import com.macedonga.visor.core.settings.GlassesSettings
-import com.macedonga.visor.gallery.RoundIcon
 import com.macedonga.visor.settings.ActionPill
-import com.macedonga.visor.settings.Card
 import com.macedonga.visor.settings.Footnote
 import com.macedonga.visor.settings.KeyLine
 import com.macedonga.visor.settings.LocalHost
@@ -56,9 +56,9 @@ import com.macedonga.visor.settings.SectionLabel
 import com.macedonga.visor.settings.SettingsPage
 import com.macedonga.visor.settings.SheetTitle
 import com.macedonga.visor.settings.Spinner
+import com.macedonga.visor.settings.Topic
 import com.macedonga.visor.settings.VisorSheet
 import com.macedonga.visor.settings.VisorSwitch
-import com.macedonga.visor.settings.timeWords
 import com.macedonga.visor.ui.VisorIcons
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -71,56 +71,10 @@ class FeaturesModel @Inject constructor(
     val hearing: com.macedonga.visor.core.assistant.Hearing,
 ) : ViewModel()
 
-/**
- * What Meta keeps off on these glasses, each with where it stands. A feature's row says what it does while it is off
- * and how to use it once it is on; held, it opens what Visor changes for it.
- */
+/** What is not built yet, and every one of Meta's switches. The features themselves are on their topics' pages. */
 @Composable
-fun FeaturesScreen(open: (NavKey) -> Unit, model: FeaturesModel = hiltViewModel()) {
-    val state by model.features.state.collectAsStateWithLifecycle()
-    val config by model.config.state.collectAsStateWithLifecycle()
-    var details by remember { mutableStateOf<Feature?>(null) }
-
-    SettingsPage(
-        stringResource(R.string.features_title),
-        stringResource(R.string.features_lede),
-        actions = {
-            if (state.busy) Spinner(Modifier.padding(horizontal = 13.dp))
-            else if (state.configRead) RoundIcon(VisorIcons.Refresh, stringResource(R.string.features_check), { model.features.check() })
-        },
-        sheet = {
-            details?.let { f ->
-                FeatureSheet(
-                    f, state.standings[f] ?: Standing.UNKNOWN, on = state.wanted[f] == true, config = config, settings = model.settings,
-                    toggle = { model.features.set(f, it) }, onDismiss = { details = null },
-                )
-            }
-        },
-    ) {
-        if (!state.configRead) item(key = "read") { ReadCard(state.busy) { model.features.check() } }
-        if (state.restart.isNotEmpty()) item(key = "restart") { RestartCard(state.restart) { model.features.restarted() } }
-        item(key = "features") {
-            Column {
-                SectionLabel(stringResource(R.string.features_section), Modifier.padding(top = if (!state.configRead || state.restart.isNotEmpty()) 28.dp else 0.dp))
-                Rows(
-                    *Feature.entries.map { f ->
-                        @Composable {
-                            FeatureRow(
-                                f, state.standings[f] ?: Standing.UNKNOWN, on = state.wanted[f] == true, waits = f in state.restart,
-                                configRead = state.configRead, open = open, toggle = { model.features.set(f, it) }, details = { details = f },
-                            )
-                        }
-                    }.toTypedArray(),
-                )
-                state.problem?.let { Footnote(stringResource(R.string.features_problem, it), Visor.colors.signal) }
-                Footnote(
-                    listOfNotNull(
-                        stringResource(R.string.features_note),
-                        state.readAt?.let { stringResource(R.string.features_read_at, timeWords(it)) },
-                    ).joinToString(" "),
-                )
-            }
-        }
+fun FeaturesScreen(open: (NavKey) -> Unit) {
+    SettingsPage(stringResource(R.string.features_title)) {
         if (OutOfReach.entries.isNotEmpty()) {
             item(key = "out") {
                 Column {
@@ -135,6 +89,47 @@ fun FeaturesScreen(open: (NavKey) -> Unit, model: FeaturesModel = hiltViewModel(
                 NavRow(VisorIcons.Flag, stringResource(R.string.settings_flags), stringResource(R.string.features_flags_sub), onClick = { open(FlagsKey) })
             }
         }
+    }
+}
+
+/**
+ * [topic]'s features Meta keeps off, on its page. A row says what one does while it is off and how to use it once it
+ * is on; held, it opens what Visor changes for it.
+ */
+fun LazyListScope.featureSection(topic: Topic, open: (NavKey) -> Unit, heading: Boolean = true) {
+    val features = Feature.entries.filter { it.topic == topic }
+    if (features.isNotEmpty()) item(key = "feature-rows") { FeatureSection(features, open, heading) }
+}
+
+@Composable
+private fun FeatureSection(features: List<Feature>, open: (NavKey) -> Unit, heading: Boolean, model: FeaturesModel = hiltViewModel()) {
+    val state by model.features.state.collectAsStateWithLifecycle()
+    val config by model.config.state.collectAsStateWithLifecycle()
+    val host = LocalHost.current
+    var details by remember { mutableStateOf<Feature?>(null) }
+    // Meta's switches come in a short report: read once the glasses are there.
+    LaunchedEffect(host.ready) {
+        if (host.ready && !state.configRead && !state.busy && features.any { it.needsConfig }) model.features.check()
+    }
+    Column {
+        if (heading) SectionLabel(stringResource(R.string.features_section))
+        Rows(
+            *features.map { f ->
+                @Composable {
+                    FeatureRow(
+                        f, state.standings[f] ?: Standing.UNKNOWN, on = state.wanted[f] == true, waits = f in state.restart,
+                        configRead = state.configRead, open = open, toggle = { model.features.set(f, it) }, details = { details = f },
+                    )
+                }
+            }.toTypedArray(),
+        )
+        state.problem?.let { Footnote(stringResource(R.string.features_problem, it), Visor.colors.signal) }
+    }
+    details?.let { f ->
+        FeatureSheet(
+            f, state.standings[f] ?: Standing.UNKNOWN, on = state.wanted[f] == true, config = config, settings = model.settings,
+            toggle = { model.features.set(f, it) }, onDismiss = { details = null },
+        )
     }
 }
 
@@ -235,42 +230,6 @@ private fun OutRow(item: OutOfReach) {
     }
 }
 
-/** Before anything: the glasses' configuration, which only a bug report carries. */
-@Composable
-private fun ReadCard(busy: Boolean, read: () -> Unit) {
-    Card {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(R.string.features_read_title), style = Visor.type.body, color = Visor.colors.textPrimary)
-            Text(stringResource(R.string.features_read_body), style = Visor.type.label, color = Visor.colors.textSecondary)
-            Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (busy) {
-                    Spinner()
-                    Text(stringResource(R.string.features_reading), style = Visor.type.label, color = Visor.colors.textSecondary, modifier = Modifier.padding(start = 10.dp))
-                } else {
-                    ActionPill(stringResource(R.string.features_read_action), read)
-                }
-            }
-        }
-    }
-}
-
-/** What waits for the glasses to start again, and the way to say they did. */
-@Composable
-private fun RestartCard(features: Set<Feature>, done: () -> Unit) {
-    val names = features.sortedBy { it.ordinal }.map { stringResource(it.title) }
-    Card(Modifier.padding(top = if (features.isEmpty()) 0.dp else 4.dp)) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
-            FeatureTile(VisorIcons.Refresh, lit = true, size = 36)
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.features_restart_title), style = Visor.type.body, color = Visor.colors.textPrimary)
-                Text(stringResource(R.string.features_restart_body, names.joinToString(", ")), style = Visor.type.label, color = Visor.colors.textSecondary)
-                Row(Modifier.padding(top = 10.dp)) { ActionPill(stringResource(R.string.features_restart_done), done) }
-            }
-        }
-    }
-}
-
 /** A feature in full: what it does, how to use it, and every switch Visor writes for it, with where each stands. */
 @Composable
 private fun FeatureSheet(
@@ -310,17 +269,6 @@ private fun FeatureSheet(
                 )
             }
         }
-    }
-}
-
-/** Hidden features in a few words, for the row that leads to them. */
-@Composable
-fun featuresWords(state: FeaturesState): String {
-    val on = state.standings.count { it.value == Standing.ON }
-    return when {
-        state.restart.isNotEmpty() -> stringResource(R.string.features_sum_restart)
-        on > 0 -> androidx.compose.ui.res.pluralStringResource(R.plurals.features_sum_on, on, on)
-        else -> stringResource(R.string.features_sum)
     }
 }
 

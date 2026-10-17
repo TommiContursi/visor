@@ -37,6 +37,7 @@ import androidx.navigation3.runtime.NavKey
 import com.macedonga.visor.IntegrationsKey
 import com.macedonga.visor.MemoriesKey
 import com.macedonga.visor.R
+import com.macedonga.visor.features.featureSection
 import com.macedonga.visor.core.assistant.Assistant
 import com.macedonga.visor.core.assistant.AssistantConfigStore
 import com.macedonga.visor.core.assistant.AssistantPhase
@@ -225,6 +226,7 @@ fun AssistantSettingsScreen(open: (NavKey) -> Unit, model: AssistantViewModel = 
                 Footnote(stringResource(R.string.ai_glasses_note))
             }
         }
+        featureSection(Topic.META_AI, open)
     }
 
     when (sheet) {
