@@ -12,14 +12,41 @@ sealed interface Gate {
     /**
      * A MobileConfig param: it goes out in a table, and the glasses read most of them when they start. [live]: one
      * the glasses keep per session but apply at once all the same, as seen on the glasses, so no restart is asked.
+     * [device]: only on glasses whose build names that device. [floor]: a minimum build, on at any number but -1, so
+     * Meta's own floor stays; it is only sent where there is none, and turning the feature off leaves it.
      */
-    data class Config(val name: String, val on: Any, val off: Any? = null, val live: Boolean = false) : Gate {
+    data class Config(
+        val name: String,
+        val on: Any,
+        val off: Any? = null,
+        val live: Boolean = false,
+        val device: String? = null,
+        val floor: Boolean = false,
+    ) : Gate {
         fun needsRestart(params: Map<String, McParam>) = !live && params[name]?.sessionless == false
+
+        /** Whether [value] has this switch on. */
+        fun holds(value: Any?): Boolean = when {
+            value == null -> false
+            floor -> value.toString().trim().toLongOrNull()?.let { it != -1L } == true
+            else -> matches(value, on)
+        }
     }
 
     /** A glasses setting: written and read back at once. */
     data class Setting(val key: String, val on: String, val off: String? = null) : Gate
 }
+
+// The hearing service starts focus only above the minimum build MobileConfig gives this model (libhearing's
+// getDeviceTypeMinSoCVersion); -1 or none, as on glasses Meta never configured, is INVALID_DEVICE.
+private val FOCUS_FLOORS =
+    listOf(
+        "hammerhead" to "min_rbm_soc_version", "mako" to "min_paloma_soc_version",
+        "greathammerhead" to "min_rbm2_soc_version", "pylades" to "min_paloma_lifestyle_soc_version",
+    ).map { (device, param) -> Gate.Config("hearing_on_sn.$param", "0", live = true, device = device, floor = true) } +
+        listOf("zebra", "silvertip", "lager").map {
+            Gate.Config("hearing_on_sn.cf_min_${it}_soc_version", 0L, live = true, device = it, floor = true)
+        }
 
 /**
  * A feature Meta keeps off on these glasses (for the country, or for testers), what it is, how to use it, the
@@ -40,7 +67,7 @@ enum class Feature(
 ) {
     CONVERSATION_FOCUS(
         "conversation_focus", R.string.feature_cf, R.string.feature_cf_about, R.string.feature_cf_use, VisorIcons.Ear,
-        listOf(Gate.Setting("hearing_boost_nux_completed", "true")),
+        listOf(Gate.Setting("hearing_boost_nux_completed", "true")) + FOCUS_FLOORS,
         Topic.HEARING,
         page = true,
     ),
@@ -89,4 +116,7 @@ enum class Feature(
     ;
 
     val needsConfig: Boolean get() = gates.any { it is Gate.Config }
+
+    /** The gates for glasses whose build names [device]. */
+    fun gatesFor(device: String?): List<Gate> = gates.filter { it !is Gate.Config || it.device == null || it.device == device }
 }

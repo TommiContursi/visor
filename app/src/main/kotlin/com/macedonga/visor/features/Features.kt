@@ -108,10 +108,11 @@ class Features @Inject constructor(
         }
         scope.launch {
             val marks = combine(checking, refused, restart, problem) { c, f, r, p -> Marks(c, f, r, p) }
-            combine(config.state, settings.state, queued, marks) { c, s, q, m ->
+            val device = connection.state.map { device(it.info?.build) }.distinctUntilChanged()
+            combine(config.state, settings.state, queued, marks, device) { c, s, q, m, d ->
                 FeaturesState(
-                    standings = Feature.entries.associateWith { standing(it, c, s, q, m) },
-                    wanted = Feature.entries.associateWith { wants(it, c, s, q) },
+                    standings = Feature.entries.associateWith { standing(it.gatesFor(d), c, s, q, m, it in m.refused) },
+                    wanted = Feature.entries.associateWith { wants(it.gatesFor(d), c, s, q) },
                     busy = c.busy.isNotEmpty() || m.checking,
                     configRead = c.params.isNotEmpty(),
                     readAt = c.reportedAt ?: c.readAt,
@@ -129,10 +130,11 @@ class Features @Inject constructor(
     /** Turn [feature] on or off. False when the glasses are not there to take it. */
     fun set(feature: Feature, on: Boolean): Boolean {
         if (!ready) return false
-        if (feature.gates.any { it is Gate.Config } && config.state.value.params.isEmpty()) return false
+        val gates = feature.gatesFor(device(connection.state.value.info?.build))
+        if (gates.any { it is Gate.Config } && config.state.value.params.isEmpty()) return false
         problem.value = null
         refused.update { it - feature }
-        for (gate in feature.gates) {
+        for (gate in gates) {
             if (!on && neededElsewhere(feature, gate)) continue
             when (gate) {
                 is Gate.Setting -> {
@@ -140,6 +142,7 @@ class Features @Inject constructor(
                     if (!same(settings.catalogue[gate.key]?.kind, settings.value(gate.key), want)) settings.write(gate.key, want)
                 }
                 is Gate.Config -> {
+                    if (gate.floor && (!on || gate.holds(config.state.value.values[gate.name]))) continue
                     val want = if (on) gate.on else offValue(gate) ?: continue
                     queued.update { it + (gate.name to want) }
                 }
@@ -263,29 +266,32 @@ class Features @Inject constructor(
         return gate.off ?: (gate.on as? Boolean)?.not()
     }
 
-    private fun standing(f: Feature, c: ConfigState, s: SettingsState, q: Map<String, Any>, m: Marks): Standing {
-        val configs = f.gates.filterIsInstance<Gate.Config>()
-        val sets = f.gates.filterIsInstance<Gate.Setting>()
+    private fun standing(gates: List<Gate>, c: ConfigState, s: SettingsState, q: Map<String, Any>, m: Marks, refused: Boolean): Standing {
+        val configs = gates.filterIsInstance<Gate.Config>()
+        val sets = gates.filterIsInstance<Gate.Setting>()
         if (configs.isNotEmpty() && c.params.isEmpty()) return Standing.UNKNOWN
         if (configs.any { it.name in q } || sets.any { it.key in s.pending }) return Standing.SENDING
-        if (f in m.refused || sets.any { it.key in s.kept }) return Standing.REFUSED
+        if (refused || sets.any { it.key in s.kept }) return Standing.REFUSED
         // Sent and not yet in a report: the glasses' configuration has to be read to know.
         if (configs.any { g -> c.values[g.name]?.let { v -> c.reported[g.name]?.let { matches(it, v) } != true } == true }) {
             return if (m.checking) Standing.CHECKING else Standing.UNCONFIRMED
         }
-        val on = configs.count { g -> c.reported[g.name]?.let { matches(it, g.on) } == true } +
+        // A floor never turns a feature off, so with every other switch off the feature is off.
+        val switches = configs.filterNot { it.floor }
+        val on = switches.count { g -> g.holds(c.reported[g.name]) } +
             sets.count { g -> same(settings.catalogue[g.key]?.kind, s.stored[g.key] ?: settings.catalogue[g.key]?.default, g.on) }
-        return when (on) {
-            configs.size + sets.size -> Standing.ON
-            0 -> Standing.OFF
+        val floored = configs.all { !it.floor || it.holds(c.reported[it.name]) }
+        return when {
+            on == 0 -> Standing.OFF
+            on == switches.size + sets.size && floored -> Standing.ON
             else -> Standing.PARTLY
         }
     }
 
-    private fun wants(f: Feature, c: ConfigState, s: SettingsState, q: Map<String, Any>): Boolean =
-        f.gates.all { g ->
+    private fun wants(gates: List<Gate>, c: ConfigState, s: SettingsState, q: Map<String, Any>): Boolean =
+        gates.all { g ->
             when (g) {
-                is Gate.Config -> (q[g.name] ?: c.values[g.name])?.let { matches(it, g.on) } == true
+                is Gate.Config -> g.holds(q[g.name] ?: c.values[g.name])
                 is Gate.Setting -> same(settings.catalogue[g.key]?.kind, s.pending[g.key] ?: s.stored[g.key] ?: settings.catalogue[g.key]?.default, g.on)
             }
         }
@@ -314,6 +320,9 @@ class Features @Inject constructor(
         const val RESTART_BOOT = "restart_boot"
     }
 }
+
+/** The device in a build fingerprint, "Meta/<product>/<device>:...". */
+private fun device(build: String?): String? = build?.split('/')?.getOrNull(2)?.substringBefore(':')?.lowercase()
 
 /** A value as the glasses report it against the one a feature wants: 1 and 1L, "true" and true. */
 internal fun matches(have: Any, want: Any): Boolean = when (want) {

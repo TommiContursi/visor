@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +55,11 @@ fun ConversationFocusScreen(model: FeaturesModel = hiltViewModel()) {
     val standing = state.standings[feature] ?: Standing.UNKNOWN
     val allowed = standing == Standing.ON
     val (style, volume) = tuning
+    val ready = LocalHost.current.ready
+    // The minimum build focus needs is one of Meta's switches: read them once the glasses are there.
+    LaunchedEffect(ready) {
+        if (ready && !state.configRead && !state.busy) model.features.check()
+    }
 
     SettingsPage(stringResource(R.string.feature_cf), stringResource(R.string.cf_lede)) {
         item(key = "now") { FocusNow(hearing, allowed, model) }
@@ -97,7 +103,7 @@ fun ConversationFocusScreen(model: FeaturesModel = hiltViewModel()) {
                             stringResource(R.string.cf_allow), allowed,
                             onChange = { model.features.set(feature, it) },
                             sub = stringResource(if (allowed) R.string.cf_allow_on else R.string.cf_allow_off),
-                            locked = !host.ready, busy = standing == Standing.SENDING,
+                            locked = !host.ready || !state.configRead, busy = standing == Standing.SENDING || state.busy,
                             problem = if (standing == Standing.REFUSED) stringResource(R.string.features_refused) else null,
                         )
                     },
