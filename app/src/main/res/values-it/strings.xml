@@ -403,7 +403,6 @@
     <string name="sum_replay">replay %1$s</string>
     <string name="sum_location_on">Posizione attiva</string>
     <string name="sum_location_off">Posizione spenta</string>
-    <string name="sum_camera_off">fotocamera spenta</string>
     <string name="sum_access_all">Tutto concesso</string>
     <string name="sum_access_missing">%1$d non concessi</string>
 

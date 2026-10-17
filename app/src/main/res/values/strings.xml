@@ -404,7 +404,6 @@
     <string name="sum_replay">replay %1$s</string>
     <string name="sum_location_on">Location on</string>
     <string name="sum_location_off">Location off</string>
-    <string name="sum_camera_off">camera off</string>
     <string name="sum_access_all">Everything allowed</string>
     <string name="sum_access_missing">%1$d not allowed</string>
 
