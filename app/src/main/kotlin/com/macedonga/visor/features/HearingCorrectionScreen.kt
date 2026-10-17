@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -265,6 +266,7 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
     // waiting one. Between tones the old one is stopped first, or the glasses refuse the next.
     private val tones = Mutex()
     private var asked = 0
+    private var visits = 0
     private var moving: Job? = null
 
     fun answer(rating: Int) {
@@ -278,9 +280,16 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
 
     fun begin() {
         _step.value = TestStep.Starting
+        val visit = visits
         viewModelScope.launch {
             hearing.startCorrection(test = true)
-            if (!hearing.awaitRunning(HearingMode.CORRECTION_SETUP, START_MS)) {
+            val running = hearing.awaitRunning(HearingMode.CORRECTION_SETUP, START_MS)
+            // Gone while the glasses got ready: the setup they started is stopped again.
+            if (visit != visits) {
+                if (running) hearing.stop()
+                return@launch
+            }
+            if (!running) {
                 _step.value = TestStep.Failed(R.string.hct_failed_start)
                 return@launch
             }
@@ -320,6 +329,7 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
     }
 
     private fun show(index: Int, level: Int = START_DBHL) {
+        if (!testing) return
         _step.value = TestStep.Tone(index, level)
         val ask = ++asked
         viewModelScope.launch {
@@ -362,10 +372,25 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
         }
     }
 
-    /** Leaving mid-test stops the hearing app, as the Meta app does. */
-    override fun onCleared() {
-        if (testing) hearing.stop()
+    /** Each visit starts from the first question: the model outlives the screen. */
+    fun enter() {
+        visits++
+        asked++
+        levels.fill(START_DBHL)
+        _step.value = TestStep.Who
     }
+
+    /** Leaving mid-test stops the hearing app, as the Meta app does. */
+    fun leave() {
+        visits++
+        asked++
+        if (testing) {
+            testing = false
+            hearing.stop()
+        }
+    }
+
+    override fun onCleared() = leave()
 
     companion object {
         const val RATING_NONE = 0
@@ -385,6 +410,10 @@ class HearingTestModel @Inject constructor(private val hearing: Hearing, private
 fun HearingTestScreen(model: HearingTestModel = hiltViewModel()) = SettingsHost(seeThrough = true) {
     val step by model.step.collectAsStateWithLifecycle()
     val density = LocalDensity.current
+    DisposableEffect(model) {
+        model.enter()
+        onDispose { model.leave() }
+    }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
