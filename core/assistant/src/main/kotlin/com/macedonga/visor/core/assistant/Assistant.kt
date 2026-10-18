@@ -612,9 +612,12 @@ class Assistant(
         l.simplified = m[30] != false
         val visual = Visual.from(m)
         say("Heard \"$transcript\" (request ${describe(body)}, understanding ${describeRead(m[2])})")
-        // The glasses' own understanding of the request, e.g. IN:REPLY_MESSAGE, and its slots.
-        val intent = m[23].asText()
-        say("Understood $intent, slots ${deep(m[26])}")
+        // The glasses' own understanding of the request, e.g. IN:REPLY_MESSAGE, and its slots: fields 23 and 26, or the
+        // OnDeviceIntent {1 name, 4 slots} that Meta's schema puts in 55 and in understanding.nluResult, with 23 and 26 flags.
+        val nlu = m[55].asStruct().ifEmpty { m[2].asStruct()[2].asStruct()[2].asStruct() }
+        val intent = m[23].asText().ifEmpty { nlu[1].asText() }
+        val slots = m[26] as? Map<*, *> ?: nlu[4]
+        say("Understood $intent, slots ${deep(slots)}")
         val waiting = awaitingReply?.takeIf { System.currentTimeMillis() < it.until }
         // The glasses fulfil this one themselves, by switching the session to Live AI; an answer would talk over it.
         if (intent == "IN:START_LIVE_AI") {
@@ -648,9 +651,9 @@ class Assistant(
             }
             // The message itself, as the glasses heard it: their content slot, else the whole utterance.
             waiting != null -> scope.launch {
-                sendReply(l, interaction, transcript, waiting.conversation, slot(m[26], "SL:CONTENT_EXACT").ifEmpty { transcript })
+                sendReply(l, interaction, transcript, waiting.conversation, slot(slots, "SL:CONTENT_EXACT").ifEmpty { transcript })
             }
-            intent == "IN:REPLY_MESSAGE" -> scope.launch { replyRequested(l, interaction, transcript, slot(m[26], "SL:CONTENT_EXACT")) }
+            intent == "IN:REPLY_MESSAGE" -> scope.launch { replyRequested(l, interaction, transcript, slot(slots, "SL:CONTENT_EXACT")) }
             else -> scope.launch { answer(l, interaction, transcript, visual) }
         }
     }
