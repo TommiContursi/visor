@@ -131,9 +131,11 @@ class Brain(
         val book = book ?: return ""
         val known = book.memories.value
         return " You can keep lasting facts about the wearer with the remember tool, and drop wrong or outdated ones with " +
-            "forget. Remember only what will help in later conversations (people and their names, preferences, places, " +
-            "plans, what they own), never the moment's small talk. Use the tools silently, without mentioning them, and " +
-            "always give your answer too." +
+            "forget. When the wearer mentions something that would help in later conversations (people and their names, " +
+            "where they live or work, preferences, plans, what they own), end your answer by asking whether to remember " +
+            "it, as in \"Should I remember that you work at the hospital?\". Call remember only once they say yes, or " +
+            "when they ask you to remember something, and then say in a few words that it is in your memories. Forget " +
+            "when they ask you to, saying so. Never keep the moment's small talk, and always give your answer too." +
             if (known.isEmpty()) " You remember nothing about the wearer yet." else
                 " What you remember about the wearer, with each fact's id: " + known.joinToString(" ") { "[${it.id}] ${it.text}" }
     }

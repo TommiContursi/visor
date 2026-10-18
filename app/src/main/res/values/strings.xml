@@ -274,6 +274,7 @@
     <string name="meta_ai_new">New conversation</string>
     <string name="meta_ai_remembered">Remembered · %1$s</string>
     <string name="meta_ai_no_answer">No answer · %1$s</string>
+    <string name="meta_ai_on_glasses">Done on the glasses</string>
     <string name="meta_ai_too_late">Answered after the glasses had moved on</string>
     <string name="meta_ai_phone">Phone</string>
     <string name="meta_ai_live_ai">Live AI</string>

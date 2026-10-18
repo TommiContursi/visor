@@ -273,6 +273,7 @@
     <string name="meta_ai_new">Nuova conversazione</string>
     <string name="meta_ai_remembered">Ricordato · %1$s</string>
     <string name="meta_ai_no_answer">Nessuna risposta · %1$s</string>
+    <string name="meta_ai_on_glasses">Fatto dagli occhiali</string>
     <string name="meta_ai_too_late">Risposta arrivata quando gli occhiali erano già oltre</string>
     <string name="meta_ai_phone">Telefono</string>
     <string name="meta_ai_live_ai">Live AI</string>

@@ -534,6 +534,12 @@ class Assistant(
                 liveAi.end("the glasses completed the interaction")
             }
             EV_FRAME_KEEP_ALIVE_RESPONSE, EV_KEEP_MWA_ALIVE -> Unit
+            // The answer's display action, passed on to the phone; the glasses wait for the phone to take it.
+            EV_ACTION_FULFILLMENT_REQUEST -> {
+                val id = runCatching { Thrift.loads(event.body)[1].asStruct()[1].asText() }.getOrDefault("")
+                l.mux.send(m0, netEvent(EV_ACTION_FULFILLMENT_RESPONSE, ThriftWriter().str(1, id).bool(2, true).done()), messageType = MT_NET_EVENT)
+            }
+            EV_MWA_VOICE_INTERACTION_CLOSE_REQUEST -> closed(l, event.body)
             EV_FULFILLMENT_REQUEST -> fulfillmentRequest(l, event.body)
             EV_MMAI_INTERACTION_REQUEST -> mmaiRequest(l, event.body)
             EV_DEVICE_VOICE_STATE -> voiceState(event.body)
@@ -544,6 +550,20 @@ class Assistant(
             CustomWakeWord.EV_RESULT -> wakeWord.onResult(runCatching { Thrift.loads(event.body) }.getOrDefault(emptyMap()))
             else -> say("Assistant: ${eventName(event.id)} (${event.id}), ${event.body.size} bytes ${describe(event.body)}")
         }
+    }
+
+    /**
+     * ev59 MwaVoiceInteractionCloseRequest {1 interactionId, 2 audioLogData {3 transcription}}: the glasses end a turn. One
+     * they never asked about they did themselves, as "play something": it goes in the diary with its words.
+     */
+    private fun closed(l: Link, body: ByteArray) {
+        val f = runCatching { Thrift.loads(body) }.getOrNull() ?: return
+        val interaction = f[1].asText().takeIf { it.isNotEmpty() } ?: return
+        l.closed.add(interaction)
+        val words = f[2].asStruct()[3].asText().trim()
+        if (interaction in l.taken || words.isEmpty() || WAKE_WORD_ONLY.matches(words)) return
+        say("The glasses did \"$words\" themselves")
+        record(TurnRecord(interaction, System.currentTimeMillis(), words, problem = ON_GLASSES))
     }
 
     /** 1002 opens a segmented message, 1003 carries its pieces; the whole one goes on as its own type. */
@@ -908,7 +928,8 @@ class Assistant(
         _phase.value = AssistantPhase.SPEAKING
         val voiceId = glassesVoice()
         val answer = netEvent(EV_VOICE_ACTION_RESPONSE, varm(interaction, transcript, text, onGlasses = true, voiceId = voiceId))
-        val complete = netEvent(EV_MWA_VOICE_INTERACTION_COMPLETE, interactionComplete(interaction, text))
+        // An answer that asks something has the glasses listen for the reply, without the wake word.
+        val complete = netEvent(EV_MWA_VOICE_INTERACTION_COMPLETE, interactionComplete(interaction, text, expectsAnswer = ASKS.containsMatchIn(text)))
         // Without simplified forwarding the VARM is acted on as it lands, so the text must be there before it.
         for (event in if (l.simplified) listOf(answer, complete) else listOf(complete, answer)) {
             l.mux.send(m0, event, messageType = MT_NET_EVENT)
@@ -1181,6 +1202,12 @@ private fun describeRead(value: Any?): String {
 
 /** The problem of an answer that came after the glasses had closed its turn: kept, never spoken. */
 const val ANSWER_TOO_LATE = "too late for the glasses"
+
+/** The problem of a turn the glasses did themselves, with no answer from Visor. */
+const val ON_GLASSES = "done on the glasses"
+
+/** An answer that ends on a question. */
+private val ASKS = Regex("""[?？؟][\s"'”’»)]*$""")
 
 /** What the glasses understand as a request for conversation focus. */
 private val FOCUS_INTENTS = setOf(
