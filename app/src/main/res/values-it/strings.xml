@@ -348,6 +348,8 @@
     <string name="settings_diagnostics_sub">Il collegamento, la chiave e cosa riportano gli occhiali</string>
     <string name="settings_event_log_sub">Tutto ciò che ha fatto il collegamento, dal più vecchio</string>
     <string name="tiles_hint">Tieni premuta un\'impostazione per fissarla qui</string>
+    <string name="tile_partly">Acceso in parte</string>
+    <string name="tile_refused">Rifiutato</string>
 
     <string name="topic_meta_ai">Meta AI</string>
     <string name="topic_language">Lingua e voce</string>
@@ -802,9 +804,9 @@
     <string name="cf_now_paused">In pausa</string>
     <string name="cf_now_off">Spento</string>
     <string name="cf_now_off_sub">Avvialo da qui, o tieni premuto il touchpad.</string>
+    <string name="cf_now_off_here">Avvialo da qui.</string>
     <string name="cf_now_volume">voce %1$s</string>
     <string name="cf_stop">Ferma</string>
-    <string name="cf_now_off_here">Avvialo da qui.</string>
     <string name="cf_resume">Riprendi</string>
     <string name="cf_start_now">Avvia</string>
     <string name="cf_paused">Messo in pausa dagli occhiali.</string>

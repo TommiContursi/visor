@@ -121,4 +121,8 @@ enum class Feature(
 
     /** The gates for glasses whose build names [device]. */
     fun gatesFor(device: String?): List<Gate> = gates.filter { it !is Gate.Config || it.device == null || it.device == device }
+
+    companion object {
+        fun byId(id: String): Feature? = entries.firstOrNull { it.id == id }
+    }
 }

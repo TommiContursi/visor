@@ -349,6 +349,8 @@
     <string name="settings_diagnostics_sub">The link, the key and what the glasses report</string>
     <string name="settings_event_log_sub">Everything the link did, newest last</string>
     <string name="tiles_hint">Hold any setting to pin it here</string>
+    <string name="tile_partly">Partly on</string>
+    <string name="tile_refused">Refused</string>
 
     <string name="topic_meta_ai">Meta AI</string>
     <string name="topic_language">Language and voice</string>
@@ -804,9 +806,9 @@
     <string name="cf_now_paused">Paused</string>
     <string name="cf_now_off">Off</string>
     <string name="cf_now_off_sub">Start it here, or tap and hold the touchpad.</string>
+    <string name="cf_now_off_here">Start it here.</string>
     <string name="cf_now_volume">voice %1$s</string>
     <string name="cf_stop">Stop</string>
-    <string name="cf_now_off_here">Start it here.</string>
     <string name="cf_resume">Resume</string>
     <string name="cf_start_now">Start</string>
     <string name="cf_paused">Paused by the glasses.</string>
