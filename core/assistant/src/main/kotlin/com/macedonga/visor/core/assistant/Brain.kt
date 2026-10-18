@@ -198,7 +198,8 @@ class Brain(
         turn?.box?.tools?.forEach { t -> tools.put(JSONObject().put("name", t.name).put("description", t.help()).put("input_schema", t.tool.schema)) }
         var said = ""
         repeat(MAX_TOOL_ROUNDS) {
-            val body = JSONObject().put("model", model).put("max_tokens", tokens).put("system", system).put("messages", messages)
+            // Current models think before they answer, and the thinking counts toward max_tokens.
+            val body = JSONObject().put("model", model).put("max_tokens", tokens + THINKING_TOKENS).put("system", system).put("messages", messages)
             if (tools.length() > 0) body.put("tools", tools)
             val answer = post("https://api.anthropic.com/v1/messages", mapOf("x-api-key" to c.apiKey, "anthropic-version" to "2023-06-01"), body)
             val blocks = answer.getJSONArray("content")
@@ -207,6 +208,7 @@ class Brain(
             val text = list.filter { it.optString("type") == "text" }.joinToString("") { it.getString("text") }
             if (text.isNotBlank()) said = text
             val uses = list.filter { it.optString("type") == "tool_use" }
+            check(said.isNotBlank() || answer.optString("stop_reason") != "max_tokens") { "the model used its whole answer thinking" }
             if (answer.optString("stop_reason") != "tool_use" || uses.isEmpty() || turn == null) return said
             messages.put(JSONObject().put("role", "assistant").put("content", blocks))
             val results = JSONArray()
@@ -352,6 +354,7 @@ class Brain(
         const val MAX_TOOL_ROUNDS = 6
         const val MAX_TOOL_HELP = 1_024
         const val GLASSES_TOKENS = 400
+        const val THINKING_TOKENS = 4_000
         const val PHONE_TOKENS = 900
         const val DEFAULT_CLAUDE_MODEL = "claude-sonnet-5-5"
         const val SYSTEM_PROMPT =
