@@ -3,6 +3,7 @@ package com.macedonga.visor.core.assistant
 import android.content.Context
 import com.macedonga.visor.core.assistant.mcp.ToolAction
 import com.macedonga.visor.core.connection.GlassesConnection
+import com.macedonga.visor.core.connection.GlassesLink
 import com.macedonga.visor.core.media.AirshipReceiver
 import com.macedonga.visor.core.media.ExtraFiles
 import com.macedonga.visor.core.media.Received
@@ -132,7 +133,9 @@ class Assistant(
                 .onFailure { say("Custom wake word: event $id did not go: ${it.message}") }
                 .isSuccess
         },
-        headset = { ms, note -> headsetTake(context, ms, note) },
+        headset = { ms, note, peak ->
+            headsetTake(context, (connection.state.value.target?.link as? GlassesLink.Bluetooth)?.address, ms, note, peak)
+        },
     )
 
     /**
