@@ -59,13 +59,15 @@ interface FieldBook {
 /** Who the answer is for: spoken by the glasses, or read on the phone. */
 enum class Audience { GLASSES, PHONE }
 
-/** The model behind the assistant. The conversation comes with each question, from the diary; tools from [hub]. */
+/** The model behind the assistant. The conversation comes with each question, from the diary; tools from [hub] and [phone]. */
 class Brain(
     private val config: () -> AssistantConfig,
     private val book: MemoryBook? = null,
     private val hub: McpHub? = null,
     private val fields: FieldBook? = null,
+    phone: Phone? = null,
 ) {
+    private val phoneTools = phone?.let(::PhoneTools)
 
     /** The answer to [question] after [past], with [image] (a JPEG) when the glasses sent one. Throws on any failure. */
     suspend fun answer(
@@ -84,6 +86,7 @@ class Brain(
             " It is ${ZonedDateTime.now().format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy, HH:mm", Locale.ENGLISH))}." +
             (if (audience == Audience.GLASSES) " The glasses are set to ${locale.getDisplayLanguage(Locale.ENGLISH)}." else "") +
             memoryPrompt() +
+            phoneTools?.prompt.orEmpty() +
             turn.box.prompt +
             (if (note.isNotBlank()) " $note" else "") +
             if (c.instructions.isNotBlank()) " " + c.instructions else ""
@@ -148,6 +151,10 @@ class Brain(
         if (book != null && name == "forget") {
             return if (book.forget(input.optString("id")) != null) ToolResult("forgotten", false) else ToolResult("no such fact", true)
         }
+        phoneTools?.run(name, input)?.let { (result, action) ->
+            action?.let(turn.actions::add)
+            return result
+        }
         val tool = turn.box.find(name) ?: return ToolResult("unknown tool", true)
         val (result, action) = hub?.call(tool, input) ?: return ToolResult("unavailable", true)
         action?.let(turn.actions::add)
@@ -185,6 +192,7 @@ class Brain(
             tools.put(JSONObject().put("name", "remember").put("description", REMEMBER_HELP).put("input_schema", schema("fact", FACT_HELP)))
             tools.put(JSONObject().put("name", "forget").put("description", FORGET_HELP).put("input_schema", schema("id", "The fact's id.")))
         }
+        if (turn != null) phoneTools?.tools?.forEach { (name, help, input) -> tools.put(JSONObject().put("name", name).put("description", help).put("input_schema", input)) }
         turn?.box?.tools?.forEach { t -> tools.put(JSONObject().put("name", t.name).put("description", t.help()).put("input_schema", t.tool.schema)) }
         var said = ""
         repeat(MAX_TOOL_ROUNDS) {
@@ -237,6 +245,7 @@ class Brain(
                 put(function("remember", REMEMBER_HELP, schema("fact", FACT_HELP)))
                 put(function("forget", FORGET_HELP, schema("id", "The fact's id.")))
             }
+            if (turn != null) phoneTools?.tools?.forEach { (name, help, input) -> put(function(name, help, input)) }
             // Some servers behind this API refuse a schema that names its own dialect.
             turn?.box?.tools?.forEach { t -> put(function(t.name, t.help(), JSONObject(t.tool.schema.toString()).apply { remove("\$schema") })) }
         }.takeIf { it.length() > 0 }

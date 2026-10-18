@@ -901,4 +901,6 @@
     <string name="hct_failed_tone">Gli occhiali non hanno riprodotto il tono.</string>
     <string name="hct_failed_fit">Gli occhiali non sono riusciti a creare il profilo.</string>
     <string name="hct_retry">Riprova</string>
+    <string name="phone_directions">Indicazioni per %1$s</string>
+    <string name="phone_play">Riproduci %1$s</string>
 </resources>

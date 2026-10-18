@@ -903,4 +903,6 @@
     <string name="hct_failed_tone">The glasses did not play the tone.</string>
     <string name="hct_failed_fit">The glasses could not make the profile.</string>
     <string name="hct_retry">Try again</string>
+    <string name="phone_directions">Directions to %1$s</string>
+    <string name="phone_play">Play %1$s</string>
 </resources>

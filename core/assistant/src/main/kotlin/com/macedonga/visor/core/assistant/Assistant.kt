@@ -102,6 +102,8 @@ class Assistant(
     private val hearing: Hearing? = null,
     /** How long the glasses wait for an answer (assistant_on_sn.default_processing_timeout_s), when known. */
     private val processingTimeoutS: () -> Long? = { null },
+    /** The phone's player, for pausing, resuming and skipping by voice. */
+    private val phone: Phone? = null,
 ) : Responder {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -654,6 +656,8 @@ class Assistant(
                 sendReply(l, interaction, transcript, waiting.conversation, slot(slots, "SL:CONTENT_EXACT").ifEmpty { transcript })
             }
             intent == "IN:REPLY_MESSAGE" -> scope.launch { replyRequested(l, interaction, transcript, slot(slots, "SL:CONTENT_EXACT")) }
+            // Left to the server by the glasses: the phone's player does them at once.
+            phone != null && intent in MEDIA_CONTROLS -> scope.launch { mediaControl(l, interaction, transcript, phone, MEDIA_CONTROLS.getValue(intent)) }
             else -> scope.launch { answer(l, interaction, transcript, visual) }
         }
     }
@@ -684,6 +688,17 @@ class Assistant(
         speakTurn(
             l, interaction, transcript,
             if (why == null) "Tell the wearer the reply to ${conversation.sender} was sent." else "Tell the wearer the reply to ${conversation.sender} could not be sent.",
+        )
+    }
+
+    private suspend fun mediaControl(l: Link, interaction: String, transcript: String, phone: Phone, control: MediaControl) {
+        val done = phone.control(control)
+        record(TurnRecord(interaction, System.currentTimeMillis(), transcript, actions = listOf(control.action(done))))
+        say(if (done.failure == null) "${control.what}: done in ${done.app.ifEmpty { "the phone's player" }}" else "${control.what} did not work: ${done.failure}")
+        speakTurn(
+            l, interaction, transcript,
+            if (done.failure == null) "Tell the wearer in two or three words that ${control.done}."
+            else "Tell the wearer briefly that it did not work: ${done.failure}.",
         )
     }
 
@@ -1170,6 +1185,18 @@ const val ANSWER_TOO_LATE = "too late for the glasses"
 /** What the glasses understand as a request for conversation focus. */
 private val FOCUS_INTENTS = setOf(
     "IN:START_CONVERSATION_FOCUS", "IN:STOP_CONVERSATION_FOCUS", "IN:PAUSE_CONVERSATION_FOCUS", "IN:RESUME_CONVERSATION_FOCUS",
+)
+
+/** What the glasses understand as pausing, resuming or skipping what plays. */
+private val MEDIA_CONTROLS = mapOf(
+    "IN:PAUSE_MUSIC" to MediaControl.PAUSE, "IN:PAUSE_MEDIA" to MediaControl.PAUSE,
+    "IN:PAUSE_PODCAST" to MediaControl.PAUSE, "IN:PAUSE_AUDIOBOOK" to MediaControl.PAUSE,
+    "IN:RESUME_MUSIC" to MediaControl.RESUME, "IN:RESUME_MEDIA" to MediaControl.RESUME, "IN:RESUME_PODCAST" to MediaControl.RESUME,
+    "IN:STOP_MUSIC" to MediaControl.STOP, "IN:STOP_MEDIA" to MediaControl.STOP,
+    "IN:STOP_PODCAST" to MediaControl.STOP, "IN:STOP_AUDIOBOOK" to MediaControl.STOP,
+    "IN:SKIP_TRACK_MUSIC" to MediaControl.NEXT, "IN:PLAY_NEXT_SONG" to MediaControl.NEXT,
+    "IN:PREVIOUS_TRACK_MUSIC" to MediaControl.PREVIOUS, "IN:PLAY_PREVIOUS_SONG" to MediaControl.PREVIOUS,
+    "IN:REPLAY_MUSIC" to MediaControl.RESTART, "IN:START_OVER_MEDIA" to MediaControl.RESTART,
 )
 
 /** What the glasses understand as starting, joining or leaving a group conversation. */
