@@ -768,7 +768,7 @@
     <string name="features_turn_off">Spegni</string>
     <string name="feature_cf">Focus conversazione</string>
     <string name="feature_cf_about">Rende più forte e chiara la persona davanti a te, in un posto rumoroso.</string>
-    <string name="feature_cf_use">Avvialo dalla sua pagina, con la voce o tenendo premuto il touchpad.</string>
+    <string name="feature_cf_use">Avvialo dalla sua pagina o con la voce.</string>
     <string name="feature_spatial">Audio spaziale</string>
     <string name="feature_spatial_about">Musica e video suonano avvolgenti, come se arrivassero da intorno a te e non dalle orecchie.</string>
     <string name="feature_spatial_use">Fai partire musica o un video. Spegnila qui per lo stereo.</string>
@@ -804,6 +804,7 @@
     <string name="cf_now_off_sub">Avvialo da qui, o tieni premuto il touchpad.</string>
     <string name="cf_now_volume">voce %1$s</string>
     <string name="cf_stop">Ferma</string>
+    <string name="cf_now_off_here">Avvialo da qui.</string>
     <string name="cf_resume">Riprendi</string>
     <string name="cf_start_now">Avvia</string>
     <string name="cf_paused">Messo in pausa dagli occhiali.</string>

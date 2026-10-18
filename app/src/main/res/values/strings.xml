@@ -770,7 +770,7 @@
     <string name="features_turn_off">Turn off</string>
     <string name="feature_cf">Conversation focus</string>
     <string name="feature_cf_about">Makes the person in front of you louder and clearer in a noisy place.</string>
-    <string name="feature_cf_use">Start it from its page, by voice, or with tap and hold.</string>
+    <string name="feature_cf_use">Start it from its page or by voice.</string>
     <string name="feature_spatial">Spatial audio</string>
     <string name="feature_spatial_about">Music and videos sound immersive, as if they played around you rather than in your ears.</string>
     <string name="feature_spatial_use">Play music or a video. Turn it off here for stereo.</string>
@@ -806,6 +806,7 @@
     <string name="cf_now_off_sub">Start it here, or tap and hold the touchpad.</string>
     <string name="cf_now_volume">voice %1$s</string>
     <string name="cf_stop">Stop</string>
+    <string name="cf_now_off_here">Start it here.</string>
     <string name="cf_resume">Resume</string>
     <string name="cf_start_now">Start</string>
     <string name="cf_paused">Paused by the glasses.</string>
