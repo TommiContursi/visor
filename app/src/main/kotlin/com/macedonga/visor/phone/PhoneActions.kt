@@ -122,6 +122,11 @@ class PhoneActions @Inject constructor(@ApplicationContext private val context: 
             MediaControl.RESTART -> t.seekTo(0)
         }
         note("${control.what} in ${c.packageName}")
+        // An app may take play and stay paused (one that plays only on screen): then it did not work.
+        if (control == MediaControl.RESUME && withTimeoutOrNull(RESUME_WAIT_MS) { while (!c.playing()) delay(POLL_MS) } == null) {
+            note("${c.packageName} took play and stayed ${c.playbackState?.state}")
+            return PhoneDone(label(c.packageName), "${label(c.packageName)} did not start playing")
+        }
         return PhoneDone(label(c.packageName))
     }
 
@@ -274,6 +279,7 @@ class PhoneActions @Inject constructor(@ApplicationContext private val context: 
         const val LAST = "last_player"
         const val PLAY_WAIT_MS = 6_000L
         const val POLL_MS = 250L
+        const val RESUME_WAIT_MS = 3_000L
         const val BROWSE_MS = 5_000L
 
         fun simple(name: String) = name.lowercase().filter { it.isLetterOrDigit() }
