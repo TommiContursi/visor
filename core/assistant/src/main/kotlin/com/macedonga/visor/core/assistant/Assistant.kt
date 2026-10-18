@@ -219,6 +219,7 @@ class Assistant(
                             delay(QUESTION_GRACE_MS)
                             if (interaction in l.taken || interaction in l.closed) return@launch
                             l.taken.add(interaction)
+                            l.fresh.add(interaction)
                             say("Heard \"$text\" myself: the glasses left this question to the server")
                             answer(l, interaction, text, Visual(null, "", "", false, ""))
                         }
@@ -258,6 +259,8 @@ class Assistant(
         // Interactions the glasses have closed: an answer that comes later would talk over the next one.
         val closed: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
         val taken: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
+        // Questions asked with the wake word rather than as a follow-up: they continue a conversation only right after it.
+        val fresh: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
         @Volatile var locale: Locale = Locale.US
         // ev57's field 30, MobileConfig assistant_on_sn.simplify_mwa_message_forwarding. Off (the factory value),
         // the glasses act on a VARM the moment it lands and end the turn there.
@@ -625,6 +628,7 @@ class Assistant(
         val interaction = m[1].asText()
         val transcript = m[2].asStruct()[1].asStruct()[1].asText()
         if (interaction.isEmpty() || !l.taken.add(interaction)) return
+        if (m[11] != FOLLOW_UP_INVOCATION) l.fresh.add(interaction)
         // In a session the request has its own id; the microphone's is the session's, and it is the same turn.
         l.listening?.takeIf { it != interaction }?.let {
             l.sessionOf[interaction] = it
@@ -1105,7 +1109,10 @@ class Assistant(
 
     /** Into the diary, in the open conversation unless it names its own. */
     private fun record(turn: TurnRecord) {
-        diary.record(if (turn.conversation.isNotEmpty()) turn else turn.copy(conversation = diary.conversationAt(turn.at, windowMs())))
+        if (turn.conversation.isNotEmpty()) return diary.record(turn)
+        // A follow-up continues the open conversation; a new "Hey Meta" only if it comes right after the last turn.
+        val window = if (link?.fresh?.contains(turn.interactionId) == true) minOf(windowMs(), FRESH_WINDOW_MS) else windowMs()
+        diary.record(turn.copy(conversation = diary.conversationAt(turn.at, window)))
     }
 
     private fun update(interaction: String, change: (TurnRecord) -> TurnRecord) = diary.update(interaction, change)
@@ -1136,6 +1143,9 @@ class Assistant(
         const val REGISTER_AGAIN_MS = 2_500L
         val CHANNEL_CLOSED = Regex("service 15 answered status 0xc0(?:02|10) on channel 0x([0-9a-f]{4})")
         const val QUESTION_GRACE_MS = 3_000L
+        // ev57 field 11, invocationMethod: 1 for the wake word, 3 for a follow-up the glasses listened for.
+        const val FOLLOW_UP_INVOCATION = 3L
+        const val FRESH_WINDOW_MS = 2 * 60_000L
         val WAKE_WORD_ONLY = Regex("^(hey|hi|ehi|ei|ok|okay)?[ ,]*(meta|mata|metta|matta|meda)[.!?]*$", RegexOption.IGNORE_CASE)
         const val MIN_MODEL_MS = 6_000L
         const val PHOTO_WAIT_MS = 8_000L
