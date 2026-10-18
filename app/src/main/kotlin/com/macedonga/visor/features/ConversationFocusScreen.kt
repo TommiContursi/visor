@@ -202,6 +202,7 @@ private fun causeWords(cause: HearingCause): Int = when (cause) {
 
 private fun refusalWords(refusal: HearingRefusal): Int = when (refusal) {
     HearingRefusal.NUX_REQUIRED -> R.string.cf_refused_setup
+    HearingRefusal.NO_ACCESS -> R.string.cf_refused_access
     HearingRefusal.GEOGATED -> R.string.cf_refused_region
     HearingRefusal.INVALID_DEVICE -> R.string.cf_refused_device
     HearingRefusal.BT_REQUIRED -> R.string.cf_refused_bluetooth

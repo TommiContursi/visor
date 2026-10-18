@@ -65,9 +65,11 @@ enum class Feature(
     /** Its own page, for a feature with more to set than on and off. */
     val page: Boolean = false,
 ) {
+    // getHasCFAccess reads cf_enabled unless conversation_focus_use_eap_settings is on; without Meta's value it is
+    // false, NO_ACCESS, and the glasses ask for early access.
     CONVERSATION_FOCUS(
         "conversation_focus", R.string.feature_cf, R.string.feature_cf_about, R.string.feature_cf_use, VisorIcons.Ear,
-        listOf(Gate.Setting("hearing_boost_nux_completed", "true")) + FOCUS_FLOORS,
+        listOf(Gate.Setting("hearing_boost_nux_completed", "true"), Gate.Config("hearing_on_sn.cf_enabled", true, live = true)) + FOCUS_FLOORS,
         Topic.HEARING,
         page = true,
     ),

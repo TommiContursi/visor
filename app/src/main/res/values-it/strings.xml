@@ -776,7 +776,7 @@
     <string name="feature_follow_ups_about">Dopo più tipi di risposte l\'assistente resta in ascolto, così continui senza “Hey Meta”. Un suono ti dice quando smette.</string>
     <string name="feature_follow_ups_use">Chiedi qualcosa, poi continua a parlare dopo la risposta.</string>
     <string name="cf_lede">I microfoni degli occhiali isolano la voce della persona davanti a te e gli altoparlanti la avvicinano.</string>
-    <string name="cf_allow_note">Meta lo offre solo dove la sua app mostra l\'introduzione, e gli occhiali controllano soltanto che l\'introduzione sia stata fatta. Visor la segna come fatta.</string>
+    <string name="cf_allow_note">Meta lo offre solo dove la sua app mostra l\'introduzione e dà l\'accesso. Visor segna l\'introduzione come fatta e dà l\'accesso.</string>
     <string name="cf_start">Avvio</string>
     <string name="cf_hold">Tieni premuto per avviarlo</string>
     <string name="cf_hold_on">Tieni premuto il touchpad per accenderlo, di nuovo per spegnerlo.</string>
@@ -815,6 +815,7 @@
     <string name="cf_paused_timeout">In pausa dopo un po\' senza uso.</string>
     <string name="cf_refused">Gli occhiali non l\'hanno avviato.</string>
     <string name="cf_refused_setup">Gli occhiali vogliono la configurazione: consentilo qui sotto.</string>
+    <string name="cf_refused_access">Gli occhiali vogliono l\'accesso anticipato: consentilo qui sotto.</string>
     <string name="cf_refused_region">Gli occhiali dicono che qui non è disponibile.</string>
     <string name="cf_refused_device">Questi occhiali non possono avviarlo.</string>
     <string name="cf_refused_bluetooth">Serve che gli occhiali siano collegati al telefono.</string>
