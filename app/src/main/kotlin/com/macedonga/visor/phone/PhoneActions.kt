@@ -183,9 +183,10 @@ class PhoneActions @Inject constructor(@ApplicationContext private val context: 
         return connected
     }
 
-    /** The phone's media sessions, newest first; null without notification access. */
+    /** The media sessions of the phone's apps, newest first, without the system's own; null without notification access. */
     private fun sessions(): List<MediaController>? = runCatching {
-        context.getSystemService(MediaSessionManager::class.java).getActiveSessions(listener).filter { it.packageName != context.packageName }
+        context.getSystemService(MediaSessionManager::class.java).getActiveSessions(listener)
+            .filter { it.packageName != context.packageName && pm.getLaunchIntentForPackage(it.packageName) != null }
     }.getOrNull()
 
     /** The installed app called [name], among the ones that play media. */
