@@ -5,6 +5,7 @@ import android.companion.BluetoothDeviceFilter
 import android.companion.CompanionDeviceManager
 import android.content.Context
 import android.content.IntentSender
+import android.content.pm.PackageManager
 import android.os.Build
 
 /**
@@ -16,6 +17,16 @@ fun companionAssociated(context: Context): Boolean = runCatching {
     @Suppress("DEPRECATION")
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) cdm.myAssociations.isNotEmpty() else cdm.associations.isNotEmpty()
 }.getOrDefault(false)
+
+/** Asks once per pair, the first time Visor is in front with it connected; Phone access asks again at any time. */
+fun askCompanionOnce(context: Context, address: String, ask: (IntentSender) -> Unit) {
+    if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_COMPANION_DEVICE_SETUP) || companionAssociated(context)) return
+    val prefs = context.getSharedPreferences("companion", Context.MODE_PRIVATE)
+    val asked = prefs.getStringSet(ASKED, emptySet()).orEmpty()
+    if (address.uppercase() in asked) return
+    prefs.edit().putStringSet(ASKED, asked + address.uppercase()).apply()
+    associateCompanion(context, address, ask) {}
+}
 
 /**
  * Asks Android to make the glasses at [address] Visor's companion device, or whichever device the person picks when the
@@ -40,3 +51,5 @@ fun associateCompanion(context: Context, address: String?, ask: (IntentSender) -
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) cdm.associate(request, context.mainExecutor, callback)
     else cdm.associate(request, callback, null)
 }
+
+private const val ASKED = "asked"
