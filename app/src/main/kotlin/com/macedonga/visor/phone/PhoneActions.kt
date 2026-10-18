@@ -1,6 +1,7 @@
 package com.macedonga.visor.phone
 
 import android.app.ActivityManager
+import android.app.KeyguardManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -46,7 +47,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 /**
  * The phone's side of directions and music by voice. The map app gets a directions link; the music app is asked through
  * its media session or media browser service, the way the Meta app plays partner music. An app in the background may
- * not open another app, so what needs one waits in a notification unless Visor is on screen.
+ * open another only as a companion app ([companionAssociated]); otherwise, and while the phone is locked, it waits in a
+ * notification.
  */
 @Singleton
 class PhoneActions @Inject constructor(@ApplicationContext private val context: Context) : Phone {
@@ -210,10 +212,11 @@ class PhoneActions @Inject constructor(@ApplicationContext private val context: 
             sessions.orEmpty().map { it.packageName })
             .filter { it != context.packageName && pm.getLaunchIntentForPackage(it) != null }.toSet()
 
-    /** Starts [intent] while Visor is on screen; otherwise it waits in a notification, which the wearer taps to open it. */
+    /** Starts [intent] when Visor may, and puts it in a notification when it may not or the phone is locked. */
     private fun open(intent: Intent, id: Int, title: String, app: String): PhoneDone {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        if (onScreen() && runCatching { context.startActivity(intent) }.isSuccess) return PhoneDone(app, opened = true)
+        val started = (onScreen() || companionAssociated(context)) && runCatching { context.startActivity(intent) }.isSuccess
+        if (started && !context.getSystemService(KeyguardManager::class.java).isKeyguardLocked) return PhoneDone(app, opened = true)
         val manager = context.getSystemService(NotificationManager::class.java)
         if (!manager.areNotificationsEnabled()) return PhoneDone(app, "Visor may not post notifications, and it cannot open $app from the background")
         manager.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.meta_ai_title), NotificationManager.IMPORTANCE_HIGH))

@@ -27,6 +27,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
+    <uses-feature android:name="android.software.companion_device_setup" android:required="false" />
 
     <!-- The settings the phone app fills in: the default SMS app and the media apps on this phone. Also the map and
          music apps the assistant opens. -->
