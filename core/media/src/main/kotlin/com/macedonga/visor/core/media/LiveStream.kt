@@ -512,8 +512,8 @@ class LiveStream(
             fail(LiveProblem.NOT_CONNECTED)
             return
         }
-        // Charging means docked in the case, and there the glasses keep the camera off.
-        if (!reuse && charging()) {
+        // Charging folded means docked in the case, and there the glasses keep the camera off. Open, it is a cable.
+        if (!reuse && inCase()) {
             say("Charging in the case: the glasses keep the camera off there.")
             fail(LiveProblem.IN_CASE)
             return
@@ -648,10 +648,10 @@ class LiveStream(
 
     private fun fail(problem: LiveProblem) {
         // Whatever broke, glasses put in the case while it was starting will not go on.
-        _status.value = LiveStatus(LivePhase.FAILED, if (charging()) LiveProblem.IN_CASE else problem)
+        _status.value = LiveStatus(LivePhase.FAILED, if (inCase()) LiveProblem.IN_CASE else problem)
     }
 
-    private fun charging() = connection.state.value.device?.battery?.charging == true
+    private fun inCase() = connection.state.value.device?.let { it.battery?.charging == true && it.hinge != "OPEN" } == true
 
     // A Wi-Fi stream between sessions: its stream went with the old one, and Bluetooth has none (it answers 0xc001).
     private val noSession: Boolean get() = params?.overWifi == true && wifi == null
