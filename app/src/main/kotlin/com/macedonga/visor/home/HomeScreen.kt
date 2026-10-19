@@ -222,6 +222,7 @@ suspend fun ownerFirstName(context: Context): String? = withContext(Dispatchers.
 @Composable
 fun HomeScreen(
     onSetUp: () -> Unit,
+    onChangeOwner: () -> Unit,
     onMedia: () -> Unit,
     onLive: () -> Unit,
     onMetaAi: () -> Unit,
@@ -346,8 +347,7 @@ fun HomeScreen(
     LaunchedEffect(state.link, state.failure) {
         if (state.link == LinkState.READY) unanswered = false
         else if (state.failure != null || state.link == LinkState.LOST) unanswered = true
-    }
-    // The Live view pauses Bluetooth too; until it is back the glasses are as present as they were on Wi-Fi.
+    }    // The Live view pauses Bluetooth too; until it is back the glasses are as present as they were on Wi-Fi.
     val backFromLive = remember { stage.fromLive.also { stage.fromLive = false } }
     var liveSettling by remember { mutableStateOf(backFromLive) }
     var wasLive by remember { mutableStateOf(live || backFromLive) }
@@ -496,7 +496,7 @@ fun HomeScreen(
             )
             StatusPill(
                 state, mood, lastBattery, paired, allowed, transferring, importProgress, waiting = if (importing) 0 else fresh.size, onImport = onImport,
-                onAllow = { ask.launch(wanted()) }, onSetUp = onSetUp,
+                onAllow = { ask.launch(wanted()) }, onSetUp = onSetUp, onChangeOwner = onChangeOwner,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 26.dp).then(fade).appear(entrance, 0),
             )
         }
