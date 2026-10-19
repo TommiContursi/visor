@@ -639,6 +639,8 @@ class LiveStream(
         val config = VideoConfig(width = next.quality.width, height = next.quality.height, bitrate = next.bitrate, frameRate = next.frameRate, iFrameInterval = 1)
         lastConfig = config
         scope.launch {
+            // A stall can tear the session down first; the restart asks for the new rung itself.
+            if (noSession) return@launch
             val answer = ask(StreamType.CONFIGURE_VIDEO_STREAM_REQUEST) { configureVideo(it, config) }
             say("Quality to ${next.quality.label}, ${next.bitrate / 1000} kbit/s, ${next.frameRate} fps: ${answer.words()}")
         }
@@ -650,6 +652,9 @@ class LiveStream(
     }
 
     private fun charging() = connection.state.value.device?.battery?.charging == true
+
+    // A Wi-Fi stream between sessions: its stream went with the old one, and Bluetooth has none (it answers 0xc001).
+    private val noSession: Boolean get() = params?.overWifi == true && wifi == null
 
     /** Which layer went quiet: the link, the DataX messages on it, or only the video. */
     private fun stallWords(now: Long): String {
@@ -679,7 +684,7 @@ class LiveStream(
         outputs.onStreamEnded()
         stopping = scope.launch {
             job?.cancel()
-            if (wifi != null || connection.state.value.link == LinkState.READY) {
+            if (wifi != null || (!noSession && connection.state.value.link == LinkState.READY)) {
                 val answer = ask(StreamType.CONTROL_STREAM_REQUEST) { controlStream(it, StreamAction.STOP) }
                 say("Stop: ${answer.words()}")
             }
@@ -859,7 +864,7 @@ class LiveStream(
     fun requestKeyframe() {
         val config = lastConfig ?: return
         val now = System.currentTimeMillis()
-        if (!_running.value || now - keyframeAskedAt < 2_000) return
+        if (!_running.value || noSession || now - keyframeAskedAt < 2_000) return
         keyframeAskedAt = now
         scope.launch {
             val answer = ask(StreamType.CONFIGURE_VIDEO_STREAM_REQUEST) { configureVideo(it, config) }
@@ -872,7 +877,7 @@ class LiveStream(
      * Asked for with a UserEventNotification; null if none came in a few seconds.
      */
     suspend fun capturePhoto(): ByteArray? {
-        if (!_running.value) return null
+        if (!_running.value || noSession) return null
         return coroutineScope {
             val photo = async(start = CoroutineStart.UNDISPATCHED) { receiver.photos.first() }
             send { it.sendOnService(SVC_MEDIA_STREAMING_CONTROL, StreamType.USER_EVENT_NOTIFICATION, requestPhotoCapture()) }
