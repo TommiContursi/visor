@@ -455,7 +455,7 @@ class LiveStream(
             if (settings.manual) settings.quality else top.quality,
             if (settings.manual) settings.bitrate else top.bitrate,
             if (settings.manual) settings.frameRate else top.frameRate,
-            bypassDonCheck = true, overWifi = true, groupBand = settings.band, auto = !settings.manual,
+            bypassDonCheck = true, overWifi = true, groupBand = BAND_2GHZ, auto = !settings.manual,
         )
     }
 
@@ -717,6 +717,8 @@ class LiveStream(
             val mhz = g.create(band)
             groupBand = band
             say("The phone's group is up on $mhz MHz")
+            val own = phoneWifiMhz(context)
+            if (radioTakesTurns(context, own, mhz)) say("The phone's own Wi-Fi is on $own MHz: its radio takes turns between that and the group")
             var result: JoinResult? = null
             // Fresh out of a group, or of a Wi-Fi firmware restart, they answer INTERNAL_ERROR for up to half a minute.
             for (attempt in 1..JOIN_TRIES) {
@@ -978,12 +980,6 @@ private const val PHOTO_WAIT_MS = 8_000L
 const val BAND_AUTO = 0
 const val BAND_2GHZ = 2
 const val BAND_5GHZ = 5
-
-fun bandWords(band: Int): String = when (band) {
-    BAND_2GHZ -> "2.4 GHz"
-    BAND_5GHZ -> "5 GHz"
-    else -> "Phone's choice"
-}
 
 private fun snappWords(code: Long): String = when (code) {
     1L -> "started"
