@@ -913,4 +913,5 @@
     <string name="hct_retry">Try again</string>
     <string name="phone_directions">Directions to %1$s</string>
     <string name="phone_play">Play %1$s</string>
+    <string name="live_settings_glasses_host">Glasses host the Wi-Fi</string>
 </resources>
