@@ -347,7 +347,8 @@ fun HomeScreen(
     LaunchedEffect(state.link, state.failure) {
         if (state.link == LinkState.READY) unanswered = false
         else if (state.failure != null || state.link == LinkState.LOST) unanswered = true
-    }    // The Live view pauses Bluetooth too; until it is back the glasses are as present as they were on Wi-Fi.
+    }
+    // The Live view pauses Bluetooth too; until it is back the glasses are as present as they were on Wi-Fi.
     val backFromLive = remember { stage.fromLive.also { stage.fromLive = false } }
     var liveSettling by remember { mutableStateOf(backFromLive) }
     var wasLive by remember { mutableStateOf(live || backFromLive) }
