@@ -115,6 +115,8 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) first. There are no test suites: changes
 
 Questions, ideas and reports of how Visor works on your pair go to [Discussions](https://github.com/macedonga/visor/discussions).
 
+[ACCESSIBILITY.md](ACCESSIBILITY.md) says what Visor does for accessibility, what it does not do yet, and how to report a problem.
+
 Report security problems privately, as [SECURITY.md](SECURITY.md) explains, not in a public issue.
 
 ## License

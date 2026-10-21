@@ -26,6 +26,7 @@ Remove serial numbers, Bluetooth addresses, tokens and API keys from every log y
 - Dependency versions live only in `gradle/libs.versions.toml`. Use the latest stable release that is at least two weeks old. No alphas, betas or release candidates. Add a dependency only when the platform and the existing code cannot do the job.
 - Match the code around your change: names, structure, the way errors are handled.
 - Text in the app follows the phone's language. Add every new string in English (`values/`) and in Italian (`values-it/`).
+- A change to a screen follows the requirements in [ACCESSIBILITY.md](ACCESSIBILITY.md).
 
 ## Commits and pull requests
 
