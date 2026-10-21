@@ -14,7 +14,6 @@
     <string name="mood_charging">In carica</string>
     <string name="mood_recording">Registrano</string>
     <string name="mood_low_battery">Batteria quasi scarica</string>
-    <string name="home_glasses_name">Ray-Ban Meta</string>
     <string name="home_reading_glasses">Occhiali</string>
     <string name="home_reading_case">Custodia</string>
     <string name="home_allow_bluetooth">Consenti il Bluetooth</string>
@@ -420,8 +419,7 @@
 
     <string name="glasses_title">Occhiali</string>
     <string name="glasses_owned">Occhiali di %s</string>
-    <string name="glasses_default_name">Ray-Ban Meta</string>
-    <string name="glasses_default_named">Ray-Ban Meta %s</string>
+    <string name="glasses_default_name">Occhiali Meta</string>
     <string name="glasses_frame">Montatura</string>
     <string name="glasses_color">Colore</string>
     <string name="glasses_lenses">Lenti</string>
@@ -607,7 +605,7 @@
     <string name="live_problem_in_case">Sono in carica nella custodia, e lì gli occhiali tengono la fotocamera spenta. Tirali fuori per andare live.</string>
 
     <!-- Onboarding -->
-    <string name="onboard_tagline">I tuoi Ray-Ban Meta, guidati da questo telefono.</string>
+    <string name="onboard_tagline">I tuoi occhiali Meta, guidati da questo telefono.</string>
     <string name="onboard_begin">Inizia</string>
     <string name="onboard_access_title">Cosa chiede Visor</string>
     <string name="onboard_access_lede">Ognuno serve a una cosa sola. Per iniziare basta il primo.</string>
