@@ -66,6 +66,8 @@
     <string name="fact_free">Свободное место</string>
     <string name="fact_volume">Громкость</string>
     <string name="fact_temperature">Температура</string>
+    <string name="live_battery">Батарея</string>
+    <string name="onboard_allowed">Разрешено</string>
     <string name="fact_last_capture">Последний снимок</string>
     <string name="shutter_take_photo">Сделать фото</string>
     <string name="shutter_record_video">Снять видео</string>

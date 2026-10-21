@@ -60,6 +60,8 @@
     <string name="fact_free">Spazio libero</string>
     <string name="fact_volume">Volume</string>
     <string name="fact_temperature">Temperatura</string>
+    <string name="live_battery">Batteria</string>
+    <string name="onboard_allowed">Consentito</string>
     <string name="fact_last_capture">Ultimo scatto</string>
     <string name="shutter_take_photo">Scatta foto</string>
     <string name="shutter_record_video">Registra video</string>
