@@ -29,7 +29,7 @@ Visor works with Ray-Ban Meta, Oakley Meta and the other Meta glasses. It speaks
 
 ## What it does
 
-| | |
+| Feature | What it does |
 |---|---|
 | **Home** | A 3D model of your pair, lit by a light that shows their state: connected, charging, asleep, recording, out of reach. Under it: both batteries, free space, volume, temperature and your latest photos. |
 | **Gallery** | Imports photos and videos over Wi-Fi Direct, on its own while the glasses charge or when you ask. Live photos become Motion Photos. Files go to `Pictures/Visor` and `Movies/Visor`. |
