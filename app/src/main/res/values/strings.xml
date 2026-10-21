@@ -698,6 +698,8 @@
     <string name="widget_name">Glasses</string>
     <string name="widget_description">Their battery and the case\'s, how they are, and your latest moment.</string>
     <string name="widget_case">Case %1$d%%</string>
+    <string name="notify_glasses">Glasses %1$d%%</string>
+    <string name="notify_glasses_charging">Glasses %1$d%%, charging</string>
     <string name="widget_no_moment">No photos yet</string>
     <string name="widget_sample_battery" translatable="false">82%</string>
     <string name="widget_sample_case">Case 64%</string>
