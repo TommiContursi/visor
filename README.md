@@ -113,6 +113,8 @@ A tag like `v1.2.3` builds the signed release APK in CI and publishes it as a Gi
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) first. There are no test suites: changes are tried on real glasses, and a pull request says what was tried.
 
+Questions, ideas and reports of how Visor works on your pair go to [Discussions](https://github.com/macedonga/visor/discussions).
+
 Report security problems privately, as [SECURITY.md](SECURITY.md) explains, not in a public issue.
 
 ## License

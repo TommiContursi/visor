@@ -4,6 +4,7 @@ Thank you for helping. Visor is small on purpose, and these rules keep it that w
 
 ## Before you start
 
+- For a question, ask in [Discussions](https://github.com/macedonga/visor/discussions/categories/q-a).
 - For a bug, open an issue with the bug form. Include the event log from the app (Settings, Advanced, Event log, Copy all).
 - For anything bigger than a fix, open an issue first and say what you want to change and why. A pull request that nobody asked for may wait a long time.
 - Read [CLAUDE.md](CLAUDE.md). Its protocol traps each cost days to find.
