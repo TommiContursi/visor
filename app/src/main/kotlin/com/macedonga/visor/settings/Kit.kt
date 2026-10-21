@@ -85,10 +85,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.toggleableState
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
@@ -123,6 +122,7 @@ import com.macedonga.visor.ui.Haptics
 import com.macedonga.visor.ui.VisorIcons
 import com.macedonga.visor.ui.asHeading
 import com.macedonga.visor.ui.lineLimit
+import com.macedonga.visor.ui.switchRow
 import com.macedonga.visor.ui.rememberHaptics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -420,6 +420,7 @@ fun RowFrame(
     dense: Boolean = false,
     below: (@Composable ColumnScope.() -> Unit)? = null,
     dim: Boolean = false,
+    state: Modifier = Modifier,
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
     val host = LocalHost.current
@@ -429,7 +430,7 @@ fun RowFrame(
         else -> onClick
     }
     val base = if (tap != null || onLongClick != null) {
-        Modifier.combinedClickable(onClick = tap ?: {}, onLongClick = onLongClick)
+        Modifier.combinedClickable(onClick = tap ?: {}, onLongClick = onLongClick).then(state)
     } else Modifier
     Column(
         base
@@ -526,7 +527,6 @@ private fun RowText(overline: String?, title: String, changed: Boolean, value: S
 fun ChoiceMark(chosen: Boolean, modifier: Modifier = Modifier) {
     Box(
         modifier
-            .semantics { selected = chosen }
             .size(22.dp)
             .clip(CircleShape)
             .background(if (chosen) Color.White else Color.Transparent)
@@ -550,8 +550,8 @@ fun VisorSwitch(on: Boolean) {
     Switch(
         checked = on,
         onCheckedChange = null,
-        // The row takes the tap; the switch still tells TalkBack whether it is on.
-        modifier = Modifier.padding(start = 12.dp).semantics { toggleableState = ToggleableState(on) },
+        // Its row carries the state for TalkBack (switchRow); the switch itself is only drawn.
+        modifier = Modifier.padding(start = 12.dp).clearAndSetSemantics {},
         colors = SwitchDefaults.colors(
             checkedThumbColor = Color.Black, checkedTrackColor = Color.White, checkedBorderColor = Color.Transparent,
             uncheckedThumbColor = colors.textSecondary, uncheckedTrackColor = colors.control, uncheckedBorderColor = Color.Transparent,
@@ -577,7 +577,7 @@ fun ToggleRow(
     val host = LocalHost.current
     RowFrame(
         title, onClick = { host.haptics.toggle(); onChange(!on) }, onLongClick = onLongClick, locked = locked, changed = changed,
-        busy = busy, overline = overline, sub = sub, keyLine = keyLine, problem = problem, dense = dense,
+        busy = busy, overline = overline, sub = sub, keyLine = keyLine, problem = problem, dense = dense, state = Modifier.switchRow(on),
     ) { VisorSwitch(on) }
 }
 
