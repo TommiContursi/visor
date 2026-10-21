@@ -172,6 +172,7 @@ class SettingsViewModel @Inject constructor(
     val updates: com.macedonga.visor.update.Updates,
     val features: com.macedonga.visor.features.Features,
     val hearing: com.macedonga.visor.core.assistant.Hearing,
+    val developer: com.macedonga.visor.outside.DeveloperMode,
 ) : ViewModel()
 
 /**
