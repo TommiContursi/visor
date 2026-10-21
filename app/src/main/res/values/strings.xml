@@ -591,6 +591,14 @@
     <string name="about_debug">Debug build</string>
     <string name="about_credits">Made with</string>
     <string name="about_foot">Each under its own licence.</string>
+    <string name="about_report">Report a problem</string>
+    <string name="about_discuss">Start a discussion</string>
+    <string name="about_star">Leave a star</string>
+    <string name="star_title">Enjoying Visor?</string>
+    <string name="star_text">Leave it a star on GitHub.</string>
+    <string name="star_ok">OK</string>
+    <string name="star_no">No</string>
+    <string name="star_never">Don\'t show again</string>
     <string name="about_sum_update">Visor %1$s, %2$s is out</string>
     <string name="update_channel">Updates</string>
     <string name="update_ready">Visor %1$s is out</string>

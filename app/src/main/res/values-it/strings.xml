@@ -590,6 +590,14 @@
     <string name="about_debug">Build di debug</string>
     <string name="about_credits">Fatto con</string>
     <string name="about_foot">Ognuno con la sua licenza.</string>
+    <string name="about_report">Segnala un problema</string>
+    <string name="about_discuss">Apri una discussione</string>
+    <string name="about_star">Lascia una stella</string>
+    <string name="star_title">Ti piace Visor?</string>
+    <string name="star_text">Lasciagli una stella su GitHub.</string>
+    <string name="star_ok">OK</string>
+    <string name="star_no">No</string>
+    <string name="star_never">Non mostrare più</string>
     <string name="about_sum_update">Visor %1$s, disponibile la %2$s</string>
     <string name="update_channel">Aggiornamenti</string>
     <string name="update_ready">Visor %1$s è disponibile</string>

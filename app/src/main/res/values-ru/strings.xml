@@ -597,6 +597,14 @@
     <string name="about_debug">Отладочная сборка</string>
     <string name="about_credits">Сделано с помощью</string>
     <string name="about_foot">Каждый компонент - под своей лицензией.</string>
+    <string name="about_report">Сообщить о проблеме</string>
+    <string name="about_discuss">Начать обсуждение</string>
+    <string name="about_star">Поставить звезду</string>
+    <string name="star_title">Нравится Visor?</string>
+    <string name="star_text">Поставьте ему звезду на GitHub.</string>
+    <string name="star_ok">OK</string>
+    <string name="star_no">Нет</string>
+    <string name="star_never">Больше не показывать</string>
     <string name="about_sum_update">Visor %1$s, вышла версия %2$s</string>
     <string name="update_channel">Обновления</string>
     <string name="update_ready">Вышел Visor %1$s</string>
