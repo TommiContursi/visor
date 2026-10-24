@@ -140,11 +140,11 @@ class Assistant(
     )
 
     /**
-     * A NetEvent onto the session; one bigger than a frame carries goes as a segmented message, a header (1002)
-     * {1 type, 2 size, 3 id} then pieces (1003) {1 bytes, 2 id, 3 last}, the way the glasses send theirs.
+     * A NetEvent onto the session, at [type]. As the Meta app sends them: over 1 KB, to glasses of assistant protocol 1
+     * or later, as a segmented message, a header (1002) {1 type, 2 size, 3 id} then pieces (1003) {1 bytes, 2 id, 3 last}.
      */
-    private suspend fun sendNetEvent(l: Link, m0: Int, event: ByteArray) {
-        if (event.size <= SEGMENT_BYTES) return l.mux.send(m0, event, messageType = MT_NET_EVENT)
+    private suspend fun sendNetEvent(l: Link, m0: Int, event: ByteArray, type: Int = MT_NET_EVENT) {
+        if (event.size <= SEGMENT_BYTES || l.protocol == 0) return l.mux.send(m0, event, messageType = type)
         val id = UUID.randomUUID().toString().encodeToByteArray()
         l.mux.send(m0, Wire.fieldVarint(1, MT_NET_EVENT.toLong()) + Wire.fieldVarint(2, event.size.toLong()) + Wire.fieldBytes(3, id), messageType = MT_SEGMENTED_HEADER)
         var at = 0
@@ -160,7 +160,7 @@ class Assistant(
         override suspend fun event(id: Int, body: ByteArray) {
             val l = link ?: return
             val m0 = l.m0 ?: return
-            l.mux.send(m0, netEvent(id, body), messageType = MT_NET_EVENT)
+            sendNetEvent(l, m0, netEvent(id, body))
         }
 
         override suspend fun answer(subInteraction: String, question: String) {
@@ -261,6 +261,8 @@ class Assistant(
         val sessionOf = java.util.concurrent.ConcurrentHashMap<String, String>()
         @Volatile var m0: Int? = null
         @Volatile var s0: Int? = null
+        // The assistant protocol version from their init answer; 0 takes no segmented messages.
+        @Volatile var protocol = 0
         val m0Answered = CompletableDeferred<Unit>()
         val s0Answered = CompletableDeferred<Unit>()
         // The stream id the glasses allocate per interaction, from their own 5002.
@@ -438,7 +440,10 @@ class Assistant(
             }
             announceSession(mux, m0)
             if (link === l) _phase.value = AssistantPhase.LISTENING
-            say("Registered as the glasses' assistant: \"Hey Meta\" now comes to Visor")
+            say("Registered as the glasses' assistant (protocol ${l.protocol}): \"Hey Meta\" now comes to Visor")
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            // The session went away while registering, such as a Wi-Fi one ending: not a failure.
+            throw cancelled
         } catch (error: Exception) {
             if (link === l) say("Could not register as the assistant: ${error.message}")
         }
@@ -468,7 +473,16 @@ class Assistant(
         if (connection !== l.mux) return
         val payload = message.payload
         when (val type = message.info.messageType) {
-            MT_INIT_MESSAGE_RESPONSE -> l.m0Answered.complete(Unit)
+            // InitChannelResponse {1 protocolVersion, 2 lifecycleId, 3 connectionId, 4 channelId}, or the bare version in
+            // 4 bytes of their byte order; nothing is version 0.
+            MT_INIT_MESSAGE_RESPONSE -> {
+                l.protocol = when {
+                    payload.size > 4 -> runCatching { Wire.parse(payload).varint(1).toInt() }.getOrDefault(0)
+                    payload.size == 4 -> ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN).int
+                    else -> 0
+                }
+                l.m0Answered.complete(Unit)
+            }
             MT_INIT_STREAM_RESPONSE -> l.s0Answered.complete(Unit)
             MT_RUNNING_LOCALE -> {
                 l.locale = parseLocale(payload)
@@ -968,7 +982,7 @@ class Assistant(
             Triple(0, EV_FINAL_TRANSCRIPTION, e52),
             Triple(0, EV_ON_PHONE_UNDERSTANDING, e342),
         )) {
-            l.mux.send(m0, netEvent(event, body), messageType = type)
+            sendNetEvent(l, m0, netEvent(event, body), type)
             delay(20)
         }
     }
@@ -987,7 +1001,7 @@ class Assistant(
         val complete = netEvent(EV_MWA_VOICE_INTERACTION_COMPLETE, interactionComplete(interaction, text, expectsAnswer = ASKS.containsMatchIn(text)))
         // Without simplified forwarding the VARM is acted on as it lands, so the text must be there before it.
         for (event in if (l.simplified) listOf(answer, complete) else listOf(complete, answer)) {
-            l.mux.send(m0, event, messageType = MT_NET_EVENT)
+            sendNetEvent(l, m0, event)
             delay(20)
         }
         val mono = System.nanoTime() / 1_000_000
@@ -1029,7 +1043,7 @@ class Assistant(
                 mux.send(s0, frame, messageType = MT_STREAM_AUDIO)
                 // The VARM goes after the first audio message, never before; without simplified forwarding it would
                 // end the turn on arrival, so it waits for the end of the audio.
-                if (l.simplified) mux.send(m0, answer, messageType = MT_NET_EVENT)
+                if (l.simplified) sendNetEvent(l, m0, answer)
             } else {
                 // A bare header: tagged with type 0, only the first 40 ms would ever play.
                 mux.send(s0, frame)
@@ -1039,7 +1053,7 @@ class Assistant(
             if (wait > 0) delay(wait)
         }
         mux.send(s0, ByteArray(0), messageType = MT_STREAM_END)
-        if (!l.simplified) mux.send(m0, answer, messageType = MT_NET_EVENT)
+        if (!l.simplified) sendNetEvent(l, m0, answer)
 
         val e389 = ThriftWriter().i64(1, System.currentTimeMillis()).i64(2, mono).i64(3, 7000).str(4, interaction).done()
         val e392 = ThriftWriter().str(1, "VoiceActionResponseMessage").i32(2, (mono and 0xFFFF).toInt()).i32(3, 1).done()
@@ -1303,7 +1317,7 @@ private const val APP_GROUP_CONVERSATIONS = 47L
 /** ev289's mode for a Live AI session. */
 private const val MODE_LIVE_AI = 2L
 
-/** The most a NetEvent goes as in one piece: an AirShield frame holds 255 blocks, and the glasses send 1 KB pieces. */
+/** The most a NetEvent goes as in one piece, and the size of each piece of a bigger one, as the Meta app sends them. */
 private const val SEGMENT_BYTES = 1_024
 
 private const val LIVE_AI_NOTE =
