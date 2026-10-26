@@ -1,0 +1,5 @@
+# Set these to exactly the values assigned to Companion in Meta Wearables Developer Center.
+# They are required for a Beta-channel installation (and are not source-controlled).
+mwdat_application_id=YOUR_META_WEARABLES_APPLICATION_ID
+mwdat_client_token=YOUR_META_WEARABLES_CLIENT_TOKEN
+# Android Studio adds sdk.dir automatically to local.properties.
